@@ -12,17 +12,17 @@ pub(all) enum BackendMode {
 /// Runtime configuration
 pub struct RuntimeConfig {
   mode : BackendMode
-  fs : @fs.MemFS? // Only used in Sandbox mode
+  fs : @fs.Fs? // Only used in Sandbox mode
   wasi_config : WasiSandboxConfig? // Only used in WasiNative mode
 }
 
 ///|
 pub fn RuntimeConfig::sandbox() -> RuntimeConfig {
-  { mode: Sandbox, fs: Some(@fs.MemFS::default()), wasi_config: None }
+  { mode: Sandbox, fs: Some(@fs.Fs::default()), wasi_config: None }
 }
 
 ///|
-pub fn RuntimeConfig::sandbox_with(fs : @fs.MemFS) -> RuntimeConfig {
+pub fn RuntimeConfig::sandbox_with(fs : @fs.Fs) -> RuntimeConfig {
   { mode: Sandbox, fs: Some(fs), wasi_config: None }
 }
 
@@ -50,7 +50,7 @@ pub fn RuntimeConfig::wasi_native_with(
 }
 
 ///|
-pub fn RuntimeConfig::get_fs(self : RuntimeConfig) -> @fs.MemFS? {
+pub fn RuntimeConfig::get_fs(self : RuntimeConfig) -> @fs.Fs? {
   self.fs
 }
 
@@ -92,16 +92,16 @@ pub fn create_posix_context(config : RuntimeConfig) -> @posix.PosixContext {
     Sandbox =>
       match config.fs {
         Some(fs) => @posix.PosixContext::new(fs)
-        None => @posix.PosixContext::new(@fs.MemFS::default())
+        None => @posix.PosixContext::new(@fs.Fs::default())
       }
     Native =>
       // For now, fallback to sandbox mode
       // Future: use real WASI filesystem
-      @posix.PosixContext::new(@fs.MemFS::default())
+      @posix.PosixContext::new(@fs.Fs::default())
     WasiNative =>
       // WASI-native mode with host-enforced sandbox
       // Creates a MemFS that can be populated from host mappings
-      @posix.PosixContext::new(@fs.MemFS::default())
+      @posix.PosixContext::new(@fs.Fs::default())
   }
 }
 

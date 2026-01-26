@@ -41,7 +41,7 @@ pub fn ProcessContext::read_stdin(self : ProcessContext) -> String {
 ///|
 /// MemFS Backend
 pub struct MemfsBackend {
-  fs : @fs.MemFS
+  fs : @fs.Fs
   // File descriptor table
   fd_table : Map[Fd, OpenFileState]
   mut next_fd : Int
@@ -77,7 +77,7 @@ struct ProcessState {
 ///|
 pub fn MemfsBackend::new() -> MemfsBackend {
   let backend : MemfsBackend = {
-    fs: @fs.MemFS::new(),
+    fs: @fs.Fs::new(),
     fd_table: {},
     next_fd: 3, // 0,1,2 reserved
     processes: {},
@@ -97,7 +97,7 @@ pub fn MemfsBackend::new() -> MemfsBackend {
 }
 
 ///|
-pub fn MemfsBackend::with_fs(fs : @fs.MemFS) -> MemfsBackend {
+pub fn MemfsBackend::with_fs(fs : @fs.Fs) -> MemfsBackend {
   let backend = MemfsBackend::new()
   { ..backend, fs, }
 }
@@ -151,15 +151,15 @@ fn MemfsBackend::get_file(
 }
 
 ///|
-fn convert_memfs_error(e : @fs.MemFSError) -> IOError {
+fn convert_memfs_error(e : @fs.FsError) -> IOError {
   match e {
-    @fs.MemFSError::NotFound(p) => IOError::NotFound(p)
-    @fs.MemFSError::AlreadyExists(p) => IOError::AlreadyExists(p)
-    @fs.MemFSError::NotAFile(p) => IOError::InvalidInput("Not a file: \{p}")
-    @fs.MemFSError::NotADirectory(p) => IOError::NotDirectory(p)
-    @fs.MemFSError::InvalidPath(p) =>
+    @fs.FsError::NotFound(p) => IOError::NotFound(p)
+    @fs.FsError::AlreadyExists(p) => IOError::AlreadyExists(p)
+    @fs.FsError::NotAFile(p) => IOError::InvalidInput("Not a file: \{p}")
+    @fs.FsError::NotADirectory(p) => IOError::NotDirectory(p)
+    @fs.FsError::InvalidPath(p) =>
       IOError::InvalidInput("Invalid path: \{p}")
-    @fs.MemFSError::SymlinkLoop(p) =>
+    @fs.FsError::SymlinkLoop(p) =>
       IOError::InvalidInput("Symlink loop: \{p}")
   }
 }

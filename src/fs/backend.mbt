@@ -36,30 +36,30 @@ pub trait FileSystem {
   is_symlink(Self, String) -> Bool
 
   // Path resolution (for symlinks)
-  resolve_path(Self, String) -> String raise MemFSError
+  resolve_path(Self, String) -> String raise FsError
 
   // File operations
-  read_file(Self, String) -> Bytes raise MemFSError
-  write_file(Self, String, Bytes) -> Unit raise MemFSError
-  read_string(Self, String) -> String raise MemFSError
-  write_string(Self, String, String) -> Unit raise MemFSError
-  truncate(Self, String, Int) -> Unit raise MemFSError
+  read_file(Self, String) -> Bytes raise FsError
+  write_file(Self, String, Bytes) -> Unit raise FsError
+  read_string(Self, String) -> String raise FsError
+  write_string(Self, String, String) -> Unit raise FsError
+  truncate(Self, String, Int) -> Unit raise FsError
   size(Self, String) -> Int?
-  remove(Self, String) -> Unit raise MemFSError
+  remove(Self, String) -> Unit raise FsError
 
   // Directory operations
-  mkdir(Self, String) -> Unit raise MemFSError
-  mkdir_p(Self, String) -> Unit raise MemFSError
-  rmdir(Self, String) -> Unit raise MemFSError
-  readdir(Self, String) -> Array[String] raise MemFSError
+  mkdir(Self, String) -> Unit raise FsError
+  mkdir_p(Self, String) -> Unit raise FsError
+  rmdir(Self, String) -> Unit raise FsError
+  readdir(Self, String) -> Array[String] raise FsError
 
   // Symlink operations
-  symlink(Self, String, String) -> Unit raise MemFSError
-  read_link(Self, String) -> String raise MemFSError
+  symlink(Self, String, String) -> Unit raise FsError
+  read_link(Self, String) -> String raise FsError
 
   // Move/Rename
-  rename(Self, String, String) -> Unit raise MemFSError
+  rename(Self, String, String) -> Unit raise FsError
 
   // Stat
-  stat(Self, String) -> FileStat raise MemFSError
+  stat(Self, String) -> FileStat raise FsError
 }

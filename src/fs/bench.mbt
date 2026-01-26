@@ -1,9 +1,9 @@
 ///|
-/// Benchmarks for MemFS
+/// Benchmarks for Fs
 
 ///|
-test "bench: MemFS write small file" (b : @bench.T) {
-  let fs = MemFS::new()
+test "bench: Fs write small file" (b : @bench.T) {
+  let fs = Fs::new()
   let result = b.bench(fn() {
     fs.write_string("/test.txt", "hello world") catch {
       _ => ()
@@ -13,8 +13,8 @@ test "bench: MemFS write small file" (b : @bench.T) {
 }
 
 ///|
-test "bench: MemFS write large file" (b : @bench.T) {
-  let fs = MemFS::new()
+test "bench: Fs write large file" (b : @bench.T) {
+  let fs = Fs::new()
   let data = String::make(1024 * 10, 'x') // 10KB
   let result = b.bench(fn() {
     fs.write_string("/large.txt", data) catch {
@@ -25,8 +25,8 @@ test "bench: MemFS write large file" (b : @bench.T) {
 }
 
 ///|
-test "bench: MemFS read file" (b : @bench.T) {
-  let fs = MemFS::new()
+test "bench: Fs read file" (b : @bench.T) {
+  let fs = Fs::new()
   fs.write_string("/test.txt", "hello world")
   let result = b.bench(fn() {
     let _ = fs.read_string("/test.txt") catch { _ => "" }
@@ -36,8 +36,8 @@ test "bench: MemFS read file" (b : @bench.T) {
 }
 
 ///|
-test "bench: MemFS mkdir" (b : @bench.T) {
-  let fs = MemFS::new()
+test "bench: Fs mkdir" (b : @bench.T) {
+  let fs = Fs::new()
   let mut i = 0
   let result = b.bench(fn() {
     fs.mkdir("/dir" + i.to_string()) catch {
@@ -49,8 +49,8 @@ test "bench: MemFS mkdir" (b : @bench.T) {
 }
 
 ///|
-test "bench: MemFS exists check" (b : @bench.T) {
-  let fs = MemFS::new()
+test "bench: Fs exists check" (b : @bench.T) {
+  let fs = Fs::new()
   fs.write_string("/test.txt", "hello")
   let result = b.bench(fn() {
     let _ = fs.exists("/test.txt")
@@ -60,8 +60,8 @@ test "bench: MemFS exists check" (b : @bench.T) {
 }
 
 ///|
-test "bench: MemFS path resolution" (b : @bench.T) {
-  let fs = MemFS::new()
+test "bench: Fs path resolution" (b : @bench.T) {
+  let fs = Fs::new()
   fs.mkdir("/a")
   fs.mkdir("/a/b")
   fs.mkdir("/a/b/c")
@@ -74,8 +74,8 @@ test "bench: MemFS path resolution" (b : @bench.T) {
 }
 
 ///|
-test "bench: MemFS rename file" (b : @bench.T) {
-  let fs = MemFS::new()
+test "bench: Fs rename file" (b : @bench.T) {
+  let fs = Fs::new()
   let mut i = 0
   let result = b.bench(fn() {
     let old_name = "/f" + i.to_string() + ".txt"
@@ -92,8 +92,8 @@ test "bench: MemFS rename file" (b : @bench.T) {
 }
 
 ///|
-test "bench: MemFS truncate shrink" (b : @bench.T) {
-  let fs = MemFS::new()
+test "bench: Fs truncate shrink" (b : @bench.T) {
+  let fs = Fs::new()
   fs.write_string("/test.txt", "hello world this is test data")
   let result = b.bench(fn() {
     try {

@@ -358,12 +358,12 @@ pub struct Sandbox {
 
 ///|
 pub fn Sandbox::new(caps : Capabilities) -> Sandbox {
-  let fs = @fs.MemFS::new()
+  let fs = @fs.Fs::new()
   { ctx: @posix.PosixContext::new(fs), caps, open_file_count: 0 }
 }
 
 ///|
-pub fn Sandbox::with_fs(fs : @fs.MemFS, caps : Capabilities) -> Sandbox {
+pub fn Sandbox::with_fs(fs : @fs.Fs, caps : Capabilities) -> Sandbox {
   { ctx: @posix.PosixContext::new(fs), caps, open_file_count: 0 }
 }
 

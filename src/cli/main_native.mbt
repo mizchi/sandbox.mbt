@@ -51,7 +51,7 @@ pub(all) enum BackendType {
 ///|
 /// Create memory filesystem backend
 fn create_memory_backend() -> &@fs.FileSystem {
-  @fs.MemFS::default()
+  @fs.Fs::default()
 }
 
 ///|

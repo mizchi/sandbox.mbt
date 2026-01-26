@@ -1,15 +1,15 @@
-// Tests for MemFS
+// Tests for Fs
 
 ///|
 test "create and read file" {
-  let fs = MemFS::new()
+  let fs = Fs::new()
   fs.write_string("/test.txt", "Hello, World!")
   assert_eq(fs.read_string("/test.txt"), "Hello, World!")
 }
 
 ///|
 test "mkdir and list" {
-  let fs = MemFS::new()
+  let fs = Fs::new()
   fs.mkdir("/dir")
   fs.write_string("/dir/file.txt", "content")
   let entries = fs.readdir("/dir")
@@ -19,7 +19,7 @@ test "mkdir and list" {
 
 ///|
 test "mkdir_p creates nested dirs" {
-  let fs = MemFS::new()
+  let fs = Fs::new()
   fs.mkdir_p("/a/b/c")
   assert_true(fs.is_dir("/a"))
   assert_true(fs.is_dir("/a/b"))
@@ -28,7 +28,7 @@ test "mkdir_p creates nested dirs" {
 
 ///|
 test "symlink" {
-  let fs = MemFS::new()
+  let fs = Fs::new()
   fs.write_string("/target.txt", "target content")
   fs.symlink("/link.txt", "target.txt")
   assert_true(fs.is_symlink("/link.txt"))
@@ -37,7 +37,7 @@ test "symlink" {
 
 ///|
 test "absolute symlink" {
-  let fs = MemFS::new()
+  let fs = Fs::new()
   fs.mkdir("/dir")
   fs.write_string("/dir/file.txt", "content")
   fs.symlink("/link", "/dir/file.txt")
@@ -46,7 +46,7 @@ test "absolute symlink" {
 
 ///|
 test "remove file" {
-  let fs = MemFS::new()
+  let fs = Fs::new()
   fs.write_string("/test.txt", "content")
   assert_true(fs.exists("/test.txt"))
   fs.remove("/test.txt")
@@ -55,7 +55,7 @@ test "remove file" {
 
 ///|
 test "rmdir" {
-  let fs = MemFS::new()
+  let fs = Fs::new()
   fs.mkdir("/empty_dir")
   assert_true(fs.is_dir("/empty_dir"))
   fs.rmdir("/empty_dir")
@@ -64,14 +64,14 @@ test "rmdir" {
 
 ///|
 test "file size" {
-  let fs = MemFS::new()
+  let fs = Fs::new()
   fs.write_string("/test.txt", "12345")
   assert_eq(fs.size("/test.txt"), Some(5))
 }
 
 ///|
 test "is_file and is_dir" {
-  let fs = MemFS::new()
+  let fs = Fs::new()
   fs.mkdir("/dir")
   fs.write_string("/file.txt", "content")
   assert_true(fs.is_dir("/dir"))
@@ -82,7 +82,7 @@ test "is_file and is_dir" {
 
 ///|
 test "exists" {
-  let fs = MemFS::new()
+  let fs = Fs::new()
   fs.write_string("/exists.txt", "")
   assert_true(fs.exists("/exists.txt"))
   assert_false(fs.exists("/not_exists.txt"))
@@ -90,7 +90,7 @@ test "exists" {
 
 ///|
 test "readdir on root" {
-  let fs = MemFS::new()
+  let fs = Fs::new()
   fs.mkdir("/dir1")
   fs.mkdir("/dir2")
   fs.write_string("/file.txt", "")
@@ -100,7 +100,7 @@ test "readdir on root" {
 
 ///|
 test "default creates standard dirs" {
-  let fs = MemFS::default()
+  let fs = Fs::default()
   assert_true(fs.is_dir("/bin"))
   assert_true(fs.is_dir("/home"))
   assert_true(fs.is_dir("/tmp"))
@@ -108,7 +108,7 @@ test "default creates standard dirs" {
 
 ///|
 test "path normalization with dots" {
-  let fs = MemFS::new()
+  let fs = Fs::new()
   fs.mkdir("/a")
   fs.mkdir("/a/b")
   fs.write_string("/a/b/file.txt", "content")
@@ -120,7 +120,7 @@ test "path normalization with dots" {
 
 ///|
 test "overwrite file" {
-  let fs = MemFS::new()
+  let fs = Fs::new()
   fs.write_string("/test.txt", "first")
   fs.write_string("/test.txt", "second")
   assert_eq(fs.read_string("/test.txt"), "second")
@@ -128,7 +128,7 @@ test "overwrite file" {
 
 ///|
 test "total size tracking" {
-  let fs = MemFS::new()
+  let fs = Fs::new()
   fs.write_string("/a.txt", "12345")
   fs.write_string("/b.txt", "123")
   assert_eq(fs.total_size(), 8)
@@ -138,7 +138,7 @@ test "total size tracking" {
 
 ///|
 test "file count" {
-  let fs = MemFS::new()
+  let fs = Fs::new()
   fs.mkdir("/dir")
   fs.write_string("/a.txt", "")
   fs.write_string("/b.txt", "")
@@ -149,7 +149,7 @@ test "file count" {
 
 ///|
 test "rename file simple" {
-  let fs = MemFS::new()
+  let fs = Fs::new()
   fs.write_string("/old.txt", "content")
   fs.rename("/old.txt", "/new.txt")
   assert_false(fs.exists("/old.txt"))
@@ -159,7 +159,7 @@ test "rename file simple" {
 
 ///|
 test "rename file overwrite existing" {
-  let fs = MemFS::new()
+  let fs = Fs::new()
   fs.write_string("/src.txt", "new")
   fs.write_string("/dst.txt", "old")
   fs.rename("/src.txt", "/dst.txt")
@@ -169,7 +169,7 @@ test "rename file overwrite existing" {
 
 ///|
 test "rename directory" {
-  let fs = MemFS::new()
+  let fs = Fs::new()
   fs.mkdir("/olddir")
   fs.write_string("/olddir/a.txt", "a")
   fs.write_string("/olddir/b.txt", "b")
@@ -182,7 +182,7 @@ test "rename directory" {
 
 ///|
 test "rename nested directory" {
-  let fs = MemFS::new()
+  let fs = Fs::new()
   fs.mkdir_p("/a/b/c")
   fs.write_string("/a/b/c/file.txt", "data")
   fs.rename("/a/b", "/a/renamed")
@@ -194,7 +194,7 @@ test "rename nested directory" {
 
 ///|
 test "rename to different parent" {
-  let fs = MemFS::new()
+  let fs = Fs::new()
   fs.mkdir("/src")
   fs.mkdir("/dst")
   fs.write_string("/src/file.txt", "content")
@@ -207,7 +207,7 @@ test "rename to different parent" {
 
 ///|
 test "truncate shrink file" {
-  let fs = MemFS::new()
+  let fs = Fs::new()
   fs.write_string("/test.txt", "hello world")
   fs.truncate("/test.txt", 5)
   assert_eq(fs.read_string("/test.txt"), "hello")
@@ -216,7 +216,7 @@ test "truncate shrink file" {
 
 ///|
 test "truncate extend file" {
-  let fs = MemFS::new()
+  let fs = Fs::new()
   fs.write_string("/test.txt", "hi")
   fs.truncate("/test.txt", 5)
   let content = fs.read_file("/test.txt")
@@ -230,7 +230,7 @@ test "truncate extend file" {
 
 ///|
 test "truncate to zero" {
-  let fs = MemFS::new()
+  let fs = Fs::new()
   fs.write_string("/test.txt", "content")
   fs.truncate("/test.txt", 0)
   assert_eq(fs.read_string("/test.txt"), "")
@@ -239,7 +239,7 @@ test "truncate to zero" {
 
 ///|
 test "truncate updates total size" {
-  let fs = MemFS::new()
+  let fs = Fs::new()
   fs.write_string("/test.txt", "1234567890")
   assert_eq(fs.total_size(), 10)
   fs.truncate("/test.txt", 3)

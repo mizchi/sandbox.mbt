@@ -175,7 +175,7 @@ pub fn[T : @fs.FileSystem] PosixContext::new(fs : T) -> PosixContext {
 
 ///|
 pub fn PosixContext::default() -> PosixContext {
-  PosixContext::new(@fs.MemFS::default())
+  PosixContext::new(@fs.Fs::default())
 }
 
 // ============ File Descriptor Operations ============
@@ -1031,7 +1031,7 @@ pub fn PosixContext::truncate(
   length : Int64,
 ) -> Unit raise PosixError {
   let abs_path = self.resolve_path(path)
-  // Let @fs.MemFS::truncate handle existence/type checks to avoid duplicate lookups
+  // Let @fs.Fs::truncate handle existence/type checks to avoid duplicate lookups
   self.fs.truncate(abs_path, length.to_int()) catch {
     NotFound(p) => raise PosixErrno(ENOENT, "No such file or directory: " + p)
     NotAFile(_) => raise PosixErrno(EISDIR, "Is a directory")
@@ -1077,7 +1077,7 @@ pub fn PosixContext::mkdir(
       raise PosixErrno(ENOENT, "No such file or directory: " + p)
     e => raise PosixErrno(EIO, e.to_string())
   }
-  // Note: mode is currently ignored as MemFS doesn't track permissions
+  // Note: mode is currently ignored as Fs doesn't track permissions
   ignore(mode)
 }
 

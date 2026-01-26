@@ -86,7 +86,7 @@ test "bench: WasiSandbox full operation" (b : @bench.T) {
 
 ///|
 test "bench: Layer 0 - Direct MemFS" (b : @bench.T) {
-  let fs = @fs.MemFS::new()
+  let fs = @fs.Fs::new()
   fs.write_string("/test.txt", "benchmark data")
   let result = b.bench(fn() {
     let _ = fs.read_string("/test.txt") catch { _ => "" }

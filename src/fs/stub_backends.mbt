@@ -13,13 +13,13 @@ pub struct S3Backend {
   // client : S3Client
   // cache : Map[String, Bytes]
 
-  // For stub: delegate to MemFS
-  inner : MemFS
+  // For stub: delegate to Fs
+  inner : Fs
 }
 
 ///|
 pub fn S3Backend::new(bucket : String, prefix~ : String = "") -> S3Backend {
-  { bucket, prefix, inner: MemFS::default() }
+  { bucket, prefix, inner: Fs::default() }
 }
 
 ///|
@@ -141,13 +141,13 @@ pub struct SqliteBackend {
   // In a real implementation:
   // conn : SqliteConnection
 
-  // For stub: delegate to MemFS
-  inner : MemFS
+  // For stub: delegate to Fs
+  inner : Fs
 }
 
 ///|
 pub fn SqliteBackend::new(db_path : String) -> SqliteBackend {
-  { db_path, inner: MemFS::default() }
+  { db_path, inner: Fs::default() }
 }
 
 ///|

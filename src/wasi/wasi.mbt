@@ -173,7 +173,7 @@ pub fn WasiSandbox::new(config : WasiSandboxConfig) -> WasiSandbox {
 
 ///|
 pub fn WasiSandbox::with_fs(
-  fs : @fs.MemFS,
+  fs : @fs.Fs,
   config : WasiSandboxConfig,
 ) -> WasiSandbox {
   { config, sandbox: @sandbox.Sandbox::with_fs(fs, config.caps) }

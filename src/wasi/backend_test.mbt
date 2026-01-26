@@ -10,7 +10,7 @@ test "sandbox mode" {
 
 ///|
 test "sandbox with custom fs" {
-  let fs = @fs.MemFS::new()
+  let fs = @fs.Fs::new()
   fs.write_string("/test.txt", "hello")
   let config = @wasi.RuntimeConfig::sandbox_with(fs)
   assert_true(config.is_sandbox())
@@ -40,7 +40,7 @@ test "with_config sandbox" {
 
 ///|
 test "with_config custom fs" {
-  let fs = @fs.MemFS::new()
+  let fs = @fs.Fs::new()
   fs.mkdir("/custom")
   fs.write_string("/custom/data.txt", "test data")
   let config = @wasi.RuntimeConfig::sandbox_with(fs)
