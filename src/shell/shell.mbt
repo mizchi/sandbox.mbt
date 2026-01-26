@@ -9,9 +9,11 @@ pub struct ExecResult {
 }
 
 ///|
-/// Shell interpreter
+/// Shell interpreter with bash-compatible features
+/// Supports: &&, ||, |, ;, variables, if/for/while/case
 pub struct Shell {
   ctx : @posix.PosixContext
+  executor : Executor
   commands : Map[
     String,
     (@posix.PosixContext, Array[String], StringBuilder, StringBuilder) -> Int,
@@ -21,8 +23,9 @@ pub struct Shell {
 
 ///|
 pub fn Shell::new(ctx : @posix.PosixContext) -> Shell {
-  let shell : Shell = { ctx, commands: {}, last_exit_code: 0 }
-  // Register built-in commands
+  let executor = Executor::new(ctx)
+  let shell : Shell = { ctx, executor, commands: {}, last_exit_code: 0 }
+  // Register built-in commands (for backwards compatibility)
   shell.register_builtins()
   shell
 }
@@ -57,52 +60,30 @@ pub fn Shell::register(
   handler : (@posix.PosixContext, Array[String], StringBuilder, StringBuilder) -> Int,
 ) -> Unit {
   self.commands.set(name, handler)
+  // Also register with executor for new parser
+  self.executor.register(name, handler)
 }
 
 ///|
-/// Execute a single command line
+/// Execute a single command line using new parser
 pub fn Shell::exec_line(self : Shell, line : String) -> ExecResult {
-  let stdout = StringBuilder::new()
-  let stderr = StringBuilder::new()
   let trimmed = trim_string(line)
   if trimmed.length() == 0 || trimmed.has_prefix("#") {
     return { exit_code: 0, stdout: "", stderr: "" }
   }
-  let parts = parse_command_line(trimmed)
-  if parts.length() == 0 {
-    return { exit_code: 0, stdout: "", stderr: "" }
-  }
-  let cmd = parts[0]
-  let args = array_slice(parts, 1, parts.length())
-  let exit_code = match self.commands.get(cmd) {
-    Some(handler) => handler(self.ctx, args, stdout, stderr)
-    None => {
-      stderr.write_string(cmd + ": command not found\n")
-      127
-    }
-  }
-  self.last_exit_code = exit_code
-  { exit_code, stdout: stdout.to_string(), stderr: stderr.to_string() }
+  // Use new parser and executor
+  let result = self.executor.exec_script(trimmed)
+  self.last_exit_code = result.exit_code
+  result
 }
 
 ///|
-/// Execute a script (multiple lines)
+/// Execute a script (multiple lines) using new parser
 pub fn Shell::exec_script(self : Shell, script : String) -> ExecResult {
-  let stdout = StringBuilder::new()
-  let stderr = StringBuilder::new()
-  let mut last_code = 0
-  let lines = split_lines(script)
-  for line in lines {
-    let result = self.exec_line(line)
-    stdout.write_string(result.stdout)
-    stderr.write_string(result.stderr)
-    last_code = result.exit_code
-  }
-  {
-    exit_code: last_code,
-    stdout: stdout.to_string(),
-    stderr: stderr.to_string(),
-  }
+  // The new parser handles multi-line scripts natively
+  let result = self.executor.exec_script(script)
+  self.last_exit_code = result.exit_code
+  result
 }
 
 ///|
@@ -406,24 +387,6 @@ fn parse_command_line(line : String) -> Array[String] {
 }
 
 ///|
-fn split_lines(s : String) -> Array[String] {
-  let result : Array[String] = []
-  let current = StringBuilder::new()
-  for c in s {
-    if c == '\n' {
-      result.push(current.to_string())
-      current.reset()
-    } else {
-      current.write_char(c)
-    }
-  }
-  if current.to_string().length() > 0 {
-    result.push(current.to_string())
-  }
-  result
-}
-
-///|
 fn trim_string(s : String) -> String {
   let chars = s.to_array()
   let mut start = 0
@@ -449,15 +412,6 @@ fn trim_string(s : String) -> String {
     }
   }
   substring_range(s, start, end)
-}
-
-///|
-fn array_slice(arr : Array[String], start : Int, end : Int) -> Array[String] {
-  let result : Array[String] = []
-  for i in start..<end {
-    result.push(arr[i])
-  }
-  result
 }
 
 ///|

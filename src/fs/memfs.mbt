@@ -553,3 +553,117 @@ fn substring_from(s : String, start : Int) -> String {
 fn string_contains(s : String, sub : String) -> Bool {
   s.find(sub) is Some(_)
 }
+
+///|
+/// Get file/directory stat
+pub fn MemFS::stat(self : MemFS, path : String) -> FileStat raise MemFSError {
+  let resolved = self.resolve_path(path)
+  match self.entries.get(resolved) {
+    Some(File(content)) => FileStat::file(content.length())
+    Some(Dir) => FileStat::dir()
+    Some(Symlink(_)) => FileStat::symlink()
+    None => raise NotFound(path)
+  }
+}
+
+// ============ FileSystem Trait Implementation ============
+
+///|
+pub impl FileSystem for MemFS with exists(self, path) {
+  self.exists(path)
+}
+
+///|
+pub impl FileSystem for MemFS with is_dir(self, path) {
+  self.is_dir(path)
+}
+
+///|
+pub impl FileSystem for MemFS with is_file(self, path) {
+  self.is_file(path)
+}
+
+///|
+pub impl FileSystem for MemFS with is_symlink(self, path) {
+  self.is_symlink(path)
+}
+
+///|
+pub impl FileSystem for MemFS with resolve_path(self, path) {
+  self.resolve_path(path)
+}
+
+///|
+pub impl FileSystem for MemFS with read_file(self, path) {
+  self.read_file(path)
+}
+
+///|
+pub impl FileSystem for MemFS with write_file(self, path, content) {
+  self.write_file(path, content)
+}
+
+///|
+pub impl FileSystem for MemFS with read_string(self, path) {
+  self.read_string(path)
+}
+
+///|
+pub impl FileSystem for MemFS with write_string(self, path, content) {
+  self.write_string(path, content)
+}
+
+///|
+pub impl FileSystem for MemFS with truncate(self, path, length) {
+  self.truncate(path, length)
+}
+
+///|
+pub impl FileSystem for MemFS with size(self, path) {
+  self.size(path)
+}
+
+///|
+pub impl FileSystem for MemFS with remove(self, path) {
+  self.remove(path)
+}
+
+///|
+pub impl FileSystem for MemFS with mkdir(self, path) {
+  self.mkdir(path)
+}
+
+///|
+pub impl FileSystem for MemFS with mkdir_p(self, path) {
+  self.mkdir_p(path)
+}
+
+///|
+pub impl FileSystem for MemFS with rmdir(self, path) {
+  self.rmdir(path)
+}
+
+///|
+pub impl FileSystem for MemFS with readdir(self, path) {
+  self.readdir(path)
+}
+
+///|
+pub impl FileSystem for MemFS with symlink(self, path, target) {
+  self.symlink(path, target)
+}
+
+///|
+pub impl FileSystem for MemFS with read_link(self, path) {
+  self.read_link(path)
+}
+
+///|
+pub impl FileSystem for MemFS with rename(self, old_path, new_path) {
+  self.rename(old_path, new_path)
+}
+
+///|
+pub impl FileSystem for MemFS with stat(self, path) {
+  self.stat(path)
+}

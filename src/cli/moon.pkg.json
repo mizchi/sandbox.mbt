@@ -1,0 +1,14 @@
+{
+  "is-main": true,
+  "import": [
+    "mizchi/sandbox/shell",
+    "mizchi/sandbox/posix",
+    "mizchi/sandbox/fs"
+  ],
+  "targets": {
+    "wasi.mbt": ["wasm"],
+    "main.mbt": ["wasm"],
+    "main_demo.mbt": ["wasm-gc"],
+    "main_native.mbt": ["native"]
+  }
+}

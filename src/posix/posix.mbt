@@ -101,8 +101,8 @@ pub struct PosixContext {
   fd_table : Map[Fd, OpenFile]
   mut next_fd : Int
 
-  // Filesystem backend
-  fs : @fs.MemFS
+  // Filesystem backend (trait object for pluggable backends)
+  fs : &@fs.FileSystem
 
   // Process table
   processes : Map[Pid, Process]
@@ -125,7 +125,8 @@ pub struct PosixContext {
 }
 
 ///|
-pub fn PosixContext::new(fs : @fs.MemFS) -> PosixContext {
+/// Create PosixContext with any FileSystem backend
+pub fn[T : @fs.FileSystem] PosixContext::new(fs : T) -> PosixContext {
   let ctx : PosixContext = {
     fd_table: {},
     next_fd: 3, // 0, 1, 2 are reserved
@@ -802,8 +803,8 @@ pub fn PosixContext::time(self : PosixContext) -> Int64 {
 // ============ Filesystem ============
 
 ///|
-/// Get underlying filesystem
-pub fn PosixContext::get_fs(self : PosixContext) -> @fs.MemFS {
+/// Get underlying filesystem (as trait object)
+pub fn PosixContext::get_fs(self : PosixContext) -> &@fs.FileSystem {
   self.fs
 }
 
