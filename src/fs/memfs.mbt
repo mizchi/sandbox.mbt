@@ -356,6 +356,124 @@ pub fn MemFS::size(self : MemFS, path : String) -> Int? {
   }
 }
 
+/// Rename (move) a file or directory
+pub fn MemFS::rename(
+  self : MemFS,
+  old_path : String,
+  new_path : String
+) -> Unit raise MemFSError {
+  let old_normalized = normalize_path(old_path)
+  let new_normalized = normalize_path(new_path)
+
+  if old_normalized == "/" || new_normalized == "/" {
+    raise InvalidPath("Cannot rename root")
+  }
+
+  // Check source exists
+  if not(self.exists(old_normalized)) {
+    raise NotFound(old_path)
+  }
+
+  // Check new parent exists and is a directory
+  let new_parent = parent_path(new_normalized)
+  if not(self.exists(new_parent)) {
+    raise NotFound(new_parent)
+  }
+  if not(self.is_dir(new_parent)) {
+    raise NotADirectory(new_parent)
+  }
+
+  // If destination exists, remove it first (for files)
+  if self.exists(new_normalized) {
+    if self.is_dir(new_normalized) && not(self.is_dir(old_normalized)) {
+      raise NotAFile(new_normalized)
+    }
+    if self.is_file(new_normalized) || self.is_symlink(new_normalized) {
+      self.entries.remove(new_normalized)
+    }
+  }
+
+  // If source is a directory, rename all entries under it
+  if self.is_dir(old_normalized) {
+    // Collect all entries that need to be moved
+    let to_move : Array[(String, FsEntry)] = []
+    for entry_path, entry in self.entries {
+      if entry_path == old_normalized || entry_path.has_prefix(old_normalized + "/") {
+        to_move.push((entry_path, entry))
+      }
+    }
+
+    // Remove old entries and add new ones
+    for item in to_move {
+      let (entry_path, entry) = item
+      self.entries.remove(entry_path)
+
+      // Calculate new path
+      let new_entry_path = if entry_path == old_normalized {
+        new_normalized
+      } else {
+        let suffix = substring_from(entry_path, old_normalized.length())
+        new_normalized + suffix
+      }
+      self.entries.set(new_entry_path, entry)
+    }
+  } else {
+    // File or symlink - simple move
+    match self.entries.get(old_normalized) {
+      Some(entry) => {
+        self.entries.remove(old_normalized)
+        self.entries.set(new_normalized, entry)
+      }
+      None => raise NotFound(old_path)
+    }
+  }
+}
+
+/// Truncate a file to specified length
+pub fn MemFS::truncate(
+  self : MemFS,
+  path : String,
+  length : Int
+) -> Unit raise MemFSError {
+  let normalized = normalize_path(path)
+
+  match self.entries.get(normalized) {
+    Some(File(content)) => {
+      let old_len = content.length()
+
+      if length == old_len {
+        // No change needed
+        return
+      }
+
+      // Use FixedArray for efficient copy
+      let new_content = FixedArray::make(length, b'\x00')
+
+      if length < old_len {
+        // Shrink: copy only what we need
+        for i in 0..<length {
+          new_content[i] = content[i]
+        }
+      } else {
+        // Extend: copy existing content, rest is already zero
+        for i in 0..<old_len {
+          new_content[i] = content[i]
+        }
+      }
+
+      self.current_size = self.current_size - old_len + length
+      self.entries.set(normalized, File(Bytes::from_fixedarray(new_content)))
+    }
+    Some(Dir) => raise NotAFile(normalized)
+    Some(Symlink(_)) => {
+      // Follow symlink and truncate target
+      let resolved = self.resolve_path(normalized)
+      self.truncate(resolved, length)
+    }
+    None => raise NotFound(path)
+  }
+}
+
 /// Get total size of all files
 pub fn MemFS::total_size(self : MemFS) -> Int {
   self.current_size

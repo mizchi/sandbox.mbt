@@ -16,7 +16,7 @@ pub fn PosixError::errno(self : PosixError) -> Errno {
 /// Internal state of an open file
 struct OpenFile {
   path : String
-  flags : OpenFlags
+  mut flags : OpenFlags
   mode : FileMode
   mut offset : Int64
   mut closed : Bool
@@ -93,7 +93,7 @@ pub struct PosixContext {
   mut next_fd : Int
 
   // Filesystem backend
-  fs : MemFS
+  fs : @fs.MemFS
 
   // Process table
   processes : Map[Pid, Process]
@@ -115,7 +115,7 @@ pub struct PosixContext {
   egid : Int
 }
 
-pub fn PosixContext::new(fs : MemFS) -> PosixContext {
+pub fn PosixContext::new(fs : @fs.MemFS) -> PosixContext {
   let ctx : PosixContext = {
     fd_table: {},
     next_fd: 3,  // 0, 1, 2 are reserved
@@ -154,7 +154,7 @@ pub fn PosixContext::new(fs : MemFS) -> PosixContext {
 }
 
 pub fn PosixContext::default() -> PosixContext {
-  PosixContext::new(MemFS::default())
+  PosixContext::new(@fs.MemFS::default())
 }
 
 // ============ File Descriptor Operations ============
@@ -755,6 +755,350 @@ pub fn PosixContext::time(self : PosixContext) -> Int64 {
 // ============ Filesystem ============
 
 /// Get underlying filesystem
-pub fn PosixContext::get_fs(self : PosixContext) -> MemFS {
+pub fn PosixContext::get_fs(self : PosixContext) -> @fs.MemFS {
   self.fs
+}
+
+// ============ fcntl Operations ============
+
+/// Get file descriptor flags
+pub fn PosixContext::fcntl_getfl(self : PosixContext, fd : Fd) -> OpenFlags raise PosixError {
+  let file = self.get_file(fd)
+  file.flags
+}
+
+/// Set file descriptor flags
+pub fn PosixContext::fcntl_setfl(
+  self : PosixContext,
+  fd : Fd,
+  flags : OpenFlags
+) -> Unit raise PosixError {
+  let file = self.get_file(fd)
+  // Only certain flags can be modified: O_APPEND, O_NONBLOCK, O_SYNC
+  // Access mode (O_RDONLY, O_WRONLY, O_RDWR) cannot be changed
+  if flags.has(O_NONBLOCK) {
+    file.flags = file.flags.add(O_NONBLOCK)
+  }
+  if flags.has(O_APPEND) {
+    file.flags = file.flags.add(O_APPEND)
+  }
+  if flags.has(O_SYNC) {
+    file.flags = file.flags.add(O_SYNC)
+  }
+}
+
+/// Duplicate fd to a number >= min_fd
+pub fn PosixContext::fcntl_dupfd(
+  self : PosixContext,
+  fd : Fd,
+  min_fd : Int
+) -> Fd raise PosixError {
+  let file = self.get_file(fd)
+
+  // Find first available fd >= min_fd
+  let mut new_fd_num = min_fd
+  while self.fd_table.contains(Fd(new_fd_num)) {
+    new_fd_num += 1
+  }
+
+  let new_fd = Fd(new_fd_num)
+  let new_file = OpenFile::new(file.path, file.flags, file.mode)
+  new_file.offset = file.offset
+
+  self.fd_table.set(new_fd, new_file)
+
+  // Update next_fd if necessary
+  if new_fd_num >= self.next_fd {
+    self.next_fd = new_fd_num + 1
+  }
+
+  new_fd
+}
+
+// ============ poll Operation ============
+
+/// Poll multiple file descriptors for I/O readiness
+/// Returns the number of ready file descriptors
+pub fn PosixContext::poll(
+  self : PosixContext,
+  pollfds : Array[PollFd],
+  _timeout_ms : Int  // timeout in milliseconds (-1 = block, 0 = immediate)
+) -> Int {
+  let mut ready_count = 0
+
+  for pfd in pollfds {
+    pfd.clear_revents()
+
+    let fd = pfd.get_fd()
+
+    // Check if fd is valid
+    match self.fd_table.get(fd) {
+      None => {
+        pfd.set_revent(POLLNVAL)
+        ready_count += 1
+        continue
+      }
+      Some(file) => {
+        if file.closed {
+          pfd.set_revent(POLLNVAL)
+          ready_count += 1
+          continue
+        }
+
+        let mut is_ready = false
+
+        // Check POLLIN (readable)
+        if pfd.has_event(POLLIN) {
+          if self.is_readable(fd, file) {
+            pfd.set_revent(POLLIN)
+            is_ready = true
+          }
+        }
+
+        // Check POLLOUT (writable)
+        if pfd.has_event(POLLOUT) {
+          if self.is_writable(fd, file) {
+            pfd.set_revent(POLLOUT)
+            is_ready = true
+          }
+        }
+
+        if is_ready {
+          ready_count += 1
+        }
+      }
+    }
+  }
+
+  ready_count
+}
+
+/// Check if fd is readable (has data or is regular file)
+fn PosixContext::is_readable(self : PosixContext, _fd : Fd, file : OpenFile) -> Bool {
+  if not(file.flags.is_readable()) {
+    return false
+  }
+
+  // Pipes: check if data is available
+  if file.is_pipe {
+    match file.pipe_buffer {
+      Some(buf) => {
+        let available = buf.length() - file.offset.to_int()
+        return available > 0
+      }
+      None => return false
+    }
+  }
+
+  // Regular files are always "ready" for reading
+  // (though they may be at EOF)
+  true
+}
+
+/// Check if fd is writable
+fn PosixContext::is_writable(self : PosixContext, _fd : Fd, file : OpenFile) -> Bool {
+  if not(file.flags.is_writable()) {
+    return false
+  }
+
+  // Pipes: always writable (in this simple implementation)
+  if file.is_pipe {
+    return true
+  }
+
+  // Regular files are always ready for writing
+  true
+}
+
+// ============ access Operation ============
+
+/// Check file accessibility
+pub fn PosixContext::access(
+  self : PosixContext,
+  path : String,
+  mode : AccessMode
+) -> Unit raise PosixError {
+  let abs_path = self.resolve_path(path)
+
+  // Check existence first
+  if not(self.fs.exists(abs_path)) {
+    raise PosixErrno(ENOENT, "No such file or directory")
+  }
+
+  // F_OK just checks existence
+  if mode == F_OK {
+    return
+  }
+
+  // For sandbox, we assume user has all permissions on their files
+  // In a real implementation, we'd check st_mode against uid/gid
+  match mode {
+    R_OK => ()  // Always readable in sandbox
+    W_OK => ()  // Always writable in sandbox
+    X_OK => {
+      // Directories are always executable (searchable)
+      // Files need execute bit (we assume true in sandbox)
+      ()
+    }
+    F_OK => ()  // Already handled above
+  }
+}
+
+// ============ rename Operation ============
+
+/// Rename (move) a file or directory
+pub fn PosixContext::rename(
+  self : PosixContext,
+  old_path : String,
+  new_path : String
+) -> Unit raise PosixError {
+  let abs_old = self.resolve_path(old_path)
+  let abs_new = self.resolve_path(new_path)
+
+  try {
+    self.fs.rename(abs_old, abs_new)
+  } catch {
+    NotFound(p) => raise PosixErrno(ENOENT, "No such file or directory: " + p)
+    NotADirectory(p) => raise PosixErrno(ENOTDIR, "Not a directory: " + p)
+    AlreadyExists(_) => raise PosixErrno(EEXIST, "File exists")
+    e => raise PosixErrno(EIO, e.to_string())
+  }
+}
+
+// ============ truncate Operations ============
+
+/// Truncate a file to specified length
+pub fn PosixContext::truncate(
+  self : PosixContext,
+  path : String,
+  length : Int64
+) -> Unit raise PosixError {
+  let abs_path = self.resolve_path(path)
+  // Let @fs.MemFS::truncate handle existence/type checks to avoid duplicate lookups
+  try {
+    self.fs.truncate(abs_path, length.to_int())
+  } catch {
+    NotFound(p) => raise PosixErrno(ENOENT, "No such file or directory: " + p)
+    NotAFile(_) => raise PosixErrno(EISDIR, "Is a directory")
+    e => raise PosixErrno(EIO, e.to_string())
+  }
+}
+
+/// Truncate a file to specified length by fd
+pub fn PosixContext::ftruncate(
+  self : PosixContext,
+  fd : Fd,
+  length : Int64
+) -> Unit raise PosixError {
+  let file = self.get_file(fd)
+
+  if not(file.flags.is_writable()) {
+    raise PosixErrno(EBADF, "File not open for writing")
+  }
+
+  if file.is_pipe {
+    raise PosixErrno(EINVAL, "Invalid argument")
+  }
+
+  try {
+    self.fs.truncate(file.path, length.to_int())
+  } catch {
+    e => raise PosixErrno(EIO, e.to_string())
+  }
+
+  // Adjust offset if beyond new length
+  if file.offset > length {
+    file.offset = length
+  }
+}
+
+/// Create a directory
+pub fn PosixContext::mkdir(
+  self : PosixContext,
+  path : String,
+  mode : FileMode
+) -> Unit raise PosixError {
+  let abs_path = self.resolve_path(path)
+  try {
+    self.fs.mkdir(abs_path)
+  } catch {
+    AlreadyExists(_) => raise PosixErrno(EEXIST, "File exists")
+    NotADirectory(p) => raise PosixErrno(ENOENT, "No such file or directory: " + p)
+    e => raise PosixErrno(EIO, e.to_string())
+  }
+  // Note: mode is currently ignored as MemFS doesn't track permissions
+  ignore(mode)
+}
+
+/// Remove an empty directory
+pub fn PosixContext::rmdir(self : PosixContext, path : String) -> Unit raise PosixError {
+  let abs_path = self.resolve_path(path)
+  if not(self.fs.exists(abs_path)) {
+    raise PosixErrno(ENOENT, "No such file or directory")
+  }
+  if not(self.fs.is_dir(abs_path)) {
+    raise PosixErrno(ENOTDIR, "Not a directory")
+  }
+  try {
+    self.fs.rmdir(abs_path)
+  } catch {
+    NotADirectory(msg) => {
+      if msg.contains("not empty") {
+        raise PosixErrno(ENOTEMPTY, "Directory not empty")
+      }
+      raise PosixErrno(ENOTDIR, msg)
+    }
+    InvalidPath(_) => raise PosixErrno(EINVAL, "Invalid argument")
+    e => raise PosixErrno(EIO, e.to_string())
+  }
+}
+
+/// Remove a file or symbolic link
+pub fn PosixContext::unlink(self : PosixContext, path : String) -> Unit raise PosixError {
+  let abs_path = self.resolve_path(path)
+  if not(self.fs.exists(abs_path)) {
+    raise PosixErrno(ENOENT, "No such file or directory")
+  }
+  if self.fs.is_dir(abs_path) {
+    raise PosixErrno(EISDIR, "Is a directory")
+  }
+  try {
+    self.fs.remove(abs_path)
+  } catch {
+    e => raise PosixErrno(EIO, e.to_string())
+  }
+}
+
+/// Create a symbolic link
+pub fn PosixContext::symlink(
+  self : PosixContext,
+  link_path : String,
+  target : String
+) -> Unit raise PosixError {
+  let abs_link = self.resolve_path(link_path)
+  if self.fs.exists(abs_link) {
+    raise PosixErrno(EEXIST, "File exists")
+  }
+  try {
+    self.fs.symlink(abs_link, target)
+  } catch {
+    NotADirectory(p) => raise PosixErrno(ENOENT, "No such file or directory: " + p)
+    e => raise PosixErrno(EIO, e.to_string())
+  }
+}
+
+/// Read the target of a symbolic link
+pub fn PosixContext::readlink(self : PosixContext, path : String) -> String raise PosixError {
+  let abs_path = self.resolve_path(path)
+  if not(self.fs.exists(abs_path)) {
+    raise PosixErrno(ENOENT, "No such file or directory")
+  }
+  if not(self.fs.is_symlink(abs_path)) {
+    raise PosixErrno(EINVAL, "Invalid argument")
+  }
+  try {
+    self.fs.read_link(abs_path)
+  } catch {
+    e => raise PosixErrno(EIO, e.to_string())
+  }
 }

@@ -1,6 +1,6 @@
 test "future: basic resolve and await" {
   @coroutine.run_async_test(async fn() {
-    let (reader, writer) = @sandbox_async.new_future()
+    let (reader, writer) = @async.new_future()
 
     // Spawn resolver
     let _ = @coroutine.spawn(async fn() {
@@ -15,7 +15,7 @@ test "future: basic resolve and await" {
 
 test "future: multiple awaiters" {
   @coroutine.run_async_test(async fn() {
-    let (reader, writer) = @sandbox_async.new_future()
+    let (reader, writer) = @async.new_future()
 
     let results : Array[Int] = []
 
@@ -48,14 +48,14 @@ test "future: multiple awaiters" {
 }
 
 test "future: poll pending" {
-  let (reader, _writer) : (@sandbox_async.FutureRead[Int], @sandbox_async.FutureWrite[Int]) = @sandbox_async.new_future()
+  let (reader, _writer) : (@async.FutureRead[Int], @async.FutureWrite[Int]) = @async.new_future()
 
   assert_true(reader.is_pending())
   assert_true(reader.poll() is None)
 }
 
 test "future: poll resolved" {
-  let (reader, writer) : (@sandbox_async.FutureRead[Int], @sandbox_async.FutureWrite[Int]) = @sandbox_async.new_future()
+  let (reader, writer) : (@async.FutureRead[Int], @async.FutureWrite[Int]) = @async.new_future()
 
   let _ = writer.resolve(42)
 
@@ -69,7 +69,7 @@ test "future: poll resolved" {
 }
 
 test "future: cannot resolve twice" {
-  let (_reader, writer) : (@sandbox_async.FutureRead[Int], @sandbox_async.FutureWrite[Int]) = @sandbox_async.new_future()
+  let (_reader, writer) : (@async.FutureRead[Int], @async.FutureWrite[Int]) = @async.new_future()
 
   assert_true(writer.resolve(1))
   assert_false(writer.resolve(2))  // Should fail

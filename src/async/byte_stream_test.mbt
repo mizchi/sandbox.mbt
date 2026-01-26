@@ -1,6 +1,6 @@
 // Simple sync test first
 test "byte stream: sync write then read" {
-  let (reader, writer) = @sandbox_async.new_byte_stream()
+  let (reader, writer) = @async.new_byte_stream()
 
   // Check initial state
   assert_true(reader.poll() is None)
@@ -13,7 +13,7 @@ test "byte stream: sync write then read" {
 
 test "byte stream: basic read/write" {
   @coroutine.run_async_test(async fn() {
-    let (reader, writer) = @sandbox_async.new_byte_stream()
+    let (reader, writer) = @async.new_byte_stream()
 
     // Spawn writer
     let _ = @coroutine.spawn(async fn() {
@@ -40,7 +40,7 @@ test "byte stream: basic read/write" {
 
 test "byte stream: multiple writes" {
   @coroutine.run_async_test(async fn() {
-    let (reader, writer) = @sandbox_async.new_byte_stream()
+    let (reader, writer) = @async.new_byte_stream()
 
     let _ = @coroutine.spawn(async fn() {
       let _ = writer.write(b"one")
@@ -65,7 +65,7 @@ test "byte stream: multiple writes" {
 
 test "byte stream: poll without blocking" {
   @coroutine.run_async_test(async fn() {
-    let (reader, writer) = @sandbox_async.new_byte_stream()
+    let (reader, writer) = @async.new_byte_stream()
 
     // Poll empty stream
     assert_true(reader.poll() is None)
@@ -87,7 +87,7 @@ test "byte stream: poll without blocking" {
 }
 
 test "byte stream: is_closed" {
-  let (reader, writer) = @sandbox_async.new_byte_stream()
+  let (reader, writer) = @async.new_byte_stream()
 
   assert_false(reader.is_closed())
   assert_false(writer.is_closed())

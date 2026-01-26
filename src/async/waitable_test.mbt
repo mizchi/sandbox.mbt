@@ -1,5 +1,5 @@
 test "waitable: is_ready checks" {
-  let (reader, writer) = @sandbox_async.new_byte_stream()
+  let (reader, writer) = @async.new_byte_stream()
   let w = reader.as_waitable()
 
   // Initially not ready
@@ -11,7 +11,7 @@ test "waitable: is_ready checks" {
 }
 
 test "waitable: future is_ready" {
-  let (reader, writer) : (@sandbox_async.FutureRead[Int], @sandbox_async.FutureWrite[Int]) = @sandbox_async.new_future()
+  let (reader, writer) : (@async.FutureRead[Int], @async.FutureWrite[Int]) = @async.new_future()
   let w = reader.as_waitable()
 
   assert_false(w.is_ready())

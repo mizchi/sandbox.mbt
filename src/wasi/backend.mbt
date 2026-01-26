@@ -10,15 +10,15 @@ pub(all) enum BackendMode {
 /// Runtime configuration
 pub struct RuntimeConfig {
   mode : BackendMode
-  fs : MemFS?  // Only used in Sandbox mode
+  fs : @fs.MemFS?  // Only used in Sandbox mode
   wasi_config : WasiSandboxConfig?  // Only used in WasiNative mode
 }
 
 pub fn RuntimeConfig::sandbox() -> RuntimeConfig {
-  { mode: Sandbox, fs: Some(MemFS::default()), wasi_config: None }
+  { mode: Sandbox, fs: Some(@fs.MemFS::default()), wasi_config: None }
 }
 
-pub fn RuntimeConfig::sandbox_with(fs : MemFS) -> RuntimeConfig {
+pub fn RuntimeConfig::sandbox_with(fs : @fs.MemFS) -> RuntimeConfig {
   { mode: Sandbox, fs: Some(fs), wasi_config: None }
 }
 
@@ -36,7 +36,7 @@ pub fn RuntimeConfig::wasi_native_with(config : WasiSandboxConfig) -> RuntimeCon
   { mode: WasiNative, fs: None, wasi_config: Some(config) }
 }
 
-pub fn RuntimeConfig::get_fs(self : RuntimeConfig) -> MemFS? {
+pub fn RuntimeConfig::get_fs(self : RuntimeConfig) -> @fs.MemFS? {
   self.fs
 }
 
@@ -66,23 +66,23 @@ pub fn RuntimeConfig::is_wasi_native(self : RuntimeConfig) -> Bool {
 }
 
 /// Create a PosixContext with the given runtime configuration
-pub fn PosixContext::with_config(config : RuntimeConfig) -> PosixContext {
+pub fn create_posix_context(config : RuntimeConfig) -> @posix.PosixContext {
   match config.mode {
     Sandbox => {
       match config.fs {
-        Some(fs) => PosixContext::new(fs)
-        None => PosixContext::new(MemFS::default())
+        Some(fs) => @posix.PosixContext::new(fs)
+        None => @posix.PosixContext::new(@fs.MemFS::default())
       }
     }
     Native => {
       // For now, fallback to sandbox mode
       // Future: use real WASI filesystem
-      PosixContext::new(MemFS::default())
+      @posix.PosixContext::new(@fs.MemFS::default())
     }
     WasiNative => {
       // WASI-native mode with host-enforced sandbox
       // Creates a MemFS that can be populated from host mappings
-      PosixContext::new(MemFS::default())
+      @posix.PosixContext::new(@fs.MemFS::default())
     }
   }
 }

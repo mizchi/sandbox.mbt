@@ -1,30 +1,30 @@
 // Sandbox security tests
 
 test "unrestricted sandbox allows all" {
-  let sandbox = Sandbox::new(Capabilities::unrestricted())
+  let sandbox = @sandbox.Sandbox::new(@sandbox.Capabilities::unrestricted())
 
   // Should be able to create and write
-  let fd = sandbox.open("/test.txt", OpenFlags::from([O_RDWR, O_CREAT]), FileMode::default_file())
+  let fd = sandbox.open("/test.txt", @posix.OpenFlags::from([@posix.O_RDWR, @posix.O_CREAT]), @posix.FileMode::default_file())
   let written = sandbox.write(fd, Bytes::from_array([b'h', b'i']))
   assert_eq(written, 2)
   sandbox.close(fd)
 }
 
 test "read_only sandbox blocks writes" {
-  let sandbox = Sandbox::new(Capabilities::read_only())
+  let sandbox = @sandbox.Sandbox::new(@sandbox.Capabilities::read_only())
 
   // Pre-create a file
   sandbox.get_ctx().get_fs().write_string("/test.txt", "content")
 
   // Can read
-  let fd = sandbox.open("/test.txt", OpenFlags::from([O_RDONLY]), FileMode::default_file())
+  let fd = sandbox.open("/test.txt", @posix.OpenFlags::from([@posix.O_RDONLY]), @posix.FileMode::default_file())
   let data = sandbox.read(fd, 10)
   assert_eq(data.length(), 7)
   sandbox.close(fd)
 
   // Cannot write
-  let result : Result[Fd, _] = try {
-    Ok(sandbox.open("/new.txt", OpenFlags::from([O_WRONLY, O_CREAT]), FileMode::default_file()))
+  let result : Result[@posix.Fd, _] = try {
+    Ok(sandbox.open("/new.txt", @posix.OpenFlags::from([@posix.O_WRONLY, @posix.O_CREAT]), @posix.FileMode::default_file()))
   } catch {
     e => Err(e)
   }
@@ -32,8 +32,8 @@ test "read_only sandbox blocks writes" {
 }
 
 test "path restrictions" {
-  let caps = Capabilities::unrestricted().with_allowed_paths(["/allowed"])
-  let sandbox = Sandbox::new(caps)
+  let caps = @sandbox.Capabilities::unrestricted().with_allowed_paths(["/allowed"])
+  let sandbox = @sandbox.Sandbox::new(caps)
   sandbox.get_ctx().get_fs().mkdir("/allowed")
   sandbox.get_ctx().get_fs().mkdir("/denied")
 
@@ -51,10 +51,10 @@ test "path restrictions" {
 }
 
 test "denied paths have priority" {
-  let caps = Capabilities::unrestricted()
+  let caps = @sandbox.Capabilities::unrestricted()
     .with_allowed_paths(["/data"])
     .with_denied_paths(["/data/secret"])
-  let sandbox = Sandbox::new(caps)
+  let sandbox = @sandbox.Sandbox::new(caps)
   sandbox.get_ctx().get_fs().mkdir("/data")
   sandbox.get_ctx().get_fs().mkdir("/data/secret")
   sandbox.get_ctx().get_fs().mkdir("/data/public")
@@ -72,15 +72,15 @@ test "denied paths have priority" {
 }
 
 test "command restrictions" {
-  let caps = Capabilities::unrestricted().with_allowed_commands(["echo", "ls"])
-  let sandbox = Sandbox::new(caps)
+  let caps = @sandbox.Capabilities::unrestricted().with_allowed_commands(["echo", "ls"])
+  let sandbox = @sandbox.Sandbox::new(caps)
 
   // Allowed command
   let pid1 = sandbox.exec("echo", ["hello"])
   assert_true(pid1.to_int() > 0)
 
   // Denied command
-  let result : Result[Pid, _] = try {
+  let result : Result[@posix.Pid, _] = try {
     Ok(sandbox.exec("rm", ["-rf", "/"]))
   } catch {
     e => Err(e)
@@ -89,10 +89,10 @@ test "command restrictions" {
 }
 
 test "exec disabled" {
-  let caps = Capabilities::unrestricted().with_exec(false)
-  let sandbox = Sandbox::new(caps)
+  let caps = @sandbox.Capabilities::unrestricted().with_exec(false)
+  let sandbox = @sandbox.Sandbox::new(caps)
 
-  let result : Result[Pid, _] = try {
+  let result : Result[@posix.Pid, _] = try {
     Ok(sandbox.exec("ls", []))
   } catch {
     e => Err(e)
@@ -101,10 +101,10 @@ test "exec disabled" {
 }
 
 test "file size limit" {
-  let caps = Capabilities::unrestricted().with_max_file_size(10)  // 10 bytes max
-  let sandbox = Sandbox::new(caps)
+  let caps = @sandbox.Capabilities::unrestricted().with_max_file_size(10)  // 10 bytes max
+  let sandbox = @sandbox.Sandbox::new(caps)
 
-  let fd = sandbox.open("/test.txt", OpenFlags::from([O_RDWR, O_CREAT]), FileMode::default_file())
+  let fd = sandbox.open("/test.txt", @posix.OpenFlags::from([@posix.O_RDWR, @posix.O_CREAT]), @posix.FileMode::default_file())
 
   // Small write OK
   let written = sandbox.write(fd, Bytes::from_array([b'a', b'b', b'c']))
@@ -123,8 +123,8 @@ test "file size limit" {
 }
 
 test "max open files limit" {
-  let caps = Capabilities::unrestricted().with_max_open_files(2)
-  let sandbox = Sandbox::new(caps)
+  let caps = @sandbox.Capabilities::unrestricted().with_max_open_files(2)
+  let sandbox = @sandbox.Sandbox::new(caps)
 
   // Create test files
   sandbox.get_ctx().get_fs().write_string("/a.txt", "a")
@@ -132,12 +132,12 @@ test "max open files limit" {
   sandbox.get_ctx().get_fs().write_string("/c.txt", "c")
 
   // Open first two files OK
-  let fd1 = sandbox.open("/a.txt", OpenFlags::from([O_RDONLY]), FileMode::default_file())
-  let fd2 = sandbox.open("/b.txt", OpenFlags::from([O_RDONLY]), FileMode::default_file())
+  let fd1 = sandbox.open("/a.txt", @posix.OpenFlags::from([@posix.O_RDONLY]), @posix.FileMode::default_file())
+  let fd2 = sandbox.open("/b.txt", @posix.OpenFlags::from([@posix.O_RDONLY]), @posix.FileMode::default_file())
 
   // Third file blocked
-  let result : Result[Fd, _] = try {
-    Ok(sandbox.open("/c.txt", OpenFlags::from([O_RDONLY]), FileMode::default_file()))
+  let result : Result[@posix.Fd, _] = try {
+    Ok(sandbox.open("/c.txt", @posix.OpenFlags::from([@posix.O_RDONLY]), @posix.FileMode::default_file()))
   } catch {
     e => Err(e)
   }
@@ -145,15 +145,15 @@ test "max open files limit" {
 
   // Close one, now can open another
   sandbox.close(fd1)
-  let fd3 = sandbox.open("/c.txt", OpenFlags::from([O_RDONLY]), FileMode::default_file())
+  let fd3 = sandbox.open("/c.txt", @posix.OpenFlags::from([@posix.O_RDONLY]), @posix.FileMode::default_file())
   ignore(fd3)
 
   sandbox.close(fd2)
 }
 
 test "path depth limit" {
-  let caps = Capabilities::unrestricted().with_max_path_depth(3)  // /a/b/c max
-  let sandbox = Sandbox::new(caps)
+  let caps = @sandbox.Capabilities::unrestricted().with_max_path_depth(3)  // /a/b/c max
+  let sandbox = @sandbox.Sandbox::new(caps)
 
   // Setup directories
   sandbox.get_ctx().get_fs().mkdir_p("/a/b/c/d/e")
@@ -171,7 +171,7 @@ test "path depth limit" {
 }
 
 test "build sandbox preset" {
-  let sandbox = Sandbox::new(Capabilities::build_sandbox())
+  let sandbox = @sandbox.Sandbox::new(@sandbox.Capabilities::build_sandbox())
 
   // Setup allowed directories
   sandbox.get_ctx().get_fs().mkdir("/tmp")
@@ -187,7 +187,7 @@ test "build sandbox preset" {
   assert_true(pid.to_int() > 0)
 
   // Cannot exec disallowed commands
-  let result : Result[Pid, _] = try {
+  let result : Result[@posix.Pid, _] = try {
     Ok(sandbox.exec("curl", ["http://evil.com"]))
   } catch {
     e => Err(e)
@@ -196,7 +196,7 @@ test "build sandbox preset" {
 }
 
 test "plugin sandbox preset" {
-  let sandbox = Sandbox::new(Capabilities::plugin_sandbox())
+  let sandbox = @sandbox.Sandbox::new(@sandbox.Capabilities::plugin_sandbox())
 
   // Setup plugin directory
   sandbox.get_ctx().get_fs().mkdir("/tmp")
@@ -215,7 +215,7 @@ test "plugin sandbox preset" {
   assert_true(result is Err(_))
 
   // Cannot exec (exec disabled)
-  let exec_result : Result[Pid, _] = try {
+  let exec_result : Result[@posix.Pid, _] = try {
     Ok(sandbox.exec("anything", []))
   } catch {
     e => Err(e)
@@ -224,8 +224,8 @@ test "plugin sandbox preset" {
 }
 
 test "delete restriction" {
-  let caps = Capabilities::unrestricted().with_delete(false)
-  let sandbox = Sandbox::new(caps)
+  let caps = @sandbox.Capabilities::unrestricted().with_delete(false)
+  let sandbox = @sandbox.Sandbox::new(caps)
 
   // Create file
   sandbox.get_ctx().get_fs().write_string("/test.txt", "content")

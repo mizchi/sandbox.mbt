@@ -144,3 +144,115 @@ test "file count" {
 
   assert_eq(fs.file_count(), 2)
 }
+
+// ============ rename tests ============
+
+test "rename file simple" {
+  let fs = MemFS::new()
+  fs.write_string("/old.txt", "content")
+
+  fs.rename("/old.txt", "/new.txt")
+
+  assert_false(fs.exists("/old.txt"))
+  assert_true(fs.exists("/new.txt"))
+  assert_eq(fs.read_string("/new.txt"), "content")
+}
+
+test "rename file overwrite existing" {
+  let fs = MemFS::new()
+  fs.write_string("/src.txt", "new")
+  fs.write_string("/dst.txt", "old")
+
+  fs.rename("/src.txt", "/dst.txt")
+
+  assert_false(fs.exists("/src.txt"))
+  assert_eq(fs.read_string("/dst.txt"), "new")
+}
+
+test "rename directory" {
+  let fs = MemFS::new()
+  fs.mkdir("/olddir")
+  fs.write_string("/olddir/a.txt", "a")
+  fs.write_string("/olddir/b.txt", "b")
+
+  fs.rename("/olddir", "/newdir")
+
+  assert_false(fs.exists("/olddir"))
+  assert_true(fs.is_dir("/newdir"))
+  assert_eq(fs.read_string("/newdir/a.txt"), "a")
+  assert_eq(fs.read_string("/newdir/b.txt"), "b")
+}
+
+test "rename nested directory" {
+  let fs = MemFS::new()
+  fs.mkdir_p("/a/b/c")
+  fs.write_string("/a/b/c/file.txt", "data")
+
+  fs.rename("/a/b", "/a/renamed")
+
+  assert_false(fs.exists("/a/b"))
+  assert_true(fs.is_dir("/a/renamed"))
+  assert_true(fs.is_dir("/a/renamed/c"))
+  assert_eq(fs.read_string("/a/renamed/c/file.txt"), "data")
+}
+
+test "rename to different parent" {
+  let fs = MemFS::new()
+  fs.mkdir("/src")
+  fs.mkdir("/dst")
+  fs.write_string("/src/file.txt", "content")
+
+  fs.rename("/src/file.txt", "/dst/file.txt")
+
+  assert_false(fs.exists("/src/file.txt"))
+  assert_eq(fs.read_string("/dst/file.txt"), "content")
+}
+
+// ============ truncate tests ============
+
+test "truncate shrink file" {
+  let fs = MemFS::new()
+  fs.write_string("/test.txt", "hello world")
+
+  fs.truncate("/test.txt", 5)
+
+  assert_eq(fs.read_string("/test.txt"), "hello")
+  assert_eq(fs.size("/test.txt"), Some(5))
+}
+
+test "truncate extend file" {
+  let fs = MemFS::new()
+  fs.write_string("/test.txt", "hi")
+
+  fs.truncate("/test.txt", 5)
+
+  let content = fs.read_file("/test.txt")
+  assert_eq(content.length(), 5)
+  assert_eq(content[0], b'h')
+  assert_eq(content[1], b'i')
+  assert_eq(content[2], b'\x00')
+  assert_eq(content[3], b'\x00')
+  assert_eq(content[4], b'\x00')
+}
+
+test "truncate to zero" {
+  let fs = MemFS::new()
+  fs.write_string("/test.txt", "content")
+
+  fs.truncate("/test.txt", 0)
+
+  assert_eq(fs.read_string("/test.txt"), "")
+  assert_eq(fs.size("/test.txt"), Some(0))
+}
+
+test "truncate updates total size" {
+  let fs = MemFS::new()
+  fs.write_string("/test.txt", "1234567890")
+  assert_eq(fs.total_size(), 10)
+
+  fs.truncate("/test.txt", 3)
+  assert_eq(fs.total_size(), 3)
+
+  fs.truncate("/test.txt", 8)
+  assert_eq(fs.total_size(), 8)
+}

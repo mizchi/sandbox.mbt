@@ -1,11 +1,11 @@
 test "task: create and state" {
-  let task = @sandbox_async.Task::new()
-  assert_true(task.get_state() is @sandbox_async.TaskState::Running)
+  let task = @async.Task::new()
+  assert_true(task.get_state() is @async.TaskState::Running)
   assert_false(task.has_backpressure())
 }
 
 test "task: backpressure on task" {
-  let task = @sandbox_async.Task::new()
+  let task = @async.Task::new()
   assert_false(task.has_backpressure())
 
   task.apply_backpressure()
@@ -16,7 +16,7 @@ test "task: backpressure on task" {
 }
 
 test "task: subtasks" {
-  let task = @sandbox_async.Task::new()
+  let task = @async.Task::new()
   assert_eq(task.pending_subtasks().length(), 0)
 
   let subtask = task.create_subtask()
@@ -28,8 +28,8 @@ test "task: subtasks" {
 }
 
 test "task: parent relationship" {
-  let parent = @sandbox_async.Task::new()
-  let child = @sandbox_async.Task::new(parent=parent)
+  let parent = @async.Task::new()
+  let child = @async.Task::new(parent=parent)
 
   assert_true(child.parent() is Some(_))
 }

@@ -1,35 +1,35 @@
 ///|
-test "WasiSandboxConfig::default" {
-  let config = WasiSandboxConfig::default()
-  assert_eq!(config.mode, GuestOnly)
+test "@wasi.WasiSandboxConfig::default" {
+  let config = @wasi.WasiSandboxConfig::default()
+  assert_eq!(config.mode, @wasi.GuestOnly)
   assert_eq!(config.allow_network, false)
   assert_eq!(config.path_mappings.length(), 0)
 }
 
 ///|
-test "WasiSandboxConfig::restricted" {
-  let config = WasiSandboxConfig::restricted()
-  assert_eq!(config.mode, HostEnforced)
+test "@wasi.WasiSandboxConfig::restricted" {
+  let config = @wasi.WasiSandboxConfig::restricted()
+  assert_eq!(config.mode, @wasi.HostEnforced)
   assert_eq!(config.allow_network, false)
   assert_eq!(config.caps.can_write, false)
 }
 
 ///|
-test "WasiSandboxConfig::permissive" {
-  let config = WasiSandboxConfig::permissive()
-  assert_eq!(config.mode, Hybrid)
+test "@wasi.WasiSandboxConfig::permissive" {
+  let config = @wasi.WasiSandboxConfig::permissive()
+  assert_eq!(config.mode, @wasi.Hybrid)
   assert_eq!(config.allow_network, true)
   assert_eq!(config.path_mappings.length(), 2)
 }
 
 ///|
 test "WasiSandboxConfig builder methods" {
-  let config = WasiSandboxConfig::default()
-    .with_mode(Hybrid)
+  let config = @wasi.WasiSandboxConfig::default()
+    .with_mode(@wasi.Hybrid)
     .with_network(true)
     .with_path_mapping("/app", "/tmp/app")
     .with_allowed_hosts(["localhost", "example.com"])
-  assert_eq!(config.mode, Hybrid)
+  assert_eq!(config.mode, @wasi.Hybrid)
   assert_eq!(config.allow_network, true)
   assert_eq!(config.path_mappings.length(), 1)
   inspect!(config.allowed_hosts, content="Some([\"localhost\", \"example.com\"])")
@@ -37,10 +37,10 @@ test "WasiSandboxConfig builder methods" {
 
 ///|
 test "WasiSandbox path mapping" {
-  let config = WasiSandboxConfig::default()
+  let config = @wasi.WasiSandboxConfig::default()
     .with_path_mapping("/sandbox", "/tmp/sandbox")
     .with_path_mapping("/home", "/tmp/home")
-  let sandbox = WasiSandbox::new(config)
+  let sandbox = @wasi.WasiSandbox::new(config)
 
   // Test exact match
   assert_eq!(sandbox.map_path("/sandbox"), "/tmp/sandbox")
@@ -54,21 +54,21 @@ test "WasiSandbox path mapping" {
 }
 
 ///|
-test "WasiSandbox::check_host" {
+test "@wasi.WasiSandbox::check_host" {
   // No network
-  let no_net = WasiSandbox::new(WasiSandboxConfig::default())
+  let no_net = @wasi.WasiSandbox::new(@wasi.WasiSandboxConfig::default())
   assert_eq!(no_net.check_host("localhost"), false)
 
   // With network, all hosts
-  let all_hosts = WasiSandbox::new(
-    WasiSandboxConfig::default().with_network(true)
+  let all_hosts = @wasi.WasiSandbox::new(
+    @wasi.WasiSandboxConfig::default().with_network(true)
   )
   // allowed_hosts is Some([]) in default, so no hosts allowed
   assert_eq!(all_hosts.check_host("localhost"), false)
 
   // With allowed hosts
-  let restricted = WasiSandbox::new(
-    WasiSandboxConfig::default()
+  let restricted = @wasi.WasiSandbox::new(
+    @wasi.WasiSandboxConfig::default()
       .with_network(true)
       .with_allowed_hosts(["localhost", "example.com"])
   )
@@ -79,19 +79,19 @@ test "WasiSandbox::check_host" {
 
 ///|
 test "WasiSandbox file operations" {
-  let config = WasiSandboxConfig::default().with_caps(Capabilities::unrestricted())
-  let sandbox = WasiSandbox::new(config)
+  let config = @wasi.WasiSandboxConfig::default().with_caps(@sandbox.Capabilities::unrestricted())
+  let sandbox = @wasi.WasiSandbox::new(config)
 
   // Create directory
   sandbox.mkdir("/test")
 
   // Open and write file
-  let fd = sandbox.open("/test/file.txt", OpenFlags::from([O_CREAT, O_RDWR]), FileMode::new(0o644))
+  let fd = sandbox.open("/test/file.txt", @posix.OpenFlags::from([@posix.O_CREAT, O_RDWR]), @posix.FileMode::new(0o644))
   let _ = sandbox.write(fd, b"hello")
   sandbox.close(fd)
 
   // Read back
-  let fd2 = sandbox.open("/test/file.txt", OpenFlags::from([O_RDONLY]), FileMode::new(0o644))
+  let fd2 = sandbox.open("/test/file.txt", @posix.OpenFlags::from([@posix.O_RDONLY]), @posix.FileMode::new(0o644))
   let data = sandbox.read(fd2, 100)
   sandbox.close(fd2)
 
@@ -100,15 +100,15 @@ test "WasiSandbox file operations" {
 
 ///|
 test "WasiSandbox respects capabilities" {
-  let config = WasiSandboxConfig::restricted()  // read_only
-  let sandbox = WasiSandbox::new(config)
+  let config = @wasi.WasiSandboxConfig::restricted()  // read_only
+  let sandbox = @wasi.WasiSandbox::new(config)
 
   // Should fail to write
   let result = try {
     sandbox.mkdir("/test")
     Ok(())
   } catch {
-    SandboxError::PermissionDenied(_) => Err("denied")
+    @sandbox.SandboxError::PermissionDenied(_) => Err("denied")
     _ => Err("other")
   }
   assert_eq!(result, Err("denied"))

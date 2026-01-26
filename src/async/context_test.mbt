@@ -1,6 +1,6 @@
 test "basic file operations" {
   @coroutine.run_async_test(async fn() {
-    let ctx = @sandbox_async.SandboxContext::new()
+    let ctx = @async.SandboxContext::new()
 
     // Write file
     ctx.write_text("/test.txt", "hello world")
@@ -17,7 +17,7 @@ test "basic file operations" {
 
 test "directory operations" {
   @coroutine.run_async_test(async fn() {
-    let ctx = @sandbox_async.SandboxContext::new()
+    let ctx = @async.SandboxContext::new()
 
     // Create directory
     ctx.mkdir("/mydir")
@@ -33,7 +33,7 @@ test "directory operations" {
 }
 
 test "environment" {
-  let ctx = @sandbox_async.SandboxContext::new()
+  let ctx = @async.SandboxContext::new()
 
   // Default env
   assert_true(ctx.get_env("HOME") is Some(_))
@@ -45,7 +45,7 @@ test "environment" {
 
 test "cwd operations" {
   @coroutine.run_async_test(async fn() {
-    let ctx = @sandbox_async.SandboxContext::new()
+    let ctx = @async.SandboxContext::new()
 
     // Default cwd
     assert_eq(ctx.cwd(), "/")

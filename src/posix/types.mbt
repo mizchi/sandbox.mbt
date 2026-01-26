@@ -366,3 +366,84 @@ pub struct PipeFds {
   read_fd : Fd   // Read end
   write_fd : Fd  // Write end
 }
+
+// ============ Poll ============
+
+/// Poll events (bitmask)
+pub(all) enum PollEvent {
+  POLLIN    // Data available for reading
+  POLLOUT   // Writing is possible
+  POLLERR   // Error condition
+  POLLHUP   // Hang up
+  POLLNVAL  // Invalid fd
+  POLLPRI   // Priority data available
+} derive(Show, Eq)
+
+pub fn PollEvent::to_int(self : PollEvent) -> Int {
+  match self {
+    POLLIN => 0x0001
+    POLLOUT => 0x0004
+    POLLERR => 0x0008
+    POLLHUP => 0x0010
+    POLLNVAL => 0x0020
+    POLLPRI => 0x0002
+  }
+}
+
+/// Poll file descriptor structure
+pub struct PollFd {
+  fd : Fd
+  events : Int     // Requested events (bitmask)
+  mut revents : Int  // Returned events (bitmask)
+}
+
+pub fn PollFd::new(fd : Fd, event : PollEvent) -> PollFd {
+  { fd, events: event.to_int(), revents: 0 }
+}
+
+pub fn PollFd::new_multi(fd : Fd, events : Array[PollEvent]) -> PollFd {
+  let mut mask = 0
+  for e in events {
+    mask = mask.lor(e.to_int())
+  }
+  { fd, events: mask, revents: 0 }
+}
+
+pub fn PollFd::get_fd(self : PollFd) -> Fd {
+  self.fd
+}
+
+pub fn PollFd::has_event(self : PollFd, event : PollEvent) -> Bool {
+  (self.events.land(event.to_int())) != 0
+}
+
+pub fn PollFd::has_revent(self : PollFd, event : PollEvent) -> Bool {
+  (self.revents.land(event.to_int())) != 0
+}
+
+pub fn PollFd::set_revent(self : PollFd, event : PollEvent) -> Unit {
+  self.revents = self.revents.lor(event.to_int())
+}
+
+pub fn PollFd::clear_revents(self : PollFd) -> Unit {
+  self.revents = 0
+}
+
+// ============ Access Mode ============
+
+/// Access mode for access()
+pub(all) enum AccessMode {
+  F_OK  // File exists
+  R_OK  // Read permission
+  W_OK  // Write permission
+  X_OK  // Execute permission
+} derive(Show, Eq)
+
+pub fn AccessMode::to_int(self : AccessMode) -> Int {
+  match self {
+    F_OK => 0
+    R_OK => 4
+    W_OK => 2
+    X_OK => 1
+  }
+}

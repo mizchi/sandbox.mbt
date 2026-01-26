@@ -1,7 +1,8 @@
 {
   "import": [
+    "mizchi/sandbox/coroutine",
     "mizchi/sandbox/posix",
-    "mizchi/sandbox/fs",
+    "mizchi/sandbox/runtime",
     "moonbitlang/core/bench"
   ]
 }

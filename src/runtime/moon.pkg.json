@@ -1,6 +1,7 @@
 {
   "import": [
-    "mizchi/sandbox/sandbox",
+    "mizchi/sandbox/posix",
+    "mizchi/sandbox/fs",
     "moonbitlang/core/encoding/utf8"
   ]
 }

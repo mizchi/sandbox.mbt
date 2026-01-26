@@ -9,12 +9,12 @@ pub struct ExecResult {
 
 /// Shell interpreter
 pub struct Shell {
-  ctx : PosixContext
-  commands : Map[String, (PosixContext, Array[String], StringBuilder, StringBuilder) -> Int]
+  ctx : @posix.PosixContext
+  commands : Map[String, (@posix.PosixContext, Array[String], StringBuilder, StringBuilder) -> Int]
   mut last_exit_code : Int
 }
 
-pub fn Shell::new(ctx : PosixContext) -> Shell {
+pub fn Shell::new(ctx : @posix.PosixContext) -> Shell {
   let shell : Shell = {
     ctx,
     commands: {},
@@ -26,7 +26,7 @@ pub fn Shell::new(ctx : PosixContext) -> Shell {
 }
 
 pub fn Shell::default() -> Shell {
-  Shell::new(PosixContext::default())
+  Shell::new(@posix.PosixContext::default())
 }
 
 fn Shell::register_builtins(self : Shell) -> Unit {
@@ -49,7 +49,7 @@ fn Shell::register_builtins(self : Shell) -> Unit {
 pub fn Shell::register(
   self : Shell,
   name : String,
-  handler : (PosixContext, Array[String], StringBuilder, StringBuilder) -> Int
+  handler : (@posix.PosixContext, Array[String], StringBuilder, StringBuilder) -> Int
 ) -> Unit {
   self.commands.set(name, handler)
 }
@@ -106,14 +106,14 @@ pub fn Shell::exec_script(self : Shell, script : String) -> ExecResult {
 }
 
 /// Get the context
-pub fn Shell::get_ctx(self : Shell) -> PosixContext {
+pub fn Shell::get_ctx(self : Shell) -> @posix.PosixContext {
   self.ctx
 }
 
 // ============ Built-in Commands ============
 
 fn cmd_echo(
-  _ctx : PosixContext,
+  _ctx : @posix.PosixContext,
   args : Array[String],
   stdout : StringBuilder,
   _stderr : StringBuilder
@@ -124,7 +124,7 @@ fn cmd_echo(
 }
 
 fn cmd_cat(
-  ctx : PosixContext,
+  ctx : @posix.PosixContext,
   args : Array[String],
   stdout : StringBuilder,
   stderr : StringBuilder
@@ -148,7 +148,7 @@ fn cmd_cat(
 }
 
 fn cmd_ls(
-  ctx : PosixContext,
+  ctx : @posix.PosixContext,
   args : Array[String],
   stdout : StringBuilder,
   stderr : StringBuilder
@@ -172,7 +172,7 @@ fn cmd_ls(
 }
 
 fn cmd_pwd(
-  ctx : PosixContext,
+  ctx : @posix.PosixContext,
   _args : Array[String],
   stdout : StringBuilder,
   _stderr : StringBuilder
@@ -183,7 +183,7 @@ fn cmd_pwd(
 }
 
 fn cmd_cd(
-  ctx : PosixContext,
+  ctx : @posix.PosixContext,
   args : Array[String],
   _stdout : StringBuilder,
   stderr : StringBuilder
@@ -201,7 +201,7 @@ fn cmd_cd(
 }
 
 fn cmd_mkdir(
-  ctx : PosixContext,
+  ctx : @posix.PosixContext,
   args : Array[String],
   _stdout : StringBuilder,
   stderr : StringBuilder
@@ -225,7 +225,7 @@ fn cmd_mkdir(
 }
 
 fn cmd_touch(
-  ctx : PosixContext,
+  ctx : @posix.PosixContext,
   args : Array[String],
   _stdout : StringBuilder,
   stderr : StringBuilder
@@ -251,7 +251,7 @@ fn cmd_touch(
 }
 
 fn cmd_rm(
-  ctx : PosixContext,
+  ctx : @posix.PosixContext,
   args : Array[String],
   _stdout : StringBuilder,
   stderr : StringBuilder
@@ -275,7 +275,7 @@ fn cmd_rm(
 }
 
 fn cmd_true(
-  _ctx : PosixContext,
+  _ctx : @posix.PosixContext,
   _args : Array[String],
   _stdout : StringBuilder,
   _stderr : StringBuilder
@@ -284,7 +284,7 @@ fn cmd_true(
 }
 
 fn cmd_false(
-  _ctx : PosixContext,
+  _ctx : @posix.PosixContext,
   _args : Array[String],
   _stdout : StringBuilder,
   _stderr : StringBuilder
@@ -293,7 +293,7 @@ fn cmd_false(
 }
 
 fn cmd_exit(
-  _ctx : PosixContext,
+  _ctx : @posix.PosixContext,
   args : Array[String],
   _stdout : StringBuilder,
   _stderr : StringBuilder
@@ -324,7 +324,7 @@ fn parse_int_simple(s : String) -> Int {
 }
 
 fn cmd_export(
-  ctx : PosixContext,
+  ctx : @posix.PosixContext,
   args : Array[String],
   _stdout : StringBuilder,
   stderr : StringBuilder
@@ -346,7 +346,7 @@ fn cmd_export(
 }
 
 fn cmd_env(
-  ctx : PosixContext,
+  ctx : @posix.PosixContext,
   _args : Array[String],
   stdout : StringBuilder,
   _stderr : StringBuilder

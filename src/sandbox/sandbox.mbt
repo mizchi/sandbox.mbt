@@ -312,23 +312,23 @@ pub(all) suberror SandboxError {
 
 /// Sandboxed POSIX context
 pub struct Sandbox {
-  ctx : PosixContext
+  ctx : @posix.PosixContext
   caps : Capabilities
   mut open_file_count : Int
 }
 
 pub fn Sandbox::new(caps : Capabilities) -> Sandbox {
-  let fs = MemFS::new()
+  let fs = @fs.MemFS::new()
   {
-    ctx: PosixContext::new(fs),
+    ctx: @posix.PosixContext::new(fs),
     caps,
     open_file_count: 0,
   }
 }
 
-pub fn Sandbox::with_fs(fs : MemFS, caps : Capabilities) -> Sandbox {
+pub fn Sandbox::with_fs(fs : @fs.MemFS, caps : Capabilities) -> Sandbox {
   {
-    ctx: PosixContext::new(fs),
+    ctx: @posix.PosixContext::new(fs),
     caps,
     open_file_count: 0,
   }
@@ -418,9 +418,9 @@ fn Sandbox::check_open_files(self : Sandbox) -> Unit raise SandboxError {
 pub fn Sandbox::open(
   self : Sandbox,
   path : String,
-  flags : OpenFlags,
-  mode : FileMode
-) -> Fd raise SandboxError {
+  flags : @posix.OpenFlags,
+  mode : @posix.FileMode
+) -> @posix.Fd raise SandboxError {
   // Check permissions
   if flags.is_readable() && not(self.caps.can_read) {
     raise PermissionDenied("Read not allowed")
@@ -428,7 +428,7 @@ pub fn Sandbox::open(
   if flags.is_writable() && not(self.caps.can_write) {
     raise PermissionDenied("Write not allowed")
   }
-  if flags.has(O_CREAT) && not(self.caps.can_create) {
+  if flags.has(@posix.O_CREAT) && not(self.caps.can_create) {
     raise PermissionDenied("Create not allowed")
   }
 
@@ -444,7 +444,7 @@ pub fn Sandbox::open(
   }
 }
 
-pub fn Sandbox::close(self : Sandbox, fd : Fd) -> Unit raise SandboxError {
+pub fn Sandbox::close(self : Sandbox, fd : @posix.Fd) -> Unit raise SandboxError {
   try {
     self.ctx.close(fd)
     if self.open_file_count > 0 {
@@ -455,7 +455,7 @@ pub fn Sandbox::close(self : Sandbox, fd : Fd) -> Unit raise SandboxError {
   }
 }
 
-pub fn Sandbox::read(self : Sandbox, fd : Fd, count : Int) -> Bytes raise SandboxError {
+pub fn Sandbox::read(self : Sandbox, fd : @posix.Fd, count : Int) -> Bytes raise SandboxError {
   if not(self.caps.can_read) {
     raise PermissionDenied("Read not allowed")
   }
@@ -466,7 +466,7 @@ pub fn Sandbox::read(self : Sandbox, fd : Fd, count : Int) -> Bytes raise Sandbo
   }
 }
 
-pub fn Sandbox::write(self : Sandbox, fd : Fd, data : Bytes) -> Int raise SandboxError {
+pub fn Sandbox::write(self : Sandbox, fd : @posix.Fd, data : Bytes) -> Int raise SandboxError {
   if not(self.caps.can_write) {
     raise PermissionDenied("Write not allowed")
   }
@@ -506,13 +506,13 @@ pub fn Sandbox::exec(
   self : Sandbox,
   cmd : String,
   args : Array[String]
-) -> Pid raise SandboxError {
+) -> @posix.Pid raise SandboxError {
   self.check_command(cmd)
   self.ctx.spawn(cmd, args)
 }
 
 /// Get the underlying context (for advanced operations)
-pub fn Sandbox::get_ctx(self : Sandbox) -> PosixContext {
+pub fn Sandbox::get_ctx(self : Sandbox) -> @posix.PosixContext {
   self.ctx
 }
 

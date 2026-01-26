@@ -1,14 +1,14 @@
-/// Minimal shell implementation (busybox-like)
+/// Minimal shell implementation (busybox-like) using runtime backend
 
-/// Shell instance
-pub struct Shell {
-  backend : MemfsBackend
+/// RuntimeShell instance using MemfsBackend
+pub struct RuntimeShell {
+  backend : @runtime.MemfsBackend
   mut running : Bool
 }
 
 ///|
-pub fn Shell::new() -> Shell {
-  let backend = MemfsBackend::new()
+pub fn RuntimeShell::new() -> RuntimeShell {
+  let backend = @runtime.MemfsBackend::new()
   backend.register_builtins()
   // Register shell-specific commands
   backend.register("exit", builtin_exit)
@@ -17,7 +17,7 @@ pub fn Shell::new() -> Shell {
 }
 
 ///|
-pub fn Shell::with_backend(backend : MemfsBackend) -> Shell {
+pub fn RuntimeShell::with_backend(backend : @runtime.MemfsBackend) -> RuntimeShell {
   backend.register_builtins()
   backend.register("exit", builtin_exit)
   backend.register("help", builtin_help)
@@ -25,7 +25,7 @@ pub fn Shell::with_backend(backend : MemfsBackend) -> Shell {
 }
 
 /// Execute a single command line
-pub fn Shell::execute(self : Shell, line : String) -> ShellResult {
+pub fn RuntimeShell::execute(self : RuntimeShell, line : String) -> ExecResult {
   let trimmed = line.trim()
   if trimmed.is_empty() || trimmed.has_prefix("#") {
     return { exit_code: 0, stdout: "", stderr: "" }
@@ -50,12 +50,12 @@ pub fn Shell::execute(self : Shell, line : String) -> ShellResult {
   }
 
   // Execute command with piped output
-  let cmd = Command::new(program)
+  let cmd = @runtime.Command::new(program)
     .args(args)
-    .stdout(Stdio::Piped)
-    .stderr(Stdio::Piped)
+    .stdout(@runtime.Stdio::Piped)
+    .stderr(@runtime.Stdio::Piped)
 
-  let result : Result[ShellResult, ProcessError] = try {
+  let result : Result[ExecResult, @runtime.ProcessError] = try {
     let proc = self.backend.spawn(cmd)
     let pid = proc.pid()
     let status = self.backend.wait(pid)
@@ -73,8 +73,8 @@ pub fn Shell::execute(self : Shell, line : String) -> ShellResult {
 }
 
 /// Execute multiple commands (script)
-pub fn Shell::execute_script(self : Shell, script : String) -> Array[ShellResult] {
-  let results : Array[ShellResult] = []
+pub fn RuntimeShell::execute_script(self : RuntimeShell, script : String) -> Array[ExecResult] {
+  let results : Array[ExecResult] = []
   for line in script.split("\n") {
     if not(self.running) {
       break
@@ -85,70 +85,24 @@ pub fn Shell::execute_script(self : Shell, script : String) -> Array[ShellResult
 }
 
 /// Check if shell is still running
-pub fn Shell::is_running(self : Shell) -> Bool {
+pub fn RuntimeShell::is_running(self : RuntimeShell) -> Bool {
   self.running
 }
 
 /// Get the backend for direct access
-pub fn Shell::get_backend(self : Shell) -> MemfsBackend {
+pub fn RuntimeShell::get_backend(self : RuntimeShell) -> @runtime.MemfsBackend {
   self.backend
-}
-
-/// Shell execution result
-pub struct ShellResult {
-  exit_code : Int
-  stdout : String
-  stderr : String
-}
-
-///|
-pub fn ShellResult::success(self : ShellResult) -> Bool {
-  self.exit_code == 0
-}
-
-/// Parse command line into parts (simple tokenizer)
-fn parse_command_line(line : String) -> Array[String] {
-  let parts : Array[String] = []
-  let current : Array[Char] = []
-  let mut in_quote = false
-  let mut quote_char : Char = ' '
-
-  for c in line {
-    if in_quote {
-      if c == quote_char {
-        in_quote = false
-      } else {
-        current.push(c)
-      }
-    } else if c == '"' || c == '\'' {
-      in_quote = true
-      quote_char = c
-    } else if c == ' ' || c == '\t' {
-      if current.length() > 0 {
-        parts.push(String::from_array(current[:]))
-        current.clear()
-      }
-    } else {
-      current.push(c)
-    }
-  }
-
-  if current.length() > 0 {
-    parts.push(String::from_array(current[:]))
-  }
-
-  parts
 }
 
 // Shell-specific builtins
 
 ///|
-fn builtin_exit(_ctx : ProcessContext) -> Int {
+fn builtin_exit(_ctx : @runtime.ProcessContext) -> Int {
   0
 }
 
 ///|
-fn builtin_help(ctx : ProcessContext) -> Int {
+fn builtin_help(ctx : @runtime.ProcessContext) -> Int {
   let help =
     #|Available commands:
     #|  echo [args...]     - Print arguments

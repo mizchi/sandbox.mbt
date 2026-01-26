@@ -1,5 +1,5 @@
 test "backpressure: basic acquire/release" {
-  let bp = @sandbox_async.BackpressureController::new(max_concurrent=2)
+  let bp = @async.BackpressureController::new(max_concurrent=2)
 
   assert_false(bp.is_active())
   assert_eq(bp.current(), 0)
@@ -22,7 +22,7 @@ test "backpressure: basic acquire/release" {
 }
 
 test "backpressure: manual activate/deactivate" {
-  let bp = @sandbox_async.BackpressureController::new()
+  let bp = @async.BackpressureController::new()
 
   assert_false(bp.is_active())
 
@@ -36,7 +36,7 @@ test "backpressure: manual activate/deactivate" {
 }
 
 test "backpressure: dynamic max adjustment" {
-  let bp = @sandbox_async.BackpressureController::new(max_concurrent=1)
+  let bp = @async.BackpressureController::new(max_concurrent=1)
 
   assert_true(bp.try_acquire())
   assert_true(bp.is_active())  // At max
