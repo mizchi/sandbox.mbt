@@ -1,3 +1,4 @@
+///|
 test "basic file operations" {
   @coroutine.run_async_test(async fn() {
     let ctx = @async.SandboxContext::new()
@@ -15,6 +16,7 @@ test "basic file operations" {
   })
 }
 
+///|
 test "directory operations" {
   @coroutine.run_async_test(async fn() {
     let ctx = @async.SandboxContext::new()
@@ -32,6 +34,7 @@ test "directory operations" {
   })
 }
 
+///|
 test "environment" {
   let ctx = @async.SandboxContext::new()
 
@@ -43,6 +46,7 @@ test "environment" {
   assert_eq(ctx.get_env("MY_VAR"), Some("my_value"))
 }
 
+///|
 test "cwd operations" {
   @coroutine.run_async_test(async fn() {
     let ctx = @async.SandboxContext::new()

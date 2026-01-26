@@ -1,5 +1,6 @@
 /// Streams for process I/O
 
+///|
 /// Pipe buffer for inter-process communication
 pub struct Pipe {
   buffer : Array[Byte]
@@ -29,7 +30,11 @@ pub fn Pipe::write_string(self : Pipe, s : String) -> Int {
 
 ///|
 pub fn Pipe::read(self : Pipe, len : Int) -> Bytes {
-  let actual_len = if len < self.buffer.length() { len } else { self.buffer.length() }
+  let actual_len = if len < self.buffer.length() {
+    len
+  } else {
+    self.buffer.length()
+  }
   if actual_len == 0 {
     return Bytes::new(0)
   }
@@ -46,7 +51,6 @@ pub fn Pipe::read(self : Pipe, len : Int) -> Bytes {
   for b in remaining {
     self.buffer.push(b)
   }
-
   result
 }
 
@@ -75,6 +79,7 @@ pub fn Pipe::available(self : Pipe) -> Int {
   self.buffer.length()
 }
 
+///|
 /// Process I/O streams
 pub struct ProcessIO {
   stdin : Pipe?
@@ -89,7 +94,11 @@ pub fn ProcessIO::new() -> ProcessIO {
 
 ///|
 pub fn ProcessIO::with_pipes() -> ProcessIO {
-  { stdin: Some(Pipe::new()), stdout: Some(Pipe::new()), stderr: Some(Pipe::new()) }
+  {
+    stdin: Some(Pipe::new()),
+    stdout: Some(Pipe::new()),
+    stderr: Some(Pipe::new()),
+  }
 }
 
 ///|

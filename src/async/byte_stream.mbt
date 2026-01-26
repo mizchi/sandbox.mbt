@@ -6,6 +6,7 @@
 /// - Async read blocks until data is available or stream is closed
 /// - Async write blocks until reader consumes the data
 
+///|
 /// Stream state
 pub(all) enum StreamState {
   Empty
@@ -13,6 +14,7 @@ pub(all) enum StreamState {
   Closed
 }
 
+///|
 /// Internal shared state between read and write ends (exposed for Waitable impl)
 pub struct StreamInner {
   mut state : StreamState
@@ -20,6 +22,7 @@ pub struct StreamInner {
   mut writer_waiting : @coroutine.Coroutine?
 }
 
+///|
 /// Wake waiting reader if present
 fn StreamInner::wake_reader(self : StreamInner) -> Unit {
   match self.reader_waiting {
@@ -31,6 +34,7 @@ fn StreamInner::wake_reader(self : StreamInner) -> Unit {
   }
 }
 
+///|
 /// Wake waiting writer if present
 fn StreamInner::wake_writer(self : StreamInner) -> Unit {
   match self.writer_waiting {
@@ -42,16 +46,19 @@ fn StreamInner::wake_writer(self : StreamInner) -> Unit {
   }
 }
 
+///|
 /// Readable end of a ByteStream
 pub struct ReadEnd {
   inner : StreamInner
 }
 
+///|
 /// Writable end of a ByteStream
 pub struct WriteEnd {
   inner : StreamInner
 }
 
+///|
 /// Create a new (readable, writable) stream pair
 pub fn new_byte_stream() -> (ReadEnd, WriteEnd) {
   let inner : StreamInner = {
@@ -62,6 +69,7 @@ pub fn new_byte_stream() -> (ReadEnd, WriteEnd) {
   ({ inner, }, { inner, })
 }
 
+///|
 /// Read from the stream. Blocks until data is available or stream is closed.
 /// Returns empty Bytes if stream is closed.
 pub async fn ReadEnd::read(self : ReadEnd) -> Bytes {
@@ -84,6 +92,7 @@ pub async fn ReadEnd::read(self : ReadEnd) -> Bytes {
   Bytes::new(0)
 }
 
+///|
 /// Check if data is available without blocking
 pub fn ReadEnd::poll(self : ReadEnd) -> Bytes? {
   match self.inner.state {
@@ -96,11 +105,13 @@ pub fn ReadEnd::poll(self : ReadEnd) -> Bytes? {
   }
 }
 
+///|
 /// Check if stream is closed
 pub fn ReadEnd::is_closed(self : ReadEnd) -> Bool {
   self.inner.state is Closed
 }
 
+///|
 /// Write to the stream. Blocks until reader consumes the data.
 /// Returns false if stream is closed.
 pub async fn WriteEnd::write(self : WriteEnd, data : Bytes) -> Bool {
@@ -124,9 +135,9 @@ pub async fn WriteEnd::write(self : WriteEnd, data : Bytes) -> Bool {
 
         // Check result after waking
         match self.inner.state {
-          Empty => return true  // Reader consumed
-          Closed => return false  // Stream closed
-          HasData(_) => continue  // Spurious wakeup, retry
+          Empty => return true // Reader consumed
+          Closed => return false // Stream closed
+          HasData(_) => continue // Spurious wakeup, retry
         }
       }
     }
@@ -135,17 +146,20 @@ pub async fn WriteEnd::write(self : WriteEnd, data : Bytes) -> Bool {
   false
 }
 
+///|
 /// Write string to the stream
 pub async fn WriteEnd::write_string(self : WriteEnd, s : String) -> Bool {
   self.write(Bytes::from_iter(s.iter().map(fn(c) { c.to_int().to_byte() })))
 }
 
+///|
 /// Close the writable end
 pub fn WriteEnd::close(self : WriteEnd) -> Unit {
   self.inner.state = Closed
   self.inner.wake_reader()
 }
 
+///|
 /// Check if stream is closed
 pub fn WriteEnd::is_closed(self : WriteEnd) -> Bool {
   self.inner.state is Closed

@@ -1,50 +1,52 @@
+///|
 /// POSIX Types and Constants
 
 // ============ Error Codes ============
 
 pub(all) enum Errno {
-  EPERM    // Operation not permitted
-  ENOENT   // No such file or directory
-  ESRCH    // No such process
-  EINTR    // Interrupted system call
-  EIO      // I/O error
-  ENXIO    // No such device or address
-  E2BIG    // Argument list too long
-  ENOEXEC  // Exec format error
-  EBADF    // Bad file descriptor
-  ECHILD   // No child processes
-  EAGAIN   // Resource temporarily unavailable
-  ENOMEM   // Out of memory
-  EACCES   // Permission denied
-  EFAULT   // Bad address
-  EBUSY    // Device or resource busy
-  EEXIST   // File exists
-  EXDEV    // Cross-device link
-  ENODEV   // No such device
-  ENOTDIR  // Not a directory
-  EISDIR   // Is a directory
-  EINVAL   // Invalid argument
-  ENFILE   // File table overflow
-  EMFILE   // Too many open files
-  ENOTTY   // Not a typewriter
-  EFBIG    // File too large
-  ENOSPC   // No space left on device
-  ESPIPE   // Illegal seek
-  EROFS    // Read-only file system
-  EMLINK   // Too many links
-  EPIPE    // Broken pipe
-  EDOM     // Math argument out of domain
-  ERANGE   // Math result not representable
-  EDEADLK  // Resource deadlock would occur
-  ENAMETOOLONG  // File name too long
-  ENOLCK   // No record locks available
-  ENOSYS   // Function not implemented
-  ENOTEMPTY  // Directory not empty
-  ELOOP    // Too many symbolic links
-  ETIMEDOUT  // Connection timed out
-  ECONNREFUSED  // Connection refused
+  EPERM // Operation not permitted
+  ENOENT // No such file or directory
+  ESRCH // No such process
+  EINTR // Interrupted system call
+  EIO // I/O error
+  ENXIO // No such device or address
+  E2BIG // Argument list too long
+  ENOEXEC // Exec format error
+  EBADF // Bad file descriptor
+  ECHILD // No child processes
+  EAGAIN // Resource temporarily unavailable
+  ENOMEM // Out of memory
+  EACCES // Permission denied
+  EFAULT // Bad address
+  EBUSY // Device or resource busy
+  EEXIST // File exists
+  EXDEV // Cross-device link
+  ENODEV // No such device
+  ENOTDIR // Not a directory
+  EISDIR // Is a directory
+  EINVAL // Invalid argument
+  ENFILE // File table overflow
+  EMFILE // Too many open files
+  ENOTTY // Not a typewriter
+  EFBIG // File too large
+  ENOSPC // No space left on device
+  ESPIPE // Illegal seek
+  EROFS // Read-only file system
+  EMLINK // Too many links
+  EPIPE // Broken pipe
+  EDOM // Math argument out of domain
+  ERANGE // Math result not representable
+  EDEADLK // Resource deadlock would occur
+  ENAMETOOLONG // File name too long
+  ENOLCK // No record locks available
+  ENOSYS // Function not implemented
+  ENOTEMPTY // Directory not empty
+  ELOOP // Too many symbolic links
+  ETIMEDOUT // Connection timed out
+  ECONNREFUSED // Connection refused
 } derive(Show, Eq)
 
+///|
 pub fn Errno::code(self : Errno) -> Int {
   match self {
     EPERM => 1
@@ -92,57 +94,77 @@ pub fn Errno::code(self : Errno) -> Int {
 
 // ============ File Descriptor ============
 
+///|
 /// File descriptor (non-negative integer)
 pub struct Fd(Int) derive(Show, Eq, Compare, Hash)
 
+///|
 pub fn Fd::to_int(self : Fd) -> Int {
   self.0
 }
 
+///|
 pub fn Fd::from_int(n : Int) -> Fd {
   Fd(n)
 }
 
+///|
 /// Standard file descriptors
-pub fn stdin_fileno() -> Fd { Fd(0) }
-pub fn stdout_fileno() -> Fd { Fd(1) }
-pub fn stderr_fileno() -> Fd { Fd(2) }
+pub fn stdin_fileno() -> Fd {
+  Fd(0)
+}
+
+///|
+pub fn stdout_fileno() -> Fd {
+  Fd(1)
+}
+
+///|
+pub fn stderr_fileno() -> Fd {
+  Fd(2)
+}
 
 // ============ Open Flags ============
 
+///|
 /// Flags for open()
 pub(all) enum OpenFlag {
-  O_RDONLY    // Read only
-  O_WRONLY    // Write only
-  O_RDWR      // Read and write
-  O_CREAT     // Create if not exists
-  O_EXCL      // Fail if exists (with O_CREAT)
-  O_TRUNC     // Truncate to zero length
-  O_APPEND    // Append mode
-  O_NONBLOCK  // Non-blocking mode
-  O_SYNC      // Synchronous writes
+  O_RDONLY // Read only
+  O_WRONLY // Write only
+  O_RDWR // Read and write
+  O_CREAT // Create if not exists
+  O_EXCL // Fail if exists (with O_CREAT)
+  O_TRUNC // Truncate to zero length
+  O_APPEND // Append mode
+  O_NONBLOCK // Non-blocking mode
+  O_SYNC // Synchronous writes
   O_DIRECTORY // Must be a directory
-  O_NOFOLLOW  // Don't follow symlinks
-  O_CLOEXEC   // Close on exec
+  O_NOFOLLOW // Don't follow symlinks
+  O_CLOEXEC // Close on exec
 } derive(Show, Eq)
 
+///|
 /// Open flags as a set
 pub struct OpenFlags {
   flags : Array[OpenFlag]
 }
 
+///|
 pub fn OpenFlags::new() -> OpenFlags {
-  { flags: [], }
+  { flags: [] }
 }
 
+///|
 pub fn OpenFlags::from(flags : Array[OpenFlag]) -> OpenFlags {
   { flags, }
 }
 
+///|
 pub fn OpenFlags::has(self : OpenFlags, flag : OpenFlag) -> Bool {
   self.flags.contains(flag)
 }
 
+///|
 pub fn OpenFlags::add(self : OpenFlags, flag : OpenFlag) -> OpenFlags {
   if not(self.has(flag)) {
     self.flags.push(flag)
@@ -150,97 +172,155 @@ pub fn OpenFlags::add(self : OpenFlags, flag : OpenFlag) -> OpenFlags {
   self
 }
 
+///|
 pub fn OpenFlags::is_readable(self : OpenFlags) -> Bool {
   self.has(O_RDONLY) || self.has(O_RDWR)
 }
 
+///|
 pub fn OpenFlags::is_writable(self : OpenFlags) -> Bool {
   self.has(O_WRONLY) || self.has(O_RDWR)
 }
 
 // ============ File Mode (Permissions) ============
 
+///|
 /// File permission bits
 pub struct FileMode {
   bits : Int
 }
 
 // Permission constants
-pub fn s_irwxu() -> Int { 0o700 }  // User: rwx
-pub fn s_irusr() -> Int { 0o400 }  // User: read
-pub fn s_iwusr() -> Int { 0o200 }  // User: write
-pub fn s_ixusr() -> Int { 0o100 }  // User: execute
 
-pub fn s_irwxg() -> Int { 0o070 }  // Group: rwx
-pub fn s_irgrp() -> Int { 0o040 }  // Group: read
-pub fn s_iwgrp() -> Int { 0o020 }  // Group: write
-pub fn s_ixgrp() -> Int { 0o010 }  // Group: execute
+///|
+pub fn s_irwxu() -> Int {
+  0o700
+} // User: rwx
 
-pub fn s_irwxo() -> Int { 0o007 }  // Other: rwx
-pub fn s_iroth() -> Int { 0o004 }  // Other: read
-pub fn s_iwoth() -> Int { 0o002 }  // Other: write
-pub fn s_ixoth() -> Int { 0o001 }  // Other: execute
+///|
+pub fn s_irusr() -> Int {
+  0o400
+} // User: read
 
+///|
+pub fn s_iwusr() -> Int {
+  0o200
+} // User: write
+
+///|
+pub fn s_ixusr() -> Int {
+  0o100
+} // User: execute
+
+///|
+pub fn s_irwxg() -> Int {
+  0o070
+} // Group: rwx
+
+///|
+pub fn s_irgrp() -> Int {
+  0o040
+} // Group: read
+
+///|
+pub fn s_iwgrp() -> Int {
+  0o020
+} // Group: write
+
+///|
+pub fn s_ixgrp() -> Int {
+  0o010
+} // Group: execute
+
+///|
+pub fn s_irwxo() -> Int {
+  0o007
+} // Other: rwx
+
+///|
+pub fn s_iroth() -> Int {
+  0o004
+} // Other: read
+
+///|
+pub fn s_iwoth() -> Int {
+  0o002
+} // Other: write
+
+///|
+pub fn s_ixoth() -> Int {
+  0o001
+} // Other: execute
+
+///|
 pub fn FileMode::new(bits : Int) -> FileMode {
   { bits, }
 }
 
+///|
 pub fn FileMode::default_file() -> FileMode {
-  FileMode::new(0o644)  // rw-r--r--
+  FileMode::new(0o644) // rw-r--r--
 }
 
+///|
 pub fn FileMode::default_dir() -> FileMode {
-  FileMode::new(0o755)  // rwxr-xr-x
+  FileMode::new(0o755) // rwxr-xr-x
 }
 
+///|
 pub fn FileMode::to_int(self : FileMode) -> Int {
   self.bits
 }
 
+///|
 pub fn FileMode::has(self : FileMode, perm : Int) -> Bool {
-  (self.bits.land(perm)) == perm
+  (self.bits & perm) == perm
 }
 
 // ============ Seek Whence ============
 
+///|
 pub(all) enum Whence {
-  SEEK_SET  // From beginning
-  SEEK_CUR  // From current position
-  SEEK_END  // From end
+  SEEK_SET // From beginning
+  SEEK_CUR // From current position
+  SEEK_END // From end
 } derive(Show, Eq)
 
 // ============ File Type ============
 
+///|
 pub(all) enum FileType {
-  S_IFREG   // Regular file
-  S_IFDIR   // Directory
-  S_IFLNK   // Symbolic link
-  S_IFCHR   // Character device
-  S_IFBLK   // Block device
-  S_IFIFO   // FIFO (named pipe)
-  S_IFSOCK  // Socket
+  S_IFREG // Regular file
+  S_IFDIR // Directory
+  S_IFLNK // Symbolic link
+  S_IFCHR // Character device
+  S_IFBLK // Block device
+  S_IFIFO // FIFO (named pipe)
+  S_IFSOCK // Socket
 } derive(Show, Eq)
 
 // ============ Stat Structure ============
 
+///|
 /// File status information
 pub struct Stat {
-  st_dev : Int        // Device ID
-  st_ino : Int        // Inode number
-  st_mode : FileMode  // File mode (type + permissions)
-  st_nlink : Int      // Number of hard links
-  st_uid : Int        // User ID of owner
-  st_gid : Int        // Group ID of owner
-  st_rdev : Int       // Device ID (if special file)
-  st_size : Int64     // Total size in bytes
-  st_blksize : Int    // Block size for I/O
-  st_blocks : Int64   // Number of 512B blocks
-  st_atime : Int64    // Last access time
-  st_mtime : Int64    // Last modification time
-  st_ctime : Int64    // Last status change time
-  st_type : FileType  // File type
+  st_dev : Int // Device ID
+  st_ino : Int // Inode number
+  st_mode : FileMode // File mode (type + permissions)
+  st_nlink : Int // Number of hard links
+  st_uid : Int // User ID of owner
+  st_gid : Int // Group ID of owner
+  st_rdev : Int // Device ID (if special file)
+  st_size : Int64 // Total size in bytes
+  st_blksize : Int // Block size for I/O
+  st_blocks : Int64 // Number of 512B blocks
+  st_atime : Int64 // Last access time
+  st_mtime : Int64 // Last modification time
+  st_ctime : Int64 // Last status change time
+  st_type : FileType // File type
 }
 
+///|
 pub fn Stat::new_file(size : Int64, mode : FileMode, mtime : Int64) -> Stat {
   {
     st_dev: 0,
@@ -260,6 +340,7 @@ pub fn Stat::new_file(size : Int64, mode : FileMode, mtime : Int64) -> Stat {
   }
 }
 
+///|
 pub fn Stat::new_dir(mode : FileMode, mtime : Int64) -> Stat {
   {
     st_dev: 0,
@@ -279,6 +360,7 @@ pub fn Stat::new_dir(mode : FileMode, mtime : Int64) -> Stat {
   }
 }
 
+///|
 pub fn Stat::new_symlink(target_len : Int, mtime : Int64) -> Stat {
   {
     st_dev: 0,
@@ -298,87 +380,103 @@ pub fn Stat::new_symlink(target_len : Int, mtime : Int64) -> Stat {
   }
 }
 
+///|
 pub fn Stat::is_file(self : Stat) -> Bool {
   self.st_type == S_IFREG
 }
 
+///|
 pub fn Stat::is_dir(self : Stat) -> Bool {
   self.st_type == S_IFDIR
 }
 
+///|
 pub fn Stat::is_symlink(self : Stat) -> Bool {
   self.st_type == S_IFLNK
 }
 
 // ============ Process Types ============
 
+///|
 /// Process ID
 pub struct Pid(Int) derive(Show, Eq, Compare, Hash)
 
+///|
 pub fn Pid::to_int(self : Pid) -> Int {
   self.0
 }
 
+///|
 pub fn Pid::from_int(n : Int) -> Pid {
   Pid(n)
 }
 
 // ============ Time Types ============
 
+///|
 /// Time in seconds and nanoseconds
 pub struct Timespec {
-  tv_sec : Int64   // Seconds
-  tv_nsec : Int64  // Nanoseconds (0-999999999)
+  tv_sec : Int64 // Seconds
+  tv_nsec : Int64 // Nanoseconds (0-999999999)
 }
 
+///|
 pub fn Timespec::new(sec : Int64, nsec : Int64) -> Timespec {
   { tv_sec: sec, tv_nsec: nsec }
 }
 
+///|
 pub fn Timespec::from_seconds(sec : Int64) -> Timespec {
   { tv_sec: sec, tv_nsec: 0L }
 }
 
+///|
 pub fn Timespec::from_millis(ms : Int64) -> Timespec {
-  { tv_sec: ms / 1000L, tv_nsec: (ms % 1000L) * 1000000L }
+  { tv_sec: ms / 1000L, tv_nsec: ms % 1000L * 1000000L }
 }
 
+///|
 pub fn Timespec::to_millis(self : Timespec) -> Int64 {
   self.tv_sec * 1000L + self.tv_nsec / 1000000L
 }
 
+///|
 pub fn Timespec::to_nanos(self : Timespec) -> Int64 {
   self.tv_sec * 1000000000L + self.tv_nsec
 }
 
+///|
 /// Clock IDs for clock_gettime
 pub(all) enum ClockId {
-  CLOCK_REALTIME           // Wall clock time
-  CLOCK_MONOTONIC          // Monotonic time since boot
+  CLOCK_REALTIME // Wall clock time
+  CLOCK_MONOTONIC // Monotonic time since boot
   CLOCK_PROCESS_CPUTIME_ID // CPU time for this process
-  CLOCK_THREAD_CPUTIME_ID  // CPU time for this thread
+  CLOCK_THREAD_CPUTIME_ID // CPU time for this thread
 } derive(Show, Eq)
 
 // ============ Pipe ============
 
+///|
 /// Pipe file descriptors
 pub struct PipeFds {
-  read_fd : Fd   // Read end
-  write_fd : Fd  // Write end
+  read_fd : Fd // Read end
+  write_fd : Fd // Write end
 }
 
 // ============ Poll ============
 
+///|
 /// Poll events (bitmask)
 pub(all) enum PollEvent {
-  POLLIN    // Data available for reading
-  POLLOUT   // Writing is possible
-  POLLERR   // Error condition
-  POLLHUP   // Hang up
-  POLLNVAL  // Invalid fd
-  POLLPRI   // Priority data available
+  POLLIN // Data available for reading
+  POLLOUT // Writing is possible
+  POLLERR // Error condition
+  POLLHUP // Hang up
+  POLLNVAL // Invalid fd
+  POLLPRI // Priority data available
 } derive(Show, Eq)
 
+///|
 pub fn PollEvent::to_int(self : PollEvent) -> Int {
   match self {
     POLLIN => 0x0001
@@ -390,55 +488,65 @@ pub fn PollEvent::to_int(self : PollEvent) -> Int {
   }
 }
 
+///|
 /// Poll file descriptor structure
 pub struct PollFd {
   fd : Fd
-  events : Int     // Requested events (bitmask)
-  mut revents : Int  // Returned events (bitmask)
+  events : Int // Requested events (bitmask)
+  mut revents : Int // Returned events (bitmask)
 }
 
+///|
 pub fn PollFd::new(fd : Fd, event : PollEvent) -> PollFd {
   { fd, events: event.to_int(), revents: 0 }
 }
 
+///|
 pub fn PollFd::new_multi(fd : Fd, events : Array[PollEvent]) -> PollFd {
   let mut mask = 0
   for e in events {
-    mask = mask.lor(e.to_int())
+    mask = mask | e.to_int()
   }
   { fd, events: mask, revents: 0 }
 }
 
+///|
 pub fn PollFd::get_fd(self : PollFd) -> Fd {
   self.fd
 }
 
+///|
 pub fn PollFd::has_event(self : PollFd, event : PollEvent) -> Bool {
-  (self.events.land(event.to_int())) != 0
+  (self.events & event.to_int()) != 0
 }
 
+///|
 pub fn PollFd::has_revent(self : PollFd, event : PollEvent) -> Bool {
-  (self.revents.land(event.to_int())) != 0
+  (self.revents & event.to_int()) != 0
 }
 
+///|
 pub fn PollFd::set_revent(self : PollFd, event : PollEvent) -> Unit {
-  self.revents = self.revents.lor(event.to_int())
+  self.revents = self.revents | event.to_int()
 }
 
+///|
 pub fn PollFd::clear_revents(self : PollFd) -> Unit {
   self.revents = 0
 }
 
 // ============ Access Mode ============
 
+///|
 /// Access mode for access()
 pub(all) enum AccessMode {
-  F_OK  // File exists
-  R_OK  // Read permission
-  W_OK  // Write permission
-  X_OK  // Execute permission
+  F_OK // File exists
+  R_OK // Read permission
+  W_OK // Write permission
+  X_OK // Execute permission
 } derive(Show, Eq)
 
+///|
 pub fn AccessMode::to_int(self : AccessMode) -> Int {
   match self {
     F_OK => 0

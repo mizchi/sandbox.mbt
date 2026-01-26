@@ -11,7 +11,6 @@ test "memfs backend: basic file operations" {
   let fd2 = backend.open("/test.txt", OpenFlags::read_only())
   let data = backend.read(fd2, 100)
   backend.close(fd2)
-
   assert_eq(data, b"hello world")
 }
 
@@ -64,7 +63,6 @@ test "memfs backend: process execution" {
   let cmd = Command::new("argcount").args(["a", "b", "c"])
   let proc = backend.spawn(cmd)
   let status = backend.wait(proc.pid())
-
   assert_eq(status.code, 3)
 }
 
@@ -76,7 +74,6 @@ test "memfs backend: builtins basic" {
   // Test true/false
   let proc_true = backend.spawn(Command::new("true"))
   assert_eq(backend.wait(proc_true.pid()).code, 0)
-
   let proc_false = backend.spawn(Command::new("false"))
   assert_eq(backend.wait(proc_false.pid()).code, 1)
 
@@ -101,13 +98,11 @@ test "memfs backend: cd and pwd" {
 ///|
 test "memfs backend: file not found" {
   let backend = MemfsBackend::new()
-
-  let result : Result[Fd, IOError] = try {
-    Ok(backend.open("/nonexistent", OpenFlags::read_only()))
-  } catch {
+  let result : Result[Fd, IOError] = Ok(
+    backend.open("/nonexistent", OpenFlags::read_only()),
+  ) catch {
     e => Err(e)
   }
-
   assert_true(result is Err(IOError::NotFound(_)))
 }
 
@@ -117,14 +112,10 @@ test "memfs backend: stdout capture" {
   backend.register_builtins()
 
   // Run echo with piped stdout
-  let cmd = Command::new("echo")
-    .args(["hello", "world"])
-    .stdout(Stdio::Piped)
+  let cmd = Command::new("echo").args(["hello", "world"]).stdout(Stdio::Piped)
   let proc = backend.spawn(cmd)
   let pid = proc.pid()
-
   assert_eq(backend.wait(pid).code, 0)
-
   let output = backend.read_stdout(pid)
   assert_eq(output, "hello world\n")
 }
@@ -140,12 +131,9 @@ test "memfs backend: cat with stdout" {
   backend.close(fd)
 
   // Cat it with piped stdout
-  let cmd = Command::new("cat")
-    .arg("/hello.txt")
-    .stdout(Stdio::Piped)
+  let cmd = Command::new("cat").arg("/hello.txt").stdout(Stdio::Piped)
   let proc = backend.spawn(cmd)
   let pid = proc.pid()
-
   assert_eq(backend.wait(pid).code, 0)
   assert_eq(backend.read_stdout(pid), "Hello, File!")
 }
@@ -163,12 +151,9 @@ test "memfs backend: ls with stdout" {
   backend.close(fd2)
 
   // ls with piped stdout
-  let cmd = Command::new("ls")
-    .arg("/testdir")
-    .stdout(Stdio::Piped)
+  let cmd = Command::new("ls").arg("/testdir").stdout(Stdio::Piped)
   let proc = backend.spawn(cmd)
   let pid = proc.pid()
-
   assert_eq(backend.wait(pid).code, 0)
   let output = backend.read_stdout(pid)
   assert_true(output.contains("a.txt"))

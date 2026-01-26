@@ -1,5 +1,6 @@
 /// MemFS Backend - Pure in-memory implementation
 
+///|
 /// Process execution context passed to handlers
 pub struct ProcessContext {
   backend : MemfsBackend
@@ -37,6 +38,7 @@ pub fn ProcessContext::read_stdin(self : ProcessContext) -> String {
   }
 }
 
+///|
 /// MemFS Backend
 pub struct MemfsBackend {
   fs : @fs.MemFS
@@ -55,6 +57,7 @@ pub struct MemfsBackend {
   args : Array[String]
 }
 
+///|
 /// Internal open file state
 struct OpenFileState {
   path : String
@@ -63,6 +66,7 @@ struct OpenFileState {
   mut closed : Bool
 }
 
+///|
 /// Internal process state
 struct ProcessState {
   pid : Pid
@@ -95,14 +99,14 @@ pub fn MemfsBackend::new() -> MemfsBackend {
 ///|
 pub fn MemfsBackend::with_fs(fs : @fs.MemFS) -> MemfsBackend {
   let backend = MemfsBackend::new()
-  { ..backend, fs }
+  { ..backend, fs, }
 }
 
 ///|
 pub fn MemfsBackend::register(
   self : MemfsBackend,
   name : String,
-  handler : (ProcessContext) -> Int
+  handler : (ProcessContext) -> Int,
 ) -> Unit {
   self.registry.set(name, handler)
 }
@@ -133,7 +137,7 @@ fn MemfsBackend::alloc_fd(self : MemfsBackend) -> Fd {
 ///|
 fn MemfsBackend::get_file(
   self : MemfsBackend,
-  fd : Fd
+  fd : Fd,
 ) -> OpenFileState raise IOError {
   match self.fd_table.get(fd) {
     Some(f) => {
@@ -153,7 +157,8 @@ fn convert_memfs_error(e : @fs.MemFSError) -> IOError {
     @fs.MemFSError::AlreadyExists(p) => IOError::AlreadyExists(p)
     @fs.MemFSError::NotAFile(p) => IOError::InvalidInput("Not a file: \{p}")
     @fs.MemFSError::NotADirectory(p) => IOError::NotDirectory(p)
-    @fs.MemFSError::InvalidPath(p) => IOError::InvalidInput("Invalid path: \{p}")
+    @fs.MemFSError::InvalidPath(p) =>
+      IOError::InvalidInput("Invalid path: \{p}")
     @fs.MemFSError::SymlinkLoop(p) =>
       IOError::InvalidInput("Symlink loop: \{p}")
   }
@@ -165,7 +170,6 @@ fn convert_memfs_error(e : @fs.MemFSError) -> IOError {
 pub impl Filesystem for MemfsBackend with open(self, path, flags) {
   let abs_path = self.resolve_path(path)
   let exists = self.fs.exists(abs_path)
-
   if flags.create {
     if not(exists) {
       self.fs.write_string(abs_path, "") catch {
@@ -175,15 +179,14 @@ pub impl Filesystem for MemfsBackend with open(self, path, flags) {
   } else if not(exists) {
     raise IOError::NotFound(abs_path)
   }
-
   if self.fs.is_dir(abs_path) && flags.is_writable() {
     raise IOError::IsDirectory(abs_path)
   }
-
   if flags.truncate && flags.is_writable() && not(self.fs.is_dir(abs_path)) {
-    self.fs.write_string(abs_path, "") catch { e => raise convert_memfs_error(e) }
+    self.fs.write_string(abs_path, "") catch {
+      e => raise convert_memfs_error(e)
+    }
   }
-
   let fd = self.alloc_fd()
   let state : OpenFileState = {
     path: abs_path,
@@ -191,14 +194,12 @@ pub impl Filesystem for MemfsBackend with open(self, path, flags) {
     offset: 0L,
     closed: false,
   }
-
   if flags.append {
     match self.fs.size(abs_path) {
       Some(size) => state.offset = size.to_int64()
       None => ()
     }
   }
-
   self.fd_table.set(fd, state)
   fd
 }
@@ -209,9 +210,8 @@ pub impl Filesystem for MemfsBackend with read(self, fd, len) {
   if not(file.flags.is_readable()) {
     raise IOError::PermissionDenied("File not opened for reading")
   }
-
-  let data = self.fs.read_file(file.path) catch { e =>
-    raise convert_memfs_error(e)
+  let data = self.fs.read_file(file.path) catch {
+    e => raise convert_memfs_error(e)
   }
   let start = file.offset.to_int()
   let end = @cmp.minimum(start + len, data.length())
@@ -229,8 +229,9 @@ pub impl Filesystem for MemfsBackend with write(self, fd, data) {
   if not(file.flags.is_writable()) {
     raise IOError::PermissionDenied("File not opened for writing")
   }
-
-  let existing : Bytes = self.fs.read_file(file.path) catch { _ => Bytes::new(0) }
+  let existing : Bytes = self.fs.read_file(file.path) catch {
+    _ => Bytes::new(0)
+  }
   let offset = file.offset.to_int()
 
   // Calculate new size
@@ -249,9 +250,8 @@ pub impl Filesystem for MemfsBackend with write(self, fd, data) {
       b'\x00'
     }
   })
-
-  self.fs.write_file(file.path, new_data) catch { e =>
-    raise convert_memfs_error(e)
+  self.fs.write_file(file.path, new_data) catch {
+    e => raise convert_memfs_error(e)
   }
   file.offset = (offset + data.length()).to_int64()
   data.length()
@@ -270,15 +270,12 @@ pub impl Filesystem for MemfsBackend with stat(self, path) {
   if not(self.fs.exists(abs_path)) {
     raise IOError::NotFound(abs_path)
   }
-
   let file_type = if self.fs.is_dir(abs_path) {
     FileType::Directory
   } else {
     FileType::File
   }
-
   let size = self.fs.size(abs_path).unwrap_or(0).to_int64()
-
   { file_type, size, mode: FileMode::default(), mtime: 0L }
 }
 
@@ -294,7 +291,9 @@ pub impl Filesystem for MemfsBackend with mkdir(self, path) {
   if self.fs.exists(abs_path) {
     raise IOError::AlreadyExists(abs_path)
   }
-  self.fs.mkdir(abs_path) catch { e => raise convert_memfs_error(e) }
+  self.fs.mkdir(abs_path) catch {
+    e => raise convert_memfs_error(e)
+  }
 }
 
 ///|
@@ -303,9 +302,8 @@ pub impl Filesystem for MemfsBackend with readdir(self, path) {
   if not(self.fs.is_dir(abs_path)) {
     raise IOError::NotDirectory(abs_path)
   }
-
-  let names = self.fs.readdir(abs_path) catch { e =>
-    raise convert_memfs_error(e)
+  let names = self.fs.readdir(abs_path) catch {
+    e => raise convert_memfs_error(e)
   }
   let entries : Array[DirEntry] = []
   for name in names {
@@ -330,7 +328,9 @@ pub impl Filesystem for MemfsBackend with unlink(self, path) {
   if not(self.fs.exists(abs_path)) {
     raise IOError::NotFound(abs_path)
   }
-  self.fs.remove(abs_path) catch { e => raise convert_memfs_error(e) }
+  self.fs.remove(abs_path) catch {
+    e => raise convert_memfs_error(e)
+  }
 }
 
 ///|
@@ -346,12 +346,15 @@ pub impl Filesystem for MemfsBackend with rename(self, from, to) {
     // For directories, just error for now (complex to implement recursively)
     raise IOError::Other("Renaming directories not yet supported")
   }
-
-  let data = self.fs.read_file(abs_from) catch { e =>
-    raise convert_memfs_error(e)
+  let data = self.fs.read_file(abs_from) catch {
+    e => raise convert_memfs_error(e)
   }
-  self.fs.write_file(abs_to, data) catch { e => raise convert_memfs_error(e) }
-  self.fs.remove(abs_from) catch { e => raise convert_memfs_error(e) }
+  self.fs.write_file(abs_to, data) catch {
+    e => raise convert_memfs_error(e)
+  }
+  self.fs.remove(abs_from) catch {
+    e => raise convert_memfs_error(e)
+  }
 }
 
 ///|
@@ -393,11 +396,9 @@ pub impl ProcessManager for MemfsBackend with spawn(self, cmd) {
 
       // Execute handler synchronously
       let exit_code = handler(ctx)
-
       let state : ProcessState = { pid, io, exit_code: Some(exit_code) }
       self.processes.set(pid, state)
-
-      Process::{ pid }
+      Process::{ pid, }
     }
     None => raise ProcessError::NotFound(cmd.program)
   }
@@ -406,15 +407,13 @@ pub impl ProcessManager for MemfsBackend with spawn(self, cmd) {
 ///|
 pub impl ProcessManager for MemfsBackend with wait(self, pid) {
   match self.processes.get(pid) {
-    Some(state) => {
+    Some(state) =>
       match state.exit_code {
-        Some(code) => ExitStatus::{ code }
-        None => {
+        Some(code) => ExitStatus::{ code, }
+        None =>
           // Process still running - in real impl would block
           ExitStatus::{ code: 0 }
-        }
       }
-    }
     None => raise ProcessError::InvalidPid(pid)
   }
 }
@@ -422,12 +421,11 @@ pub impl ProcessManager for MemfsBackend with wait(self, pid) {
 ///|
 pub impl ProcessManager for MemfsBackend with try_wait(self, pid) {
   match self.processes.get(pid) {
-    Some(state) => {
+    Some(state) =>
       match state.exit_code {
-        Some(code) => Some(ExitStatus::{ code })
+        Some(code) => Some(ExitStatus::{ code, })
         None => None
       }
-    }
     None => raise ProcessError::InvalidPid(pid)
   }
 }

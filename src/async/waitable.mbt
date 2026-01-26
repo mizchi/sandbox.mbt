@@ -2,6 +2,7 @@
 ///
 /// Allows waiting on multiple streams/futures simultaneously
 
+///|
 /// Waitable trait - anything that can be waited on
 pub(open) trait Waitable {
   /// Check if ready without blocking. Returns true if ready.
@@ -14,27 +15,33 @@ pub(open) trait Waitable {
   set_waiter(Self, @coroutine.Coroutine?) -> Unit
 }
 
+///|
 /// Waitable wrapper for ReadEnd
 pub struct WaitableRead {
   reader : ReadEnd
 }
 
+///|
 /// Waitable wrapper for FutureRead
 pub struct WaitableFuture[T] {
   future : FutureRead[T]
 }
 
+///|
 /// Create waitable from ReadEnd
 pub fn ReadEnd::as_waitable(self : ReadEnd) -> WaitableRead {
   { reader: self }
 }
 
+///|
 /// Create waitable from FutureRead
 pub fn[T] FutureRead::as_waitable(self : FutureRead[T]) -> WaitableFuture[T] {
   { future: self }
 }
 
 // Implement Waitable for WaitableRead
+
+///|
 pub impl Waitable for WaitableRead with is_ready(self) {
   match self.reader.inner.state {
     HasData(_) | Closed => true
@@ -42,19 +49,24 @@ pub impl Waitable for WaitableRead with is_ready(self) {
   }
 }
 
+///|
 pub impl Waitable for WaitableRead with get_waiter(self) {
   self.reader.inner.reader_waiting
 }
 
+///|
 pub impl Waitable for WaitableRead with set_waiter(self, coro) {
   self.reader.inner.reader_waiting = coro
 }
 
 // Implement Waitable for WaitableFuture
+
+///|
 pub impl[T] Waitable for WaitableFuture[T] with is_ready(self) {
   not(self.future.inner.state is Pending)
 }
 
+///|
 pub impl[T] Waitable for WaitableFuture[T] with get_waiter(self) {
   if self.future.inner.waiters.length() > 0 {
     Some(self.future.inner.waiters[0])
@@ -63,23 +75,25 @@ pub impl[T] Waitable for WaitableFuture[T] with get_waiter(self) {
   }
 }
 
+///|
 pub impl[T] Waitable for WaitableFuture[T] with set_waiter(self, coro) {
   match coro {
-    Some(c) => {
+    Some(c) =>
       if not(self.future.inner.waiters.contains(c)) {
         self.future.inner.waiters.push(c)
       }
-    }
     None => self.future.inner.waiters.clear()
   }
 }
 
+///|
 /// Result of wait_any - which waitable became ready
 pub(all) enum WaitResult {
-  Index(Int)  // Index of ready waitable
-  Timeout     // Timeout occurred (future extension)
+  Index(Int) // Index of ready waitable
+  Timeout // Timeout occurred (future extension)
 }
 
+///|
 /// Wait for any of the waitables to become ready
 /// Returns the index of the first ready waitable
 pub async fn[W : Waitable] wait_any(waitables : Array[W]) -> WaitResult {
@@ -116,13 +130,13 @@ pub async fn[W : Waitable] wait_any(waitables : Array[W]) -> WaitResult {
   wait_any(waitables)
 }
 
+///|
 /// Wait for all waitables to become ready
 pub async fn[W : Waitable] wait_all(waitables : Array[W]) -> Unit {
   let remaining : Array[Int] = []
   for i in 0..<waitables.length() {
     remaining.push(i)
   }
-
   while remaining.length() > 0 {
     // Find next ready
     let mut found = -1
@@ -132,10 +146,10 @@ pub async fn[W : Waitable] wait_all(waitables : Array[W]) -> Unit {
         break
       }
     }
-
     if found >= 0 {
       // Remove from remaining
       let _ = remaining.remove(found)
+
     } else {
       // Wait for any to become ready
       let current = @coroutine.current_coroutine()
@@ -152,16 +166,13 @@ pub async fn[W : Waitable] wait_all(waitables : Array[W]) -> Unit {
   }
 }
 
+///|
 /// Select - wait for first of two different waitable types
-pub async fn[A : Waitable, B : Waitable] select2(
-  a : A,
-  b : B
-) -> (Bool, Bool) {
+pub async fn[A : Waitable, B : Waitable] select2(a : A, b : B) -> (Bool, Bool) {
   // Returns (a_ready, b_ready)
   while true {
     let a_ready = a.is_ready()
     let b_ready = b.is_ready()
-
     if a_ready || b_ready {
       return (a_ready, b_ready)
     }

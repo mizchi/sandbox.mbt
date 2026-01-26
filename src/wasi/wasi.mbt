@@ -7,6 +7,7 @@
 /// - Guest side: Uses this interface for capability checks
 /// - Host side: Implements actual capability enforcement via wasmtime
 
+///|
 /// WASI Sandbox mode
 pub(all) enum WasiSandboxMode {
   /// Pure guest-side sandbox (MemFS only, no host interaction)
@@ -17,6 +18,7 @@ pub(all) enum WasiSandboxMode {
   Hybrid
 } derive(Show, Eq)
 
+///|
 /// WASI Sandbox configuration
 pub struct WasiSandboxConfig {
   mode : WasiSandboxMode
@@ -27,10 +29,11 @@ pub struct WasiSandboxConfig {
   env_whitelist : Array[String]?
   // Network capabilities
   allow_network : Bool
-  allowed_hosts : Array[String]?  // None = all, Some([]) = none
-  allowed_ports : Array[Int]?     // None = all, Some([]) = none
+  allowed_hosts : Array[String]? // None = all, Some([]) = none
+  allowed_ports : Array[Int]? // None = all, Some([]) = none
 }
 
+///|
 /// Create default WASI sandbox config
 pub fn WasiSandboxConfig::default() -> WasiSandboxConfig {
   {
@@ -44,6 +47,7 @@ pub fn WasiSandboxConfig::default() -> WasiSandboxConfig {
   }
 }
 
+///|
 /// Create a restricted WASI sandbox config
 pub fn WasiSandboxConfig::restricted() -> WasiSandboxConfig {
   {
@@ -57,6 +61,7 @@ pub fn WasiSandboxConfig::restricted() -> WasiSandboxConfig {
   }
 }
 
+///|
 /// Create a permissive WASI sandbox config for development
 pub fn WasiSandboxConfig::permissive() -> WasiSandboxConfig {
   {
@@ -70,10 +75,11 @@ pub fn WasiSandboxConfig::permissive() -> WasiSandboxConfig {
   }
 }
 
+///|
 /// Builder methods
 pub fn WasiSandboxConfig::with_mode(
   self : WasiSandboxConfig,
-  mode : WasiSandboxMode
+  mode : WasiSandboxMode,
 ) -> WasiSandboxConfig {
   {
     mode,
@@ -86,9 +92,10 @@ pub fn WasiSandboxConfig::with_mode(
   }
 }
 
+///|
 pub fn WasiSandboxConfig::with_caps(
   self : WasiSandboxConfig,
-  caps : @sandbox.Capabilities
+  caps : @sandbox.Capabilities,
 ) -> WasiSandboxConfig {
   {
     mode: self.mode,
@@ -101,10 +108,11 @@ pub fn WasiSandboxConfig::with_caps(
   }
 }
 
+///|
 pub fn WasiSandboxConfig::with_path_mapping(
   self : WasiSandboxConfig,
   guest_path : String,
-  host_path : String
+  host_path : String,
 ) -> WasiSandboxConfig {
   let mappings = self.path_mappings.copy()
   mappings.push((guest_path, host_path))
@@ -119,9 +127,10 @@ pub fn WasiSandboxConfig::with_path_mapping(
   }
 }
 
+///|
 pub fn WasiSandboxConfig::with_network(
   self : WasiSandboxConfig,
-  allow : Bool
+  allow : Bool,
 ) -> WasiSandboxConfig {
   {
     mode: self.mode,
@@ -134,9 +143,10 @@ pub fn WasiSandboxConfig::with_network(
   }
 }
 
+///|
 pub fn WasiSandboxConfig::with_allowed_hosts(
   self : WasiSandboxConfig,
-  hosts : Array[String]
+  hosts : Array[String],
 ) -> WasiSandboxConfig {
   {
     mode: self.mode,
@@ -149,23 +159,27 @@ pub fn WasiSandboxConfig::with_allowed_hosts(
   }
 }
 
+///|
 /// WASI Sandbox runtime
 pub struct WasiSandbox {
   config : WasiSandboxConfig
-  sandbox : @sandbox.Sandbox  // Underlying guest sandbox
+  sandbox : @sandbox.Sandbox // Underlying guest sandbox
 }
 
+///|
 pub fn WasiSandbox::new(config : WasiSandboxConfig) -> WasiSandbox {
   { config, sandbox: @sandbox.Sandbox::new(config.caps) }
 }
 
+///|
 pub fn WasiSandbox::with_fs(
   fs : @fs.MemFS,
-  config : WasiSandboxConfig
+  config : WasiSandboxConfig,
 ) -> WasiSandbox {
   { config, sandbox: @sandbox.Sandbox::with_fs(fs, config.caps) }
 }
 
+///|
 /// Map guest path to host path
 pub fn WasiSandbox::map_path(self : WasiSandbox, guest_path : String) -> String {
   for mapping in self.config.path_mappings {
@@ -182,6 +196,7 @@ pub fn WasiSandbox::map_path(self : WasiSandbox, guest_path : String) -> String 
   guest_path
 }
 
+///|
 /// Extract substring from start index to end of string
 fn wasi_substring_from(s : String, start : Int) -> String {
   if start >= s.length() {
@@ -195,11 +210,9 @@ fn wasi_substring_from(s : String, start : Int) -> String {
   result.to_string()
 }
 
+///|
 /// Check if host is allowed for network access
-pub fn WasiSandbox::check_host(
-  self : WasiSandbox,
-  host : String
-) -> Bool {
+pub fn WasiSandbox::check_host(self : WasiSandbox, host : String) -> Bool {
   if not(self.config.allow_network) {
     return false
   }
@@ -209,6 +222,7 @@ pub fn WasiSandbox::check_host(
   }
 }
 
+///|
 /// Check if port is allowed for network access
 pub fn WasiSandbox::check_port(self : WasiSandbox, port : Int) -> Bool {
   if not(self.config.allow_network) {
@@ -220,6 +234,7 @@ pub fn WasiSandbox::check_port(self : WasiSandbox, port : Int) -> Bool {
   }
 }
 
+///|
 /// Check environment variable access
 pub fn WasiSandbox::check_env(self : WasiSandbox, name : String) -> Bool {
   match self.config.env_whitelist {
@@ -230,11 +245,12 @@ pub fn WasiSandbox::check_env(self : WasiSandbox, name : String) -> Bool {
 
 // ============ Sandboxed Operations (delegating to underlying Sandbox) ============
 
+///|
 pub fn WasiSandbox::open(
   self : WasiSandbox,
   path : String,
   flags : @posix.OpenFlags,
-  mode : @posix.FileMode
+  mode : @posix.FileMode,
 ) -> @posix.Fd raise @sandbox.SandboxError {
   // Map path for host-enforced mode
   let mapped_path = match self.config.mode {
@@ -244,27 +260,37 @@ pub fn WasiSandbox::open(
   self.sandbox.open(mapped_path, flags, mode)
 }
 
-pub fn WasiSandbox::close(self : WasiSandbox, fd : @posix.Fd) -> Unit raise @sandbox.SandboxError {
+///|
+pub fn WasiSandbox::close(
+  self : WasiSandbox,
+  fd : @posix.Fd,
+) -> Unit raise @sandbox.SandboxError {
   self.sandbox.close(fd)
 }
 
+///|
 pub fn WasiSandbox::read(
   self : WasiSandbox,
   fd : @posix.Fd,
-  count : Int
+  count : Int,
 ) -> Bytes raise @sandbox.SandboxError {
   self.sandbox.read(fd, count)
 }
 
+///|
 pub fn WasiSandbox::write(
   self : WasiSandbox,
   fd : @posix.Fd,
-  data : Bytes
+  data : Bytes,
 ) -> Int raise @sandbox.SandboxError {
   self.sandbox.write(fd, data)
 }
 
-pub fn WasiSandbox::mkdir(self : WasiSandbox, path : String) -> Unit raise @sandbox.SandboxError {
+///|
+pub fn WasiSandbox::mkdir(
+  self : WasiSandbox,
+  path : String,
+) -> Unit raise @sandbox.SandboxError {
   let mapped_path = match self.config.mode {
     HostEnforced | Hybrid => self.map_path(path)
     GuestOnly => path
@@ -272,7 +298,11 @@ pub fn WasiSandbox::mkdir(self : WasiSandbox, path : String) -> Unit raise @sand
   self.sandbox.mkdir(mapped_path)
 }
 
-pub fn WasiSandbox::remove(self : WasiSandbox, path : String) -> Unit raise @sandbox.SandboxError {
+///|
+pub fn WasiSandbox::remove(
+  self : WasiSandbox,
+  path : String,
+) -> Unit raise @sandbox.SandboxError {
   let mapped_path = match self.config.mode {
     HostEnforced | Hybrid => self.map_path(path)
     GuestOnly => path
@@ -280,19 +310,22 @@ pub fn WasiSandbox::remove(self : WasiSandbox, path : String) -> Unit raise @san
   self.sandbox.remove(mapped_path)
 }
 
+///|
 pub fn WasiSandbox::exec(
   self : WasiSandbox,
   cmd : String,
-  args : Array[String]
+  args : Array[String],
 ) -> @posix.Pid raise @sandbox.SandboxError {
   self.sandbox.exec(cmd, args)
 }
 
+///|
 /// Get underlying sandbox
 pub fn WasiSandbox::get_sandbox(self : WasiSandbox) -> @sandbox.Sandbox {
   self.sandbox
 }
 
+///|
 /// Get config
 pub fn WasiSandbox::get_config(self : WasiSandbox) -> WasiSandboxConfig {
   self.config

@@ -1,11 +1,13 @@
 /// CLI argument parser for Deno-like permissions
 
+///|
 /// Parse result
 pub struct ParsedArgs {
   permissions : Permissions
   program_args : Array[String]
 }
 
+///|
 /// Parse CLI arguments into permissions and program args
 ///
 /// Supported flags:
@@ -24,10 +26,8 @@ pub fn parse_args(args : Array[String]) -> ParsedArgs {
   let permissions = Permissions::new()
   let program_args : Array[String] = []
   let mut i = 0
-
   while i < args.length() {
     let arg = args[i]
-
     if arg == "--allow-all" {
       permissions.allow(PermissionDescriptor::Read(path=None))
       permissions.allow(PermissionDescriptor::Write(path=None))
@@ -37,7 +37,6 @@ pub fn parse_args(args : Array[String]) -> ParsedArgs {
       i += 1
       continue
     }
-
     if arg == "--" {
       // Everything after -- is program args
       i += 1
@@ -55,28 +54,24 @@ pub fn parse_args(args : Array[String]) -> ParsedArgs {
       i += 1
       continue
     }
-
     if arg.has_prefix("--allow-write") {
       let path = parse_flag_value(arg, "--allow-write")
       permissions.allow(PermissionDescriptor::Write(path~))
       i += 1
       continue
     }
-
     if arg.has_prefix("--allow-net") {
       let host = parse_flag_value(arg, "--allow-net")
       permissions.allow(PermissionDescriptor::Net(host~))
       i += 1
       continue
     }
-
     if arg.has_prefix("--allow-env") {
       let variable = parse_flag_value(arg, "--allow-env")
       permissions.allow(PermissionDescriptor::Env(variable~))
       i += 1
       continue
     }
-
     if arg.has_prefix("--allow-run") {
       let command = parse_flag_value(arg, "--allow-run")
       permissions.allow(PermissionDescriptor::Run(command~))
@@ -91,28 +86,24 @@ pub fn parse_args(args : Array[String]) -> ParsedArgs {
       i += 1
       continue
     }
-
     if arg.has_prefix("--deny-write") {
       let path = parse_flag_value(arg, "--deny-write")
       permissions.deny(PermissionDescriptor::Write(path~))
       i += 1
       continue
     }
-
     if arg.has_prefix("--deny-net") {
       let host = parse_flag_value(arg, "--deny-net")
       permissions.deny(PermissionDescriptor::Net(host~))
       i += 1
       continue
     }
-
     if arg.has_prefix("--deny-env") {
       let variable = parse_flag_value(arg, "--deny-env")
       permissions.deny(PermissionDescriptor::Env(variable~))
       i += 1
       continue
     }
-
     if arg.has_prefix("--deny-run") {
       let command = parse_flag_value(arg, "--deny-run")
       permissions.deny(PermissionDescriptor::Run(command~))
@@ -124,10 +115,10 @@ pub fn parse_args(args : Array[String]) -> ParsedArgs {
     program_args.push(arg)
     i += 1
   }
-
   { permissions, program_args }
 }
 
+///|
 /// Parse flag value from --flag=value or --flag (returns None)
 fn parse_flag_value(arg : String, prefix : String) -> String? {
   if arg == prefix {
@@ -144,8 +135,11 @@ fn parse_flag_value(arg : String, prefix : String) -> String? {
   None
 }
 
+///|
 /// Create SandboxedBackend from CLI args
-pub fn create_sandbox_from_args(args : Array[String]) -> (SandboxedBackend, Array[String]) {
+pub fn create_sandbox_from_args(
+  args : Array[String],
+) -> (SandboxedBackend, Array[String]) {
   let parsed = parse_args(args)
   let backend = SandboxedBackend::new(parsed.permissions)
   (backend, parsed.program_args)

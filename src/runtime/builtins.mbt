@@ -1,5 +1,6 @@
 /// Builtin commands for MemfsBackend
 
+///|
 /// Register all builtin commands
 pub fn MemfsBackend::register_builtins(self : MemfsBackend) -> Unit {
   self.register("echo", builtin_echo)
@@ -71,7 +72,11 @@ fn builtin_ls(ctx : ProcessContext) -> Int {
       Err(e)
     }
   }
-  if result is Err(_) { 1 } else { 0 }
+  if result is Err(_) {
+    1
+  } else {
+    0
+  }
 }
 
 ///|
@@ -145,7 +150,11 @@ fn builtin_cd(ctx : ProcessContext) -> Int {
       Err(e)
     }
   }
-  if result is Err(_) { 1 } else { 0 }
+  if result is Err(_) {
+    1
+  } else {
+    0
+  }
 }
 
 ///|
@@ -183,11 +192,12 @@ fn builtin_head(ctx : ProcessContext) -> Int {
       i += 1
     }
   }
-
   let backend = ctx.backend
-
   fn output_head(content : String, n : Int, ctx : ProcessContext) -> Unit {
-    let lines : Array[String] = content.split("\n").map(fn(s) { s.to_string() }).collect()
+    let lines : Array[String] = content
+      .split("\n")
+      .map(fn(s) { s.to_string() })
+      .collect()
     for j = 0; j < n && j < lines.length(); j = j + 1 {
       ctx.write_stdout(lines[j])
       if j < n - 1 && j < lines.length() - 1 {
@@ -201,7 +211,6 @@ fn builtin_head(ctx : ProcessContext) -> Int {
     output_head(ctx.read_stdin(), n, ctx)
     return 0
   }
-
   for path in files {
     let result : Result[Unit, IOError] = try {
       let fd = backend.open(path, OpenFlags::read_only())
@@ -238,11 +247,12 @@ fn builtin_tail(ctx : ProcessContext) -> Int {
       i += 1
     }
   }
-
   let backend = ctx.backend
-
   fn output_tail(content : String, n : Int, ctx : ProcessContext) -> Unit {
-    let lines : Array[String] = content.split("\n").map(fn(s) { s.to_string() }).collect()
+    let lines : Array[String] = content
+      .split("\n")
+      .map(fn(s) { s.to_string() })
+      .collect()
     let start = if lines.length() > n { lines.length() - n } else { 0 }
     for j = start; j < lines.length(); j = j + 1 {
       ctx.write_stdout(lines[j])
@@ -256,7 +266,6 @@ fn builtin_tail(ctx : ProcessContext) -> Int {
     output_tail(ctx.read_stdin(), n, ctx)
     return 0
   }
-
   for path in files {
     let result : Result[Unit, IOError] = try {
       let fd = backend.open(path, OpenFlags::read_only())
@@ -280,7 +289,6 @@ fn builtin_tail(ctx : ProcessContext) -> Int {
 ///|
 fn builtin_wc(ctx : ProcessContext) -> Int {
   let backend = ctx.backend
-
   fn count_stats(content : String) -> (Int, Int, Int) {
     let lines = content.split("\n").count()
     let words = content.split(" ").filter(fn(s) { not(s.is_empty()) }).count()
@@ -294,7 +302,6 @@ fn builtin_wc(ctx : ProcessContext) -> Int {
     ctx.write_stdout("\{lines}\t\{words}\t\{bytes}\n")
     return 0
   }
-
   for path in ctx.args {
     let result : Result[Unit, IOError] = try {
       let fd = backend.open(path, OpenFlags::read_only())
@@ -323,13 +330,15 @@ fn builtin_grep(ctx : ProcessContext) -> Int {
     ctx.write_stderr("grep: missing pattern\n")
     return 1
   }
-
   let pattern = ctx.args[0]
   let files = ctx.args[1:]
   let backend = ctx.backend
   let mut found = false
-
-  fn grep_content(content : String, pattern : String, ctx : ProcessContext) -> Bool {
+  fn grep_content(
+    content : String,
+    pattern : String,
+    ctx : ProcessContext,
+  ) -> Bool {
     let mut matched = false
     for line in content.split("\n") {
       if line.to_string().contains(pattern) {
@@ -367,8 +376,11 @@ fn builtin_grep(ctx : ProcessContext) -> Int {
       }
     }
   }
-
-  if found { 0 } else { 1 }
+  if found {
+    0
+  } else {
+    1
+  }
 }
 
 ///|
@@ -378,7 +390,6 @@ fn builtin_touch(ctx : ProcessContext) -> Int {
     ctx.write_stderr("touch: missing operand\n")
     return 1
   }
-
   for path in ctx.args {
     let result : Result[Unit, IOError] = try {
       let fd = backend.open(path, OpenFlags::create())
@@ -404,15 +415,12 @@ fn builtin_cp(ctx : ProcessContext) -> Int {
     ctx.write_stderr("cp: missing operand\n")
     return 1
   }
-
   let src = ctx.args[0]
   let dst = ctx.args[1]
-
   let result : Result[Unit, IOError] = try {
     let fd_src = backend.open(src, OpenFlags::read_only())
     let data = backend.read(fd_src, 1024 * 1024)
     backend.close(fd_src)
-
     let fd_dst = backend.open(dst, OpenFlags::create())
     let _ = backend.write(fd_dst, data)
     backend.close(fd_dst)
@@ -423,8 +431,11 @@ fn builtin_cp(ctx : ProcessContext) -> Int {
       Err(e)
     }
   }
-
-  if result is Err(_) { 1 } else { 0 }
+  if result is Err(_) {
+    1
+  } else {
+    0
+  }
 }
 
 ///|
@@ -434,10 +445,8 @@ fn builtin_mv(ctx : ProcessContext) -> Int {
     ctx.write_stderr("mv: missing operand\n")
     return 1
   }
-
   let src = ctx.args[0]
   let dst = ctx.args[1]
-
   let result : Result[Unit, IOError] = try {
     backend.rename(src, dst)
     Ok(())
@@ -447,8 +456,11 @@ fn builtin_mv(ctx : ProcessContext) -> Int {
       Err(e)
     }
   }
-
-  if result is Err(_) { 1 } else { 0 }
+  if result is Err(_) {
+    1
+  } else {
+    0
+  }
 }
 
 ///|

@@ -1,5 +1,6 @@
 /// Sandbox Security Configuration
 
+///|
 /// Capability flags for operations
 pub struct Capabilities {
   // File operations
@@ -15,23 +16,24 @@ pub struct Capabilities {
 
   // Execution
   can_exec : Bool
-  allowed_commands : Array[String]?  // None = all, Some([]) = none
+  allowed_commands : Array[String]? // None = all, Some([]) = none
 
   // Path restrictions
-  allowed_paths : Array[String]?      // None = all paths allowed
-  denied_paths : Array[String]        // Always denied (higher priority)
+  allowed_paths : Array[String]? // None = all paths allowed
+  denied_paths : Array[String] // Always denied (higher priority)
 
   // Resource limits
-  max_file_size : Int?         // bytes, None = unlimited
-  max_total_size : Int?        // bytes
-  max_open_files : Int?        // count
-  max_path_depth : Int?        // directory depth
+  max_file_size : Int? // bytes, None = unlimited
+  max_total_size : Int? // bytes
+  max_open_files : Int? // count
+  max_path_depth : Int? // directory depth
 
   // Time/Resource limits
-  max_exec_time_ms : Int64?    // execution timeout
-  max_memory_bytes : Int?      // memory limit
+  max_exec_time_ms : Int64? // execution timeout
+  max_memory_bytes : Int? // memory limit
 }
 
+///|
 /// Preset security profiles
 pub fn Capabilities::unrestricted() -> Capabilities {
   {
@@ -55,6 +57,7 @@ pub fn Capabilities::unrestricted() -> Capabilities {
   }
 }
 
+///|
 /// Read-only sandbox (safe for untrusted code)
 pub fn Capabilities::read_only() -> Capabilities {
   {
@@ -78,6 +81,7 @@ pub fn Capabilities::read_only() -> Capabilities {
   }
 }
 
+///|
 /// Restricted write (e.g., for build tools)
 pub fn Capabilities::build_sandbox() -> Capabilities {
   {
@@ -92,15 +96,16 @@ pub fn Capabilities::build_sandbox() -> Capabilities {
     allowed_commands: Some(["moon", "moonc", "moonrun", "ls", "cat", "echo"]),
     allowed_paths: Some(["/tmp", "/build", "/src"]),
     denied_paths: ["/etc", "/bin", "/home"],
-    max_file_size: Some(10 * 1024 * 1024),  // 10MB
+    max_file_size: Some(10 * 1024 * 1024), // 10MB
     max_total_size: Some(100 * 1024 * 1024), // 100MB
     max_open_files: Some(64),
     max_path_depth: Some(20),
-    max_exec_time_ms: Some(60000L),  // 1 minute
+    max_exec_time_ms: Some(60000L), // 1 minute
     max_memory_bytes: Some(256 * 1024 * 1024), // 256MB
   }
 }
 
+///|
 /// Minimal sandbox for untrusted plugins
 pub fn Capabilities::plugin_sandbox() -> Capabilities {
   {
@@ -115,17 +120,21 @@ pub fn Capabilities::plugin_sandbox() -> Capabilities {
     allowed_commands: Some([]),
     allowed_paths: Some(["/tmp/plugin"]),
     denied_paths: [],
-    max_file_size: Some(1024 * 1024),  // 1MB
+    max_file_size: Some(1024 * 1024), // 1MB
     max_total_size: Some(10 * 1024 * 1024), // 10MB
     max_open_files: Some(8),
     max_path_depth: Some(5),
-    max_exec_time_ms: Some(1000L),  // 1 second
+    max_exec_time_ms: Some(1000L), // 1 second
     max_memory_bytes: Some(16 * 1024 * 1024), // 16MB
   }
 }
 
+///|
 /// Builder methods for customizing capabilities
-pub fn Capabilities::with_allowed_paths(self : Capabilities, paths : Array[String]) -> Capabilities {
+pub fn Capabilities::with_allowed_paths(
+  self : Capabilities,
+  paths : Array[String],
+) -> Capabilities {
   {
     can_read: self.can_read,
     can_write: self.can_write,
@@ -147,7 +156,11 @@ pub fn Capabilities::with_allowed_paths(self : Capabilities, paths : Array[Strin
   }
 }
 
-pub fn Capabilities::with_denied_paths(self : Capabilities, paths : Array[String]) -> Capabilities {
+///|
+pub fn Capabilities::with_denied_paths(
+  self : Capabilities,
+  paths : Array[String],
+) -> Capabilities {
   {
     can_read: self.can_read,
     can_write: self.can_write,
@@ -169,7 +182,11 @@ pub fn Capabilities::with_denied_paths(self : Capabilities, paths : Array[String
   }
 }
 
-pub fn Capabilities::with_allowed_commands(self : Capabilities, cmds : Array[String]) -> Capabilities {
+///|
+pub fn Capabilities::with_allowed_commands(
+  self : Capabilities,
+  cmds : Array[String],
+) -> Capabilities {
   {
     can_read: self.can_read,
     can_write: self.can_write,
@@ -191,7 +208,11 @@ pub fn Capabilities::with_allowed_commands(self : Capabilities, cmds : Array[Str
   }
 }
 
-pub fn Capabilities::with_exec(self : Capabilities, can_exec : Bool) -> Capabilities {
+///|
+pub fn Capabilities::with_exec(
+  self : Capabilities,
+  can_exec : Bool,
+) -> Capabilities {
   {
     can_read: self.can_read,
     can_write: self.can_write,
@@ -213,7 +234,11 @@ pub fn Capabilities::with_exec(self : Capabilities, can_exec : Bool) -> Capabili
   }
 }
 
-pub fn Capabilities::with_delete(self : Capabilities, can_delete : Bool) -> Capabilities {
+///|
+pub fn Capabilities::with_delete(
+  self : Capabilities,
+  can_delete : Bool,
+) -> Capabilities {
   {
     can_read: self.can_read,
     can_write: self.can_write,
@@ -235,7 +260,11 @@ pub fn Capabilities::with_delete(self : Capabilities, can_delete : Bool) -> Capa
   }
 }
 
-pub fn Capabilities::with_max_file_size(self : Capabilities, size : Int) -> Capabilities {
+///|
+pub fn Capabilities::with_max_file_size(
+  self : Capabilities,
+  size : Int,
+) -> Capabilities {
   {
     can_read: self.can_read,
     can_write: self.can_write,
@@ -257,7 +286,11 @@ pub fn Capabilities::with_max_file_size(self : Capabilities, size : Int) -> Capa
   }
 }
 
-pub fn Capabilities::with_max_open_files(self : Capabilities, count : Int) -> Capabilities {
+///|
+pub fn Capabilities::with_max_open_files(
+  self : Capabilities,
+  count : Int,
+) -> Capabilities {
   {
     can_read: self.can_read,
     can_write: self.can_write,
@@ -279,7 +312,11 @@ pub fn Capabilities::with_max_open_files(self : Capabilities, count : Int) -> Ca
   }
 }
 
-pub fn Capabilities::with_max_path_depth(self : Capabilities, depth : Int) -> Capabilities {
+///|
+pub fn Capabilities::with_max_path_depth(
+  self : Capabilities,
+  depth : Int,
+) -> Capabilities {
   {
     can_read: self.can_read,
     can_write: self.can_write,
@@ -301,15 +338,17 @@ pub fn Capabilities::with_max_path_depth(self : Capabilities, depth : Int) -> Ca
   }
 }
 
+///|
 /// Security violation error
 pub(all) suberror SandboxError {
-  PermissionDenied(String)     // Operation not allowed
-  PathDenied(String)           // Path access denied
-  CommandDenied(String)        // Command not allowed
+  PermissionDenied(String) // Operation not allowed
+  PathDenied(String) // Path access denied
+  CommandDenied(String) // Command not allowed
   ResourceLimitExceeded(String) // Limit exceeded
-  IOError(String)              // Underlying IO error
+  IOError(String) // Underlying IO error
 } derive(Show, Eq)
 
+///|
 /// Sandboxed POSIX context
 pub struct Sandbox {
   ctx : @posix.PosixContext
@@ -317,25 +356,23 @@ pub struct Sandbox {
   mut open_file_count : Int
 }
 
+///|
 pub fn Sandbox::new(caps : Capabilities) -> Sandbox {
   let fs = @fs.MemFS::new()
-  {
-    ctx: @posix.PosixContext::new(fs),
-    caps,
-    open_file_count: 0,
-  }
+  { ctx: @posix.PosixContext::new(fs), caps, open_file_count: 0 }
 }
 
+///|
 pub fn Sandbox::with_fs(fs : @fs.MemFS, caps : Capabilities) -> Sandbox {
-  {
-    ctx: @posix.PosixContext::new(fs),
-    caps,
-    open_file_count: 0,
-  }
+  { ctx: @posix.PosixContext::new(fs), caps, open_file_count: 0 }
 }
 
+///|
 /// Check if path is allowed
-fn Sandbox::check_path(self : Sandbox, path : String) -> Unit raise SandboxError {
+fn Sandbox::check_path(
+  self : Sandbox,
+  path : String,
+) -> Unit raise SandboxError {
   let abs_path = self.ctx.resolve_path(path)
 
   // Check denied paths first (higher priority)
@@ -359,7 +396,7 @@ fn Sandbox::check_path(self : Sandbox, path : String) -> Unit raise SandboxError
         raise PathDenied("Path not in allowed list: " + abs_path)
       }
     }
-    None => ()  // All paths allowed
+    None => () // All paths allowed
   }
 
   // Check path depth
@@ -367,59 +404,69 @@ fn Sandbox::check_path(self : Sandbox, path : String) -> Unit raise SandboxError
     Some(max_depth) => {
       let depth = count_path_depth(abs_path)
       if depth > max_depth {
-        raise ResourceLimitExceeded("Path depth exceeds limit: " + depth.to_string())
+        raise ResourceLimitExceeded(
+          "Path depth exceeds limit: " + depth.to_string(),
+        )
       }
     }
     None => ()
   }
 }
 
+///|
 /// Check if command is allowed
-fn Sandbox::check_command(self : Sandbox, cmd : String) -> Unit raise SandboxError {
+fn Sandbox::check_command(
+  self : Sandbox,
+  cmd : String,
+) -> Unit raise SandboxError {
   if not(self.caps.can_exec) {
     raise PermissionDenied("Execution not allowed")
   }
-
   match self.caps.allowed_commands {
-    Some(allowed) => {
+    Some(allowed) =>
       if not(allowed.contains(cmd)) {
         raise CommandDenied("Command not allowed: " + cmd)
       }
-    }
-    None => ()  // All commands allowed
+    None => () // All commands allowed
   }
 }
 
+///|
 /// Check resource limits
-fn Sandbox::check_file_size(self : Sandbox, size : Int) -> Unit raise SandboxError {
+fn Sandbox::check_file_size(
+  self : Sandbox,
+  size : Int,
+) -> Unit raise SandboxError {
   match self.caps.max_file_size {
-    Some(max_size) => {
+    Some(max_size) =>
       if size > max_size {
-        raise ResourceLimitExceeded("File size exceeds limit: " + size.to_string() + " bytes")
+        raise ResourceLimitExceeded(
+          "File size exceeds limit: " + size.to_string() + " bytes",
+        )
       }
-    }
     None => ()
   }
 }
 
+///|
 fn Sandbox::check_open_files(self : Sandbox) -> Unit raise SandboxError {
   match self.caps.max_open_files {
-    Some(max_files) => {
+    Some(max_files) =>
       if self.open_file_count >= max_files {
         raise ResourceLimitExceeded("Too many open files")
       }
-    }
     None => ()
   }
 }
 
 // ============ Sandboxed Operations ============
 
+///|
 pub fn Sandbox::open(
   self : Sandbox,
   path : String,
   flags : @posix.OpenFlags,
-  mode : @posix.FileMode
+  mode : @posix.FileMode,
 ) -> @posix.Fd raise SandboxError {
   // Check permissions
   if flags.is_readable() && not(self.caps.can_read) {
@@ -431,10 +478,8 @@ pub fn Sandbox::open(
   if flags.has(@posix.O_CREAT) && not(self.caps.can_create) {
     raise PermissionDenied("Create not allowed")
   }
-
   self.check_path(path)
   self.check_open_files()
-
   try {
     let fd = self.ctx.open(path, flags, mode)
     self.open_file_count += 1
@@ -444,7 +489,11 @@ pub fn Sandbox::open(
   }
 }
 
-pub fn Sandbox::close(self : Sandbox, fd : @posix.Fd) -> Unit raise SandboxError {
+///|
+pub fn Sandbox::close(
+  self : Sandbox,
+  fd : @posix.Fd,
+) -> Unit raise SandboxError {
   try {
     self.ctx.close(fd)
     if self.open_file_count > 0 {
@@ -455,67 +504,77 @@ pub fn Sandbox::close(self : Sandbox, fd : @posix.Fd) -> Unit raise SandboxError
   }
 }
 
-pub fn Sandbox::read(self : Sandbox, fd : @posix.Fd, count : Int) -> Bytes raise SandboxError {
+///|
+pub fn Sandbox::read(
+  self : Sandbox,
+  fd : @posix.Fd,
+  count : Int,
+) -> Bytes raise SandboxError {
   if not(self.caps.can_read) {
     raise PermissionDenied("Read not allowed")
   }
-  try {
-    self.ctx.read(fd, count)
-  } catch {
+  self.ctx.read(fd, count) catch {
     _ => raise IOError("Failed to read")
   }
 }
 
-pub fn Sandbox::write(self : Sandbox, fd : @posix.Fd, data : Bytes) -> Int raise SandboxError {
+///|
+pub fn Sandbox::write(
+  self : Sandbox,
+  fd : @posix.Fd,
+  data : Bytes,
+) -> Int raise SandboxError {
   if not(self.caps.can_write) {
     raise PermissionDenied("Write not allowed")
   }
   self.check_file_size(data.length())
-  try {
-    self.ctx.write(fd, data)
-  } catch {
+  self.ctx.write(fd, data) catch {
     _ => raise IOError("Failed to write")
   }
 }
 
+///|
 pub fn Sandbox::mkdir(self : Sandbox, path : String) -> Unit raise SandboxError {
   if not(self.caps.can_mkdir) {
     raise PermissionDenied("mkdir not allowed")
   }
   self.check_path(path)
-  try {
-    self.ctx.get_fs().mkdir(self.ctx.resolve_path(path))
-  } catch {
+  self.ctx.get_fs().mkdir(self.ctx.resolve_path(path)) catch {
     _ => raise IOError("mkdir failed")
   }
 }
 
-pub fn Sandbox::remove(self : Sandbox, path : String) -> Unit raise SandboxError {
+///|
+pub fn Sandbox::remove(
+  self : Sandbox,
+  path : String,
+) -> Unit raise SandboxError {
   if not(self.caps.can_delete) {
     raise PermissionDenied("Delete not allowed")
   }
   self.check_path(path)
-  try {
-    self.ctx.get_fs().remove(self.ctx.resolve_path(path))
-  } catch {
+  self.ctx.get_fs().remove(self.ctx.resolve_path(path)) catch {
     _ => raise IOError("remove failed")
   }
 }
 
+///|
 pub fn Sandbox::exec(
   self : Sandbox,
   cmd : String,
-  args : Array[String]
+  args : Array[String],
 ) -> @posix.Pid raise SandboxError {
   self.check_command(cmd)
   self.ctx.spawn(cmd, args)
 }
 
+///|
 /// Get the underlying context (for advanced operations)
 pub fn Sandbox::get_ctx(self : Sandbox) -> @posix.PosixContext {
   self.ctx
 }
 
+///|
 /// Get capabilities
 pub fn Sandbox::get_caps(self : Sandbox) -> Capabilities {
   self.caps
@@ -523,6 +582,7 @@ pub fn Sandbox::get_caps(self : Sandbox) -> Capabilities {
 
 // ============ Helpers ============
 
+///|
 fn count_path_depth(path : String) -> Int {
   let mut depth = 0
   for c in path {

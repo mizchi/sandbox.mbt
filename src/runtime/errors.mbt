@@ -1,5 +1,6 @@
 /// Runtime errors
 
+///|
 /// IO Error
 pub(all) suberror IOError {
   NotFound(String)
@@ -13,6 +14,7 @@ pub(all) suberror IOError {
   Other(String)
 } derive(Show, Eq)
 
+///|
 /// Process Error
 pub(all) suberror ProcessError {
   NotFound(String)
@@ -23,6 +25,7 @@ pub(all) suberror ProcessError {
   Other(String)
 } derive(Show, Eq)
 
+///|
 /// Network Error
 pub(all) suberror NetworkError {
   ConnectionRefused(String)

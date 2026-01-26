@@ -1,5 +1,6 @@
 /// Runtime traits - abstract interfaces for different backends
 
+///|
 /// Filesystem operations
 pub(open) trait Filesystem {
   // File operations
@@ -24,6 +25,7 @@ pub(open) trait Filesystem {
   realpath(Self, String) -> String raise IOError
 }
 
+///|
 /// Process handle returned by spawn
 pub(all) struct Process {
   pid : Pid
@@ -35,6 +37,7 @@ pub fn Process::pid(self : Process) -> Pid {
   self.pid
 }
 
+///|
 /// Process management
 pub(open) trait ProcessManager {
   spawn(Self, Command) -> Process raise ProcessError
@@ -48,30 +51,32 @@ pub(open) trait ProcessManager {
   write_stdin(Self, Pid, String) -> Unit raise ProcessError
 }
 
+///|
 /// TCP stream abstraction
 pub(all) struct TcpConn {
-  id : Int  // Internal connection ID
+  id : Int // Internal connection ID
 }
 
+///|
 /// TCP listener abstraction
 pub(all) struct TcpListenerHandle {
   id : Int
 }
 
+///|
 /// Network operations
 pub(open) trait Network {
   tcp_connect(Self, SocketAddr) -> TcpConn raise NetworkError
   tcp_read(Self, TcpConn, Int) -> Bytes raise NetworkError
   tcp_write(Self, TcpConn, Bytes) -> Int raise NetworkError
   tcp_close(Self, TcpConn) -> Unit
-
   tcp_listen(Self, SocketAddr) -> TcpListenerHandle raise NetworkError
   tcp_accept(Self, TcpListenerHandle) -> TcpConn raise NetworkError
   tcp_listener_close(Self, TcpListenerHandle) -> Unit
-
   resolve(Self, String) -> Array[String] raise NetworkError
 }
 
+///|
 /// Environment operations
 pub(open) trait Environment {
   get_env(Self, String) -> String?

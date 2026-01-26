@@ -14,7 +14,6 @@ test "builtin: head" {
     .stdout(Stdio::Piped)
   let proc = backend.spawn(cmd)
   assert_eq(backend.wait(proc.pid()).code, 0)
-
   let output = backend.read_stdout(proc.pid())
   assert_true(output.contains("line1"))
   assert_true(output.contains("line2"))
@@ -37,7 +36,6 @@ test "builtin: tail" {
     .stdout(Stdio::Piped)
   let proc = backend.spawn(cmd)
   assert_eq(backend.wait(proc.pid()).code, 0)
-
   let output = backend.read_stdout(proc.pid())
   assert_false(output.contains("line3"))
   assert_true(output.contains("line4"))
@@ -60,7 +58,6 @@ test "builtin: grep" {
     .stdout(Stdio::Piped)
   let proc = backend.spawn(cmd)
   assert_eq(backend.wait(proc.pid()).code, 0)
-
   let output = backend.read_stdout(proc.pid())
   assert_true(output.contains("hello world"))
   assert_true(output.contains("hello again"))
@@ -71,7 +68,6 @@ test "builtin: grep" {
 test "builtin: grep not found" {
   let backend = MemfsBackend::new()
   backend.register_builtins()
-
   let fd = backend.open("/test.txt", OpenFlags::create())
   let _ = backend.write(fd, b"hello world")
   backend.close(fd)
@@ -90,17 +86,12 @@ test "builtin: grep not found" {
 test "builtin: wc" {
   let backend = MemfsBackend::new()
   backend.register_builtins()
-
   let fd = backend.open("/test.txt", OpenFlags::create())
   let _ = backend.write(fd, b"hello world\nfoo bar")
   backend.close(fd)
-
-  let cmd = Command::new("wc")
-    .arg("/test.txt")
-    .stdout(Stdio::Piped)
+  let cmd = Command::new("wc").arg("/test.txt").stdout(Stdio::Piped)
   let proc = backend.spawn(cmd)
   assert_eq(backend.wait(proc.pid()).code, 0)
-
   let output = backend.read_stdout(proc.pid())
   // Should contain line count, word count, byte count
   assert_true(output.contains("2")) // 2 lines
@@ -122,7 +113,9 @@ test "builtin: touch and cp" {
   backend.close(fd)
 
   // cp copies file
-  let proc2 = backend.spawn(Command::new("cp").args(["/newfile.txt", "/copy.txt"]))
+  let proc2 = backend.spawn(
+    Command::new("cp").args(["/newfile.txt", "/copy.txt"]),
+  )
   assert_eq(backend.wait(proc2.pid()).code, 0)
   assert_true(backend.exists("/copy.txt"))
 
@@ -144,9 +137,10 @@ test "builtin: mv" {
   backend.close(fd)
 
   // mv renames file
-  let proc = backend.spawn(Command::new("mv").args(["/original.txt", "/renamed.txt"]))
+  let proc = backend.spawn(
+    Command::new("mv").args(["/original.txt", "/renamed.txt"]),
+  )
   assert_eq(backend.wait(proc.pid()).code, 0)
-
   assert_false(backend.exists("/original.txt"))
   assert_true(backend.exists("/renamed.txt"))
 }

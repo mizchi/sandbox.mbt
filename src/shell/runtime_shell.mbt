@@ -1,5 +1,6 @@
 /// Minimal shell implementation (busybox-like) using runtime backend
 
+///|
 /// RuntimeShell instance using MemfsBackend
 pub struct RuntimeShell {
   backend : @runtime.MemfsBackend
@@ -17,13 +18,16 @@ pub fn RuntimeShell::new() -> RuntimeShell {
 }
 
 ///|
-pub fn RuntimeShell::with_backend(backend : @runtime.MemfsBackend) -> RuntimeShell {
+pub fn RuntimeShell::with_backend(
+  backend : @runtime.MemfsBackend,
+) -> RuntimeShell {
   backend.register_builtins()
   backend.register("exit", builtin_exit)
   backend.register("help", builtin_help)
   { backend, running: true }
 }
 
+///|
 /// Execute a single command line
 pub fn RuntimeShell::execute(self : RuntimeShell, line : String) -> ExecResult {
   let trimmed = line.trim()
@@ -36,7 +40,6 @@ pub fn RuntimeShell::execute(self : RuntimeShell, line : String) -> ExecResult {
   if parts.is_empty() {
     return { exit_code: 0, stdout: "", stderr: "" }
   }
-
   let program = parts[0]
   let args : Array[String] = []
   for i = 1; i < parts.length(); i = i + 1 {
@@ -54,7 +57,6 @@ pub fn RuntimeShell::execute(self : RuntimeShell, line : String) -> ExecResult {
     .args(args)
     .stdout(@runtime.Stdio::Piped)
     .stderr(@runtime.Stdio::Piped)
-
   let result : Result[ExecResult, @runtime.ProcessError] = try {
     let proc = self.backend.spawn(cmd)
     let pid = proc.pid()
@@ -65,15 +67,18 @@ pub fn RuntimeShell::execute(self : RuntimeShell, line : String) -> ExecResult {
   } catch {
     e => Err(e)
   }
-
   match result {
     Ok(r) => r
     Err(e) => { exit_code: 127, stdout: "", stderr: "shell: \{e}\n" }
   }
 }
 
+///|
 /// Execute multiple commands (script)
-pub fn RuntimeShell::execute_script(self : RuntimeShell, script : String) -> Array[ExecResult] {
+pub fn RuntimeShell::execute_script(
+  self : RuntimeShell,
+  script : String,
+) -> Array[ExecResult] {
   let results : Array[ExecResult] = []
   for line in script.split("\n") {
     if not(self.running) {
@@ -84,11 +89,13 @@ pub fn RuntimeShell::execute_script(self : RuntimeShell, script : String) -> Arr
   results
 }
 
+///|
 /// Check if shell is still running
 pub fn RuntimeShell::is_running(self : RuntimeShell) -> Bool {
   self.running
 }
 
+///|
 /// Get the backend for direct access
 pub fn RuntimeShell::get_backend(self : RuntimeShell) -> @runtime.MemfsBackend {
   self.backend

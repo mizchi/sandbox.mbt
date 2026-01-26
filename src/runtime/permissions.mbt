@@ -1,5 +1,6 @@
 /// Deno-like Permission System
 
+///|
 /// Permission state
 pub(all) enum PermissionState {
   Granted
@@ -7,6 +8,7 @@ pub(all) enum PermissionState {
   Denied
 } derive(Show, Eq)
 
+///|
 /// Permission descriptor
 pub(all) enum PermissionDescriptor {
   Read(path~ : String?)
@@ -16,12 +18,14 @@ pub(all) enum PermissionDescriptor {
   Run(command~ : String?)
 } derive(Show, Eq)
 
+///|
 /// Permission status
 pub(all) struct PermissionStatus {
   state : PermissionState
   descriptor : PermissionDescriptor
 }
 
+///|
 /// Permissions manager
 pub struct Permissions {
   allowed : Array[PermissionDescriptor]
@@ -48,19 +52,25 @@ pub fn Permissions::allow_all() -> Permissions {
 }
 
 ///|
-pub fn Permissions::allow(self : Permissions, desc : PermissionDescriptor) -> Unit {
+pub fn Permissions::allow(
+  self : Permissions,
+  desc : PermissionDescriptor,
+) -> Unit {
   self.allowed.push(desc)
 }
 
 ///|
-pub fn Permissions::deny(self : Permissions, desc : PermissionDescriptor) -> Unit {
+pub fn Permissions::deny(
+  self : Permissions,
+  desc : PermissionDescriptor,
+) -> Unit {
   self.denied.push(desc)
 }
 
 ///|
 pub fn Permissions::query(
   self : Permissions,
-  desc : PermissionDescriptor
+  desc : PermissionDescriptor,
 ) -> PermissionStatus {
   // Check denied first
   if self.is_denied(desc) {
@@ -77,7 +87,10 @@ pub fn Permissions::query(
 }
 
 ///|
-fn Permissions::is_denied(self : Permissions, desc : PermissionDescriptor) -> Bool {
+fn Permissions::is_denied(
+  self : Permissions,
+  desc : PermissionDescriptor,
+) -> Bool {
   for d in self.denied {
     if matches_permission(d, desc) {
       return true
@@ -87,7 +100,10 @@ fn Permissions::is_denied(self : Permissions, desc : PermissionDescriptor) -> Bo
 }
 
 ///|
-fn Permissions::is_allowed(self : Permissions, desc : PermissionDescriptor) -> Bool {
+fn Permissions::is_allowed(
+  self : Permissions,
+  desc : PermissionDescriptor,
+) -> Bool {
   for d in self.allowed {
     if matches_permission(d, desc) {
       return true
@@ -96,10 +112,11 @@ fn Permissions::is_allowed(self : Permissions, desc : PermissionDescriptor) -> B
   false
 }
 
+///|
 /// Check if allowed permission covers requested permission
 fn matches_permission(
   allowed : PermissionDescriptor,
-  requested : PermissionDescriptor
+  requested : PermissionDescriptor,
 ) -> Bool {
   match (allowed, requested) {
     (PermissionDescriptor::Read(path=None), PermissionDescriptor::Read(_)) =>
@@ -135,6 +152,7 @@ fn matches_permission(
   }
 }
 
+///|
 /// Check if requested path is under allowed path
 fn is_subpath(allowed : String, requested : String) -> Bool {
   if requested == allowed {
@@ -148,6 +166,7 @@ fn is_subpath(allowed : String, requested : String) -> Bool {
   false
 }
 
+///|
 /// Permission denied error
 pub(all) suberror PermissionDenied {
   Read(String)
@@ -157,10 +176,11 @@ pub(all) suberror PermissionDenied {
   Run(String)
 } derive(Show, Eq)
 
+///|
 /// Check read permission
 pub fn Permissions::check_read(
   self : Permissions,
-  path : String
+  path : String,
 ) -> Unit raise PermissionDenied {
   let status = self.query(PermissionDescriptor::Read(path=Some(path)))
   if status.state != PermissionState::Granted {
@@ -168,10 +188,11 @@ pub fn Permissions::check_read(
   }
 }
 
+///|
 /// Check write permission
 pub fn Permissions::check_write(
   self : Permissions,
-  path : String
+  path : String,
 ) -> Unit raise PermissionDenied {
   let status = self.query(PermissionDescriptor::Write(path=Some(path)))
   if status.state != PermissionState::Granted {
@@ -179,10 +200,11 @@ pub fn Permissions::check_write(
   }
 }
 
+///|
 /// Check net permission
 pub fn Permissions::check_net(
   self : Permissions,
-  host : String
+  host : String,
 ) -> Unit raise PermissionDenied {
   let status = self.query(PermissionDescriptor::Net(host=Some(host)))
   if status.state != PermissionState::Granted {
@@ -190,10 +212,11 @@ pub fn Permissions::check_net(
   }
 }
 
+///|
 /// Check env permission
 pub fn Permissions::check_env(
   self : Permissions,
-  variable : String
+  variable : String,
 ) -> Unit raise PermissionDenied {
   let status = self.query(PermissionDescriptor::Env(variable=Some(variable)))
   if status.state != PermissionState::Granted {
@@ -201,10 +224,11 @@ pub fn Permissions::check_env(
   }
 }
 
+///|
 /// Check run permission
 pub fn Permissions::check_run(
   self : Permissions,
-  command : String
+  command : String,
 ) -> Unit raise PermissionDenied {
   let status = self.query(PermissionDescriptor::Run(command=Some(command)))
   if status.state != PermissionState::Granted {

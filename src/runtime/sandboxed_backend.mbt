@@ -1,5 +1,6 @@
 /// Sandboxed Backend - MemfsBackend with Permission Checking
 
+///|
 /// Sandboxed backend wrapping MemfsBackend with permissions
 pub struct SandboxedBackend {
   inner : MemfsBackend
@@ -14,7 +15,7 @@ pub fn SandboxedBackend::new(permissions : Permissions) -> SandboxedBackend {
 ///|
 pub fn SandboxedBackend::with_backend(
   backend : MemfsBackend,
-  permissions : Permissions
+  permissions : Permissions,
 ) -> SandboxedBackend {
   { inner: backend, permissions }
 }
@@ -23,7 +24,7 @@ pub fn SandboxedBackend::with_backend(
 pub fn SandboxedBackend::register(
   self : SandboxedBackend,
   name : String,
-  handler : (ProcessContext) -> Int
+  handler : (ProcessContext) -> Int,
 ) -> Unit {
   self.inner.register(name, handler)
 }
@@ -52,18 +53,17 @@ pub impl Filesystem for SandboxedBackend with open(self, path, flags) {
 
   // Check read permission if reading
   if flags.is_readable() {
-    self.permissions.check_read(abs_path) catch { e =>
-      raise convert_permission_error(e)
+    self.permissions.check_read(abs_path) catch {
+      e => raise convert_permission_error(e)
     }
   }
 
   // Check write permission if writing
   if flags.is_writable() {
-    self.permissions.check_write(abs_path) catch { e =>
-      raise convert_permission_error(e)
+    self.permissions.check_write(abs_path) catch {
+      e => raise convert_permission_error(e)
     }
   }
-
   self.inner.open(path, flags)
 }
 
@@ -85,8 +85,8 @@ pub impl Filesystem for SandboxedBackend with close(self, fd) {
 ///|
 pub impl Filesystem for SandboxedBackend with stat(self, path) {
   let abs_path = self.inner.resolve_path(path)
-  self.permissions.check_read(abs_path) catch { e =>
-    raise convert_permission_error(e)
+  self.permissions.check_read(abs_path) catch {
+    e => raise convert_permission_error(e)
   }
   self.inner.stat(path)
 }
@@ -109,8 +109,8 @@ pub impl Filesystem for SandboxedBackend with exists(self, path) {
 ///|
 pub impl Filesystem for SandboxedBackend with mkdir(self, path) {
   let abs_path = self.inner.resolve_path(path)
-  self.permissions.check_write(abs_path) catch { e =>
-    raise convert_permission_error(e)
+  self.permissions.check_write(abs_path) catch {
+    e => raise convert_permission_error(e)
   }
   self.inner.mkdir(path)
 }
@@ -118,8 +118,8 @@ pub impl Filesystem for SandboxedBackend with mkdir(self, path) {
 ///|
 pub impl Filesystem for SandboxedBackend with readdir(self, path) {
   let abs_path = self.inner.resolve_path(path)
-  self.permissions.check_read(abs_path) catch { e =>
-    raise convert_permission_error(e)
+  self.permissions.check_read(abs_path) catch {
+    e => raise convert_permission_error(e)
   }
   self.inner.readdir(path)
 }
@@ -127,8 +127,8 @@ pub impl Filesystem for SandboxedBackend with readdir(self, path) {
 ///|
 pub impl Filesystem for SandboxedBackend with unlink(self, path) {
   let abs_path = self.inner.resolve_path(path)
-  self.permissions.check_write(abs_path) catch { e =>
-    raise convert_permission_error(e)
+  self.permissions.check_write(abs_path) catch {
+    e => raise convert_permission_error(e)
   }
   self.inner.unlink(path)
 }
@@ -137,11 +137,11 @@ pub impl Filesystem for SandboxedBackend with unlink(self, path) {
 pub impl Filesystem for SandboxedBackend with rename(self, from, to) {
   let abs_from = self.inner.resolve_path(from)
   let abs_to = self.inner.resolve_path(to)
-  self.permissions.check_read(abs_from) catch { e =>
-    raise convert_permission_error(e)
+  self.permissions.check_read(abs_from) catch {
+    e => raise convert_permission_error(e)
   }
-  self.permissions.check_write(abs_to) catch { e =>
-    raise convert_permission_error(e)
+  self.permissions.check_write(abs_to) catch {
+    e => raise convert_permission_error(e)
   }
   self.inner.rename(from, to)
 }
@@ -163,8 +163,8 @@ fn convert_permission_to_process_error(e : PermissionDenied) -> ProcessError {
 
 ///|
 pub impl ProcessManager for SandboxedBackend with spawn(self, cmd) {
-  self.permissions.check_run(cmd.program) catch { e =>
-    raise convert_permission_to_process_error(e)
+  self.permissions.check_run(cmd.program) catch {
+    e => raise convert_permission_to_process_error(e)
   }
   self.inner.spawn(cmd)
 }
@@ -218,8 +218,8 @@ fn convert_permission_to_network_error(e : PermissionDenied) -> NetworkError {
 ///|
 pub impl Network for SandboxedBackend with tcp_connect(self, addr) {
   let host = "\{addr.host}:\{addr.port}"
-  self.permissions.check_net(host) catch { e =>
-    raise convert_permission_to_network_error(e)
+  self.permissions.check_net(host) catch {
+    e => raise convert_permission_to_network_error(e)
   }
   self.inner.tcp_connect(addr)
 }
@@ -242,8 +242,8 @@ pub impl Network for SandboxedBackend with tcp_close(self, conn) {
 ///|
 pub impl Network for SandboxedBackend with tcp_listen(self, addr) {
   let host = "\{addr.host}:\{addr.port}"
-  self.permissions.check_net(host) catch { e =>
-    raise convert_permission_to_network_error(e)
+  self.permissions.check_net(host) catch {
+    e => raise convert_permission_to_network_error(e)
   }
   self.inner.tcp_listen(addr)
 }
@@ -260,8 +260,8 @@ pub impl Network for SandboxedBackend with tcp_listener_close(self, listener) {
 
 ///|
 pub impl Network for SandboxedBackend with resolve(self, host) {
-  self.permissions.check_net(host) catch { e =>
-    raise convert_permission_to_network_error(e)
+  self.permissions.check_net(host) catch {
+    e => raise convert_permission_to_network_error(e)
   }
   self.inner.resolve(host)
 }
@@ -327,8 +327,8 @@ pub impl Environment for SandboxedBackend with cwd(self) {
 ///|
 pub impl Environment for SandboxedBackend with chdir(self, path) {
   let abs_path = self.inner.resolve_path(path)
-  self.permissions.check_read(abs_path) catch { e =>
-    raise convert_permission_error(e)
+  self.permissions.check_read(abs_path) catch {
+    e => raise convert_permission_error(e)
   }
   self.inner.chdir(path)
 }

@@ -1,5 +1,6 @@
 /// MemFS - In-memory filesystem for sandboxed operations
 
+///|
 /// Entry type in the filesystem
 pub(all) enum FsEntry {
   File(Bytes)
@@ -7,6 +8,7 @@ pub(all) enum FsEntry {
   Symlink(String)
 }
 
+///|
 /// Error types for MemFS operations
 pub(all) suberror MemFSError {
   NotFound(String)
@@ -17,6 +19,7 @@ pub(all) suberror MemFSError {
   SymlinkLoop(String)
 } derive(Show, Eq)
 
+///|
 /// In-memory filesystem
 pub struct MemFS {
   entries : Map[String, FsEntry]
@@ -25,11 +28,9 @@ pub struct MemFS {
   max_file_count : Int?
 }
 
+///|
 /// Create a new MemFS
-pub fn MemFS::new(
-  max_total_size? : Int,
-  max_file_count? : Int
-) -> MemFS {
+pub fn MemFS::new(max_total_size? : Int, max_file_count? : Int) -> MemFS {
   let fs : MemFS = {
     entries: {},
     current_size: 0,
@@ -41,6 +42,7 @@ pub fn MemFS::new(
   fs
 }
 
+///|
 /// Default MemFS with standard directories
 pub fn MemFS::default() -> MemFS {
   let fs = MemFS::new()
@@ -54,6 +56,7 @@ pub fn MemFS::default() -> MemFS {
   fs
 }
 
+///|
 /// Normalize path (remove . and ..)
 fn normalize_path(path : String) -> String {
   if path == "" {
@@ -79,6 +82,7 @@ fn normalize_path(path : String) -> String {
   }
 }
 
+///|
 fn split_path(path : String) -> Array[String] {
   let result : Array[String] = []
   let mut current = StringBuilder::new()
@@ -98,6 +102,7 @@ fn split_path(path : String) -> Array[String] {
   result
 }
 
+///|
 fn parent_path(path : String) -> String {
   let normalized = normalize_path(path)
   if normalized == "/" {
@@ -117,11 +122,12 @@ fn parent_path(path : String) -> String {
   }
 }
 
+///|
 /// Resolve symlinks (up to max depth)
 fn MemFS::resolve_symlinks(
   self : MemFS,
   path : String,
-  max_depth : Int
+  max_depth : Int,
 ) -> String raise MemFSError {
   if max_depth <= 0 {
     raise SymlinkLoop(path)
@@ -139,24 +145,30 @@ fn MemFS::resolve_symlinks(
   }
 }
 
+///|
 /// Resolve path following symlinks
-pub fn MemFS::resolve_path(self : MemFS, path : String) -> String raise MemFSError {
+pub fn MemFS::resolve_path(
+  self : MemFS,
+  path : String,
+) -> String raise MemFSError {
   self.resolve_symlinks(normalize_path(path), 40)
 }
 
+///|
 /// Check if path exists
 pub fn MemFS::exists(self : MemFS, path : String) -> Bool {
   let normalized = normalize_path(path)
   self.entries.contains(normalized)
 }
 
+///|
 /// Check if path is a directory
 pub fn MemFS::is_dir(self : MemFS, path : String) -> Bool {
   let normalized = normalize_path(path)
   match self.entries.get(normalized) {
     Some(Dir) => true
     Some(Symlink(_)) => {
-      let resolved = try { self.resolve_path(normalized) } catch { _ => return false }
+      let resolved = self.resolve_path(normalized) catch { _ => return false }
       match self.entries.get(resolved) {
         Some(Dir) => true
         _ => false
@@ -166,13 +178,14 @@ pub fn MemFS::is_dir(self : MemFS, path : String) -> Bool {
   }
 }
 
+///|
 /// Check if path is a file
 pub fn MemFS::is_file(self : MemFS, path : String) -> Bool {
   let normalized = normalize_path(path)
   match self.entries.get(normalized) {
     Some(File(_)) => true
     Some(Symlink(_)) => {
-      let resolved = try { self.resolve_path(normalized) } catch { _ => return false }
+      let resolved = self.resolve_path(normalized) catch { _ => return false }
       match self.entries.get(resolved) {
         Some(File(_)) => true
         _ => false
@@ -182,6 +195,7 @@ pub fn MemFS::is_file(self : MemFS, path : String) -> Bool {
   }
 }
 
+///|
 /// Check if path is a symlink
 pub fn MemFS::is_symlink(self : MemFS, path : String) -> Bool {
   let normalized = normalize_path(path)
@@ -191,6 +205,7 @@ pub fn MemFS::is_symlink(self : MemFS, path : String) -> Bool {
   }
 }
 
+///|
 /// Create a directory
 pub fn MemFS::mkdir(self : MemFS, path : String) -> Unit raise MemFSError {
   let normalized = normalize_path(path)
@@ -209,6 +224,7 @@ pub fn MemFS::mkdir(self : MemFS, path : String) -> Unit raise MemFSError {
   self.entries.set(normalized, Dir)
 }
 
+///|
 /// Create directories recursively
 pub fn MemFS::mkdir_p(self : MemFS, path : String) -> Unit raise MemFSError {
   let normalized = normalize_path(path)
@@ -227,6 +243,7 @@ pub fn MemFS::mkdir_p(self : MemFS, path : String) -> Unit raise MemFSError {
   }
 }
 
+///|
 /// Read file contents
 pub fn MemFS::read_file(self : MemFS, path : String) -> Bytes raise MemFSError {
   let resolved = self.resolve_path(path)
@@ -238,8 +255,13 @@ pub fn MemFS::read_file(self : MemFS, path : String) -> Bytes raise MemFSError {
   }
 }
 
+///|
 /// Write file contents
-pub fn MemFS::write_file(self : MemFS, path : String, content : Bytes) -> Unit raise MemFSError {
+pub fn MemFS::write_file(
+  self : MemFS,
+  path : String,
+  content : Bytes,
+) -> Unit raise MemFSError {
   let normalized = normalize_path(path)
   // Check parent exists
   let parent = parent_path(normalized)
@@ -256,13 +278,25 @@ pub fn MemFS::write_file(self : MemFS, path : String, content : Bytes) -> Unit r
   self.entries.set(normalized, File(content))
 }
 
+///|
 /// Write string to file
-pub fn MemFS::write_string(self : MemFS, path : String, content : String) -> Unit raise MemFSError {
-  self.write_file(path, Bytes::from_iter(content.iter().map(fn(c) { c.to_int().to_byte() })))
+pub fn MemFS::write_string(
+  self : MemFS,
+  path : String,
+  content : String,
+) -> Unit raise MemFSError {
+  self.write_file(
+    path,
+    Bytes::from_iter(content.iter().map(fn(c) { c.to_int().to_byte() })),
+  )
 }
 
+///|
 /// Read file as string
-pub fn MemFS::read_string(self : MemFS, path : String) -> String raise MemFSError {
+pub fn MemFS::read_string(
+  self : MemFS,
+  path : String,
+) -> String raise MemFSError {
   let bytes = self.read_file(path)
   let result = StringBuilder::new()
   for b in bytes {
@@ -271,8 +305,13 @@ pub fn MemFS::read_string(self : MemFS, path : String) -> String raise MemFSErro
   result.to_string()
 }
 
+///|
 /// Create symlink
-pub fn MemFS::symlink(self : MemFS, path : String, target : String) -> Unit raise MemFSError {
+pub fn MemFS::symlink(
+  self : MemFS,
+  path : String,
+  target : String,
+) -> Unit raise MemFSError {
   let normalized = normalize_path(path)
   let parent = parent_path(normalized)
   if not(self.is_dir(parent)) {
@@ -284,6 +323,7 @@ pub fn MemFS::symlink(self : MemFS, path : String, target : String) -> Unit rais
   self.entries.set(normalized, Symlink(target))
 }
 
+///|
 /// Read symlink target
 pub fn MemFS::read_link(self : MemFS, path : String) -> String raise MemFSError {
   let normalized = normalize_path(path)
@@ -294,6 +334,7 @@ pub fn MemFS::read_link(self : MemFS, path : String) -> String raise MemFSError 
   }
 }
 
+///|
 /// Remove file or symlink
 pub fn MemFS::remove(self : MemFS, path : String) -> Unit raise MemFSError {
   let normalized = normalize_path(path)
@@ -302,14 +343,13 @@ pub fn MemFS::remove(self : MemFS, path : String) -> Unit raise MemFSError {
       self.current_size -= content.length()
       self.entries.remove(normalized)
     }
-    Some(Symlink(_)) => {
-      self.entries.remove(normalized)
-    }
+    Some(Symlink(_)) => self.entries.remove(normalized)
     Some(Dir) => raise NotAFile(normalized)
     None => raise NotFound(path)
   }
 }
 
+///|
 /// Remove directory (must be empty)
 pub fn MemFS::rmdir(self : MemFS, path : String) -> Unit raise MemFSError {
   let normalized = normalize_path(path)
@@ -328,8 +368,12 @@ pub fn MemFS::rmdir(self : MemFS, path : String) -> Unit raise MemFSError {
   self.entries.remove(normalized)
 }
 
+///|
 /// List directory contents
-pub fn MemFS::readdir(self : MemFS, path : String) -> Array[String] raise MemFSError {
+pub fn MemFS::readdir(
+  self : MemFS,
+  path : String,
+) -> Array[String] raise MemFSError {
   let resolved = self.resolve_path(path)
   if not(self.is_dir(resolved)) {
     raise NotADirectory(path)
@@ -347,24 +391,25 @@ pub fn MemFS::readdir(self : MemFS, path : String) -> Array[String] raise MemFSE
   result
 }
 
+///|
 /// Get file size
 pub fn MemFS::size(self : MemFS, path : String) -> Int? {
-  let resolved = try { self.resolve_path(path) } catch { _ => return None }
+  let resolved = self.resolve_path(path) catch { _ => return None }
   match self.entries.get(resolved) {
     Some(File(content)) => Some(content.length())
     _ => None
   }
 }
 
+///|
 /// Rename (move) a file or directory
 pub fn MemFS::rename(
   self : MemFS,
   old_path : String,
-  new_path : String
+  new_path : String,
 ) -> Unit raise MemFSError {
   let old_normalized = normalize_path(old_path)
   let new_normalized = normalize_path(new_path)
-
   if old_normalized == "/" || new_normalized == "/" {
     raise InvalidPath("Cannot rename root")
   }
@@ -398,7 +443,8 @@ pub fn MemFS::rename(
     // Collect all entries that need to be moved
     let to_move : Array[(String, FsEntry)] = []
     for entry_path, entry in self.entries {
-      if entry_path == old_normalized || entry_path.has_prefix(old_normalized + "/") {
+      if entry_path == old_normalized ||
+        entry_path.has_prefix(old_normalized + "/") {
         to_move.push((entry_path, entry))
       }
     }
@@ -429,18 +475,17 @@ pub fn MemFS::rename(
   }
 }
 
+///|
 /// Truncate a file to specified length
 pub fn MemFS::truncate(
   self : MemFS,
   path : String,
-  length : Int
+  length : Int,
 ) -> Unit raise MemFSError {
   let normalized = normalize_path(path)
-
   match self.entries.get(normalized) {
     Some(File(content)) => {
       let old_len = content.length()
-
       if length == old_len {
         // No change needed
         return
@@ -448,7 +493,6 @@ pub fn MemFS::truncate(
 
       // Use FixedArray for efficient copy
       let new_content = FixedArray::make(length, b'\x00')
-
       if length < old_len {
         // Shrink: copy only what we need
         for i in 0..<length {
@@ -460,7 +504,6 @@ pub fn MemFS::truncate(
           new_content[i] = content[i]
         }
       }
-
       self.current_size = self.current_size - old_len + length
       self.entries.set(normalized, File(Bytes::from_fixedarray(new_content)))
     }
@@ -474,11 +517,13 @@ pub fn MemFS::truncate(
   }
 }
 
+///|
 /// Get total size of all files
 pub fn MemFS::total_size(self : MemFS) -> Int {
   self.current_size
 }
 
+///|
 /// Get file count
 pub fn MemFS::file_count(self : MemFS) -> Int {
   let mut count = 0
@@ -491,6 +536,7 @@ pub fn MemFS::file_count(self : MemFS) -> Int {
   count
 }
 
+///|
 fn substring_from(s : String, start : Int) -> String {
   if start >= s.length() {
     return ""
@@ -503,6 +549,7 @@ fn substring_from(s : String, start : Int) -> String {
   result.to_string()
 }
 
+///|
 fn string_contains(s : String, sub : String) -> Bool {
   s.find(sub) is Some(_)
 }

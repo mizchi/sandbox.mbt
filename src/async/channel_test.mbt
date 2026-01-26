@@ -1,3 +1,4 @@
+///|
 test "channel: unbounded basic" {
   let (sender, receiver) : (@async.Sender[Int], @async.Receiver[Int]) = @async.new_channel()
 
@@ -17,20 +18,21 @@ test "channel: unbounded basic" {
   assert_eq(receiver.try_recv(), None)
 }
 
+///|
 test "channel: bounded capacity" {
-  let (sender, _receiver) : (@async.Sender[Int], @async.Receiver[Int]) = @async.new_channel_with_capacity(2)
-
+  let (sender, _receiver) : (@async.Sender[Int], @async.Receiver[Int]) = @async.new_channel_with_capacity(
+    2,
+  )
   assert_true(sender.try_send(1))
   assert_true(sender.try_send(2))
-  assert_false(sender.try_send(3))  // Buffer full
+  assert_false(sender.try_send(3)) // Buffer full
 }
 
+///|
 test "channel: close" {
   let (sender, receiver) : (@async.Sender[Int], @async.Receiver[Int]) = @async.new_channel()
-
   sender.try_send(1) |> ignore
   sender.close()
-
   assert_true(sender.is_closed())
   // Can still receive buffered data
   assert_eq(receiver.try_recv(), Some(1))
@@ -38,14 +40,13 @@ test "channel: close" {
   assert_true(receiver.is_closed())
 }
 
+///|
 test "channel: async send recv" {
   @coroutine.run_async_test(async fn() {
     let (sender, receiver) : (@async.Sender[Int], @async.Receiver[Int]) = @async.new_channel()
 
     // Spawn sender
-    let _ = @coroutine.spawn(async fn() {
-      sender.send(42) |> ignore
-    })
+    let _ = @coroutine.spawn(async fn() { sender.send(42) |> ignore })
 
     // Receive
     let value = receiver.recv()
