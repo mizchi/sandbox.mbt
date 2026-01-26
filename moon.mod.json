@@ -12,5 +12,10 @@
   ],
   "description": "In-memory sandbox primitives for MoonBit - virtual filesystem, POSIX emulation, shell",
   "source": "src",
-  "warn-list": "-67"
+  "warn-list": "-67",
+  "deps": {
+    "moonbitlang/async": {
+      "path": "deps/x-async"
+    }
+  }
 }

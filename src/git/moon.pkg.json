@@ -1,0 +1,12 @@
+{
+  "import": [
+    {
+      "path": "moonbitlang/async/http",
+      "targets": ["wasm-gc", "wasm"]
+    }
+  ],
+  "targets": {
+    "remote.mbt": ["wasm-gc", "wasm"],
+    "remote_test.mbt": ["wasm-gc", "wasm"]
+  }
+}

@@ -1,0 +1,145 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "mizchi/sandbox/git"
+
+// Values
+pub fn adler32(Bytes) -> Int
+
+pub fn adler32_fixed(FixedArray[Byte]) -> Int
+
+pub fn build_receive_pack_body(PushRequest) -> Bytes
+
+pub fn build_ref_update(ObjectId, ObjectId, String, String) -> String
+
+pub fn build_ref_update_simple(ObjectId, ObjectId, String) -> String
+
+pub fn create_blob(Bytes) -> (ObjectId, Bytes)
+
+pub fn create_blob_packfile(Bytes) -> Bytes
+
+pub fn create_blob_string(String) -> (ObjectId, Bytes)
+
+pub fn create_commit(Commit) -> (ObjectId, Bytes)
+
+pub fn create_commit_packfile(Bytes, String, Commit) -> (ObjectId, Bytes)
+
+pub fn create_object(ObjectType, Bytes) -> (ObjectId, Bytes)
+
+pub fn create_packfile(Array[PackObject]) -> Bytes
+
+pub fn create_tree(Array[TreeEntry]) -> (ObjectId, Bytes)
+
+pub async fn discover_refs(Remote) -> (Array[(ObjectId, String)], Array[String]) raise GitError
+
+pub fn encode_type_and_size(Int, Int, Array[Byte]) -> Unit
+
+pub fn extract_capabilities(Bytes) -> Array[String]
+
+pub fn hash_blob(Bytes) -> ObjectId
+
+pub fn hash_blob_string(String) -> ObjectId
+
+pub fn parse_receive_pack_response(Bytes) -> Result[String, GitError]
+
+pub fn parse_refs(Bytes) -> Array[(ObjectId, String)] raise GitError
+
+pub fn parse_sideband(Bytes) -> (Int, Bytes)
+
+pub fn pktline_decode(Bytes) -> Array[(Bytes, Bool)] raise GitError
+
+pub fn pktline_delim() -> Bytes
+
+pub fn pktline_encode(String) -> Bytes
+
+pub fn pktline_encode_bytes(Bytes) -> Bytes
+
+pub fn pktline_flush() -> Bytes
+
+pub async fn push(Remote, PushRequest) -> String raise GitError
+
+pub async fn push_file(Remote, Bytes, String, String, String, Int64, ObjectId?) -> ObjectId raise GitError
+
+pub fn sha1(Bytes) -> ObjectId
+
+pub fn sha1_array(Array[Byte]) -> ObjectId
+
+pub fn zlib_compress_stored(Bytes) -> Bytes
+
+pub fn zlib_decompress_stored(Bytes) -> Bytes raise GitError
+
+// Errors
+pub(all) suberror GitError {
+  InvalidObject(String)
+  HashMismatch(String, String)
+  PackfileError(String)
+  ProtocolError(String)
+  IoError(String)
+}
+pub impl Eq for GitError
+pub impl Show for GitError
+
+// Types and methods
+pub struct Commit {
+  tree : ObjectId
+  parents : Array[ObjectId]
+  author : String
+  author_time : Int64
+  author_tz : String
+  committer : String
+  commit_time : Int64
+  committer_tz : String
+  message : String
+}
+pub fn Commit::new(ObjectId, Array[ObjectId], String, Int64, String, String, Int64, String, String) -> Self
+
+pub struct ObjectId {
+  bytes : FixedArray[Byte]
+}
+pub fn ObjectId::from_hex(String) -> Self raise GitError
+pub fn ObjectId::new(FixedArray[Byte]) -> Self
+pub fn ObjectId::to_hex(Self) -> String
+pub fn ObjectId::zero() -> Self
+pub impl Eq for ObjectId
+pub impl Show for ObjectId
+
+pub(all) enum ObjectType {
+  Blob
+  Tree
+  Commit
+  Tag
+}
+pub fn ObjectType::to_packfile_type(Self) -> Int
+pub fn ObjectType::to_string(Self) -> String
+pub impl Show for ObjectType
+
+pub struct PackObject {
+  obj_type : ObjectType
+  data : Bytes
+}
+pub fn PackObject::new(ObjectType, Bytes) -> Self
+
+pub struct PushRequest {
+  old_id : ObjectId
+  new_id : ObjectId
+  refname : String
+  packfile : Bytes
+}
+pub fn PushRequest::new(ObjectId, ObjectId, String, Bytes) -> Self
+
+pub struct Remote {
+  url : String
+}
+pub fn Remote::info_refs_url(Self) -> String
+pub fn Remote::new(String) -> Self
+pub fn Remote::receive_pack_url(Self) -> String
+
+pub struct TreeEntry {
+  mode : String
+  name : String
+  id : ObjectId
+}
+pub fn TreeEntry::new(String, String, ObjectId) -> Self
+
+// Type aliases
+
+// Traits
+
