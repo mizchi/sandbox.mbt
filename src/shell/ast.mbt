@@ -202,6 +202,8 @@ pub impl Show for Ast with output(self, logger) {
 pub fn token_to_word(token : Token) -> Word? {
   match token {
     Word(s) => Some(Literal(s))
+    SingleQuotedWord(s) => Some(Quoted([Literal(s)]))
+    DoubleQuotedWord(s) => Some(Quoted([Literal(s)]))
     Variable(s) => Some(Variable(s))
     ExitCode => Some(Word::ExitCode)
     ArgN(n) => Some(Word::ArgN(n))

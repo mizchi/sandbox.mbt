@@ -124,8 +124,11 @@ fn Executor::exec_simple(
     return { exit_code: 0, stdout: "", stderr: "" }
   }
 
-  // Expand words
-  let expanded = expand_words(words, self.env, self.ctx)
+  // Expand words with glob expansion
+  let expanded = expand_words_with_glob(words, self.env, self.ctx)
+  if expanded.length() == 0 {
+    return { exit_code: 0, stdout: "", stderr: "" }
+  }
   let cmd = expanded[0]
   let args : Array[String] = []
   for i = 1; i < expanded.length(); i = i + 1 {

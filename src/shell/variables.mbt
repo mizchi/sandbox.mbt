@@ -90,7 +90,7 @@ pub fn expand_word(word : Word, env : VarEnv, ctx : @posix.PosixContext) -> Stri
 }
 
 ///|
-/// Expand an array of Words to strings
+/// Expand an array of Words to strings (without glob expansion)
 pub fn expand_words(
   words : Array[Word],
   env : VarEnv,
@@ -101,4 +101,38 @@ pub fn expand_words(
     result.push(expand_word(w, env, ctx))
   }
   result
+}
+
+///|
+/// Expand an array of Words to strings with glob expansion
+pub fn expand_words_with_glob(
+  words : Array[Word],
+  env : VarEnv,
+  ctx : @posix.PosixContext,
+) -> Array[String] {
+  let result : Array[String] = []
+  let cwd = ctx.getcwd()
+  for w in words {
+    let expanded = expand_word(w, env, ctx)
+    // Apply glob expansion if the word contains glob characters
+    // and is not quoted (Literal words can contain glob chars)
+    if has_glob_chars(expanded) && not(is_quoted_word(w)) {
+      let glob_results = expand_glob(expanded, ctx.get_fs(), cwd)
+      for path in glob_results {
+        result.push(path)
+      }
+    } else {
+      result.push(expanded)
+    }
+  }
+  result
+}
+
+///|
+/// Check if a word is quoted (should not be glob-expanded)
+fn is_quoted_word(w : Word) -> Bool {
+  match w {
+    Quoted(_) => true
+    _ => false
+  }
 }

@@ -4,7 +4,9 @@
 /// Token types for shell parsing
 pub(all) enum Token {
   // Basic tokens
-  Word(String)              // Command, argument
+  Word(String)              // Command, argument (unquoted)
+  SingleQuotedWord(String)  // 'literal' - no expansion
+  DoubleQuotedWord(String)  // "string" - variable expansion, no glob
   Assignment(String, String) // VAR=value
 
   // Variables
@@ -55,6 +57,8 @@ pub(all) enum Token {
 pub impl Show for Token with output(self, logger) {
   match self {
     Word(s) => logger.write_string("Word(\{s})")
+    SingleQuotedWord(s) => logger.write_string("SingleQuotedWord('\{s}')")
+    DoubleQuotedWord(s) => logger.write_string("DoubleQuotedWord(\"\{s}\")")
     Assignment(k, v) => logger.write_string("Assignment(\{k}=\{v})")
     Variable(s) => logger.write_string("Variable($\{s})")
     ExitCode => logger.write_string("ExitCode($?)")
@@ -94,6 +98,8 @@ pub impl Show for Token with output(self, logger) {
 pub impl Eq for Token with equal(self, other) {
   match (self, other) {
     (Word(a), Word(b)) => a == b
+    (SingleQuotedWord(a), SingleQuotedWord(b)) => a == b
+    (DoubleQuotedWord(a), DoubleQuotedWord(b)) => a == b
     (Assignment(k1, v1), Assignment(k2, v2)) => k1 == k2 && v1 == v2
     (Variable(a), Variable(b)) => a == b
     (ExitCode, ExitCode) => true
@@ -459,12 +465,12 @@ pub fn Lexer::next_token(self : Lexer) -> Token {
     Some('\'') => {
       let s = self.read_single_quoted()
       self.at_command_pos = false
-      Word(s)
+      SingleQuotedWord(s)
     }
     Some('"') => {
       let s = self.read_double_quoted()
       self.at_command_pos = false
-      Word(s)
+      DoubleQuotedWord(s)
     }
     Some(_) => self.read_word_token()
   }
