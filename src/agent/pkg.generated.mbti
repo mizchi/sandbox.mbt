@@ -1,0 +1,107 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "mizchi/sandbox/agent"
+
+import {
+  "mizchi/sandbox/posix",
+  "mizchi/sandbox/shell",
+}
+
+// Values
+pub fn get_builtin_tools() -> Array[ToolDef]
+
+// Errors
+
+// Types and methods
+pub(all) struct Agent {
+  config : AgentConfig
+  executor : ToolExecutor
+  messages : Array[Message]
+  tools : Array[ToolDef]
+}
+pub fn Agent::add_assistant_message(Self, String, Array[ToolCall]) -> Unit
+pub fn Agent::add_user_message(Self, String) -> Unit
+pub fn Agent::clear_history(Self) -> Unit
+pub fn Agent::get_messages(Self) -> Array[Message]
+pub fn Agent::new(@shell.Shell, @posix.PosixContext) -> Self
+pub fn Agent::new_with_config(@shell.Shell, @posix.PosixContext, AgentConfig) -> Self
+pub fn Agent::process_tool_calls(Self, Array[ToolCall]) -> Array[ToolResult]
+pub fn[C : LLMClient] Agent::run(Self, C, String) -> String raise
+pub fn[C : LLMClient] Agent::run_turn(Self, C) -> (String, Bool) raise
+
+pub(all) struct AgentConfig {
+  model : String
+  max_turns : Int
+  system_prompt : String
+}
+pub fn AgentConfig::default() -> Self
+
+pub(all) struct AgentRunner {
+  agent : Agent
+  pending_tool_calls : Array[ToolCall]
+}
+pub fn AgentRunner::execute_tools(Self) -> Array[ToolResult]
+pub fn AgentRunner::get_messages(Self) -> Array[Message]
+pub fn AgentRunner::get_tools(Self) -> Array[ToolDef]
+pub fn AgentRunner::has_pending_tools(Self) -> Bool
+pub fn AgentRunner::new(Agent) -> Self
+pub fn AgentRunner::process_response(Self, String, Array[ToolCall]) -> Unit
+pub fn AgentRunner::set_user_input(Self, String) -> Unit
+pub fn AgentRunner::should_continue(Self, Int) -> Bool
+
+pub(all) struct Message {
+  role : Role
+  content : String
+  tool_calls : Array[ToolCall]
+  tool_call_id : String?
+}
+pub fn Message::assistant(String, Array[ToolCall]) -> Self
+pub fn Message::new(Role, String, Array[ToolCall], String?) -> Self
+pub fn Message::system(String) -> Self
+pub fn Message::tool_result(String, String) -> Self
+pub fn Message::user(String) -> Self
+
+pub(all) enum Role {
+  System
+  User
+  Assistant
+  Tool
+}
+pub fn Role::from_string(String) -> Self?
+pub fn Role::to_string(Self) -> String
+
+pub(all) struct ToolCall {
+  id : String
+  name : String
+  arguments : String
+}
+pub fn ToolCall::new(String, String, String) -> Self
+
+pub(all) struct ToolDef {
+  name : String
+  description : String
+  parameters_schema : String
+}
+pub fn ToolDef::new(String, String, String) -> Self
+
+pub(all) struct ToolExecutor {
+  shell : @shell.Shell
+  ctx : @posix.PosixContext
+}
+pub fn ToolExecutor::execute(Self, ToolCall) -> ToolResult
+pub fn ToolExecutor::new(@shell.Shell, @posix.PosixContext) -> Self
+
+pub(all) struct ToolResult {
+  success : Bool
+  output : String
+  error : String?
+}
+pub fn ToolResult::err(String) -> Self
+pub fn ToolResult::ok(String) -> Self
+
+// Type aliases
+
+// Traits
+pub(open) trait LLMClient {
+  chat(Self, Array[Message], Array[ToolDef]) -> Message raise
+}
+

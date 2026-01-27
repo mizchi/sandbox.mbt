@@ -24,6 +24,8 @@ pub fn has_glob_chars(String) -> Bool
 
 pub fn parse(String) -> Ast raise ParseError
 
+pub fn register_git_commands(Executor, (String, (@posix.PosixContext, Array[String], StringBuilder, StringBuilder) -> Int) -> Unit) -> Unit
+
 pub fn token_to_word(Token) -> Word?
 
 pub fn tokenize(String) -> Array[Token]
@@ -73,6 +75,19 @@ pub fn Executor::get_env(Self) -> VarEnv
 pub fn Executor::new(@posix.PosixContext) -> Self
 pub fn Executor::register(Self, String, (@posix.PosixContext, Array[String], StringBuilder, StringBuilder) -> Int) -> Unit
 pub fn Executor::with_args(@posix.PosixContext, Array[String]) -> Self
+
+pub struct GitObject {
+  obj_type : String
+  size : Int
+  content : String
+  compressed : Bytes
+}
+
+pub struct IndexEntry {
+  mode : String
+  hash : String
+  path : String
+}
 
 pub struct Lexer {
   input : Array[Char]
@@ -174,13 +189,18 @@ pub struct VarEnv {
   vars : Map[String, String]
   args : Array[String]
   mut last_exit : Int
+  git_objects : Map[String, GitObject]
+  git_index : Map[String, IndexEntry]
 }
 pub fn VarEnv::get(Self, String) -> String?
 pub fn VarEnv::get_arg(Self, Int) -> String?
+pub fn VarEnv::get_git_index(Self) -> Map[String, IndexEntry]
+pub fn VarEnv::get_git_objects(Self) -> Map[String, GitObject]
 pub fn VarEnv::get_last_exit(Self) -> Int
 pub fn VarEnv::new() -> Self
 pub fn VarEnv::set(Self, String, String) -> Unit
 pub fn VarEnv::set_last_exit(Self, Int) -> Unit
+pub fn VarEnv::store_git_object(Self, String, GitObject) -> Unit
 pub fn VarEnv::with_args(Array[String]) -> Self
 
 pub(all) enum Word {

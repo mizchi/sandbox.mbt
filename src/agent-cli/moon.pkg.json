@@ -1,0 +1,11 @@
+{
+  "is-main": true,
+  "import": [
+    "mizchi/sandbox/agent",
+    "mizchi/sandbox/shell",
+    "mizchi/sandbox/posix"
+  ],
+  "targets": {
+    "main.mbt": ["wasm-gc"]
+  }
+}
