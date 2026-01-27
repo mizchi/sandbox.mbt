@@ -9,16 +9,38 @@ pub struct VarEnv {
   args : Array[String]
   /// Last exit code
   mut last_exit : Int
+  /// Git objects storage (hash -> object)
+  git_objects : Map[String, GitObject]
+  /// Git index (path -> entry)
+  git_index : Map[String, IndexEntry]
 }
 
 ///|
 pub fn VarEnv::new() -> VarEnv {
-  { vars: {}, args: [], last_exit: 0 }
+  { vars: {}, args: [], last_exit: 0, git_objects: {}, git_index: {} }
 }
 
 ///|
 pub fn VarEnv::with_args(args : Array[String]) -> VarEnv {
-  { vars: {}, args, last_exit: 0 }
+  { vars: {}, args, last_exit: 0, git_objects: {}, git_index: {} }
+}
+
+///|
+/// Store a git object
+pub fn VarEnv::store_git_object(self : VarEnv, hash : String, obj : GitObject) -> Unit {
+  self.git_objects.set(hash, obj)
+}
+
+///|
+/// Get git objects map
+pub fn VarEnv::get_git_objects(self : VarEnv) -> Map[String, GitObject] {
+  self.git_objects
+}
+
+///|
+/// Get git index map
+pub fn VarEnv::get_git_index(self : VarEnv) -> Map[String, IndexEntry] {
+  self.git_index
 }
 
 ///|
@@ -90,7 +112,7 @@ pub fn expand_word(word : Word, env : VarEnv, ctx : @posix.PosixContext) -> Stri
 }
 
 ///|
-/// Expand an array of Words to strings
+/// Expand an array of Words to strings (without glob expansion)
 pub fn expand_words(
   words : Array[Word],
   env : VarEnv,
@@ -101,4 +123,38 @@ pub fn expand_words(
     result.push(expand_word(w, env, ctx))
   }
   result
+}
+
+///|
+/// Expand an array of Words to strings with glob expansion
+pub fn expand_words_with_glob(
+  words : Array[Word],
+  env : VarEnv,
+  ctx : @posix.PosixContext,
+) -> Array[String] {
+  let result : Array[String] = []
+  let cwd = ctx.getcwd()
+  for w in words {
+    let expanded = expand_word(w, env, ctx)
+    // Apply glob expansion if the word contains glob characters
+    // and is not quoted (Literal words can contain glob chars)
+    if has_glob_chars(expanded) && not(is_quoted_word(w)) {
+      let glob_results = expand_glob(expanded, ctx.get_fs(), cwd)
+      for path in glob_results {
+        result.push(path)
+      }
+    } else {
+      result.push(expanded)
+    }
+  }
+  result
+}
+
+///|
+/// Check if a word is quoted (should not be glob-expanded)
+fn is_quoted_word(w : Word) -> Bool {
+  match w {
+    Quoted(_) => true
+    _ => false
+  }
 }

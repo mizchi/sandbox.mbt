@@ -41,6 +41,9 @@ fn Executor::register_builtins(self : Executor) -> Unit {
   self.commands.set("export", cmd_export)
   self.commands.set("env", cmd_env)
   self.commands.set("test", exec_test_cmd)
+
+  // Register git commands
+  register_git_commands(self, fn(name, handler) { self.commands.set(name, handler) })
 }
 
 ///|
@@ -124,8 +127,11 @@ fn Executor::exec_simple(
     return { exit_code: 0, stdout: "", stderr: "" }
   }
 
-  // Expand words
-  let expanded = expand_words(words, self.env, self.ctx)
+  // Expand words with glob expansion
+  let expanded = expand_words_with_glob(words, self.env, self.ctx)
+  if expanded.length() == 0 {
+    return { exit_code: 0, stdout: "", stderr: "" }
+  }
   let cmd = expanded[0]
   let args : Array[String] = []
   for i = 1; i < expanded.length(); i = i + 1 {
