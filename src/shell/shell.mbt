@@ -138,20 +138,91 @@ fn cmd_ls(
   stdout : StringBuilder,
   stderr : StringBuilder,
 ) -> Int {
-  let path = if args.length() > 0 { args[0] } else { "." }
+  // If no args, list current directory
+  if args.length() == 0 {
+    return ls_path(ctx, ".", stdout, stderr)
+  }
+
+  // Process each argument
+  let mut exit_code = 0
+  for arg in args {
+    let code = ls_path(ctx, arg, stdout, stderr)
+    if code != 0 {
+      exit_code = code
+    }
+  }
+  exit_code
+}
+
+///|
+fn ls_path(
+  ctx : @posix.PosixContext,
+  path : String,
+  stdout : StringBuilder,
+  stderr : StringBuilder,
+) -> Int {
   let abs_path = ctx.resolve_path(path)
-  try {
-    let entries = ctx.get_fs().readdir(abs_path)
-    for entry in entries {
-      stdout.write_string(entry)
-      stdout.write_string("\n")
+
+  // Check if it's a file or directory
+  if ctx.get_fs().is_file(abs_path) {
+    // It's a file - just print its name
+    let name = get_basename(path)
+    stdout.write_string(name)
+    stdout.write_string("\n")
+    return 0
+  }
+
+  if ctx.get_fs().is_dir(abs_path) {
+    // It's a directory - list its contents
+    try {
+      let entries = ctx.get_fs().readdir(abs_path)
+      for entry in entries {
+        stdout.write_string(entry)
+        stdout.write_string("\n")
+      }
+      0
+    } catch {
+      _ => {
+        stderr.write_string("ls: cannot access '" + path + "'\n")
+        1
+      }
     }
-    0
-  } catch {
-    _ => {
-      stderr.write_string("ls: cannot access '" + path + "'\n")
-      1
+  } else {
+    stderr.write_string("ls: cannot access '" + path + "': No such file or directory\n")
+    1
+  }
+}
+
+///|
+fn get_basename(path : String) -> String {
+  let chars = path.to_array()
+  let mut last_slash = -1
+  for i, c in chars {
+    if c == '/' {
+      last_slash = i
     }
+  }
+  if last_slash == -1 {
+    path
+  } else if last_slash == chars.length() - 1 {
+    // Trailing slash - find previous slash
+    let mut prev_slash = -1
+    for i = 0; i < last_slash; i = i + 1 {
+      if chars[i] == '/' {
+        prev_slash = i
+      }
+    }
+    let buf = StringBuilder::new()
+    for i = prev_slash + 1; i < last_slash; i = i + 1 {
+      buf.write_char(chars[i])
+    }
+    buf.to_string()
+  } else {
+    let buf = StringBuilder::new()
+    for i = last_slash + 1; i < chars.length(); i = i + 1 {
+      buf.write_char(chars[i])
+    }
+    buf.to_string()
   }
 }
 

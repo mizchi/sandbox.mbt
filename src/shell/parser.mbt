@@ -184,6 +184,14 @@ fn Parser::parse_simple_command(self : Parser) -> Ast raise ParseError {
         let _ = self.advance()
         words.push(Literal(s))
       }
+      SingleQuotedWord(s) => {
+        let _ = self.advance()
+        words.push(Quoted([Literal(s)]))
+      }
+      DoubleQuotedWord(s) => {
+        let _ = self.advance()
+        words.push(Quoted([Literal(s)]))
+      }
       Variable(s) => {
         let _ = self.advance()
         words.push(Word::Variable(s))
@@ -233,6 +241,14 @@ fn Parser::parse_word(self : Parser) -> Word raise ParseError {
     Word(s) => {
       let _ = self.advance()
       Literal(s)
+    }
+    SingleQuotedWord(s) => {
+      let _ = self.advance()
+      Quoted([Literal(s)])
+    }
+    DoubleQuotedWord(s) => {
+      let _ = self.advance()
+      Quoted([Literal(s)])
     }
     Variable(s) => {
       let _ = self.advance()
@@ -308,6 +324,14 @@ fn Parser::parse_for(self : Parser) -> Ast raise ParseError {
         Word(s) => {
           let _ = self.advance()
           items.push(Literal(s))
+        }
+        SingleQuotedWord(s) => {
+          let _ = self.advance()
+          items.push(Quoted([Literal(s)]))
+        }
+        DoubleQuotedWord(s) => {
+          let _ = self.advance()
+          items.push(Quoted([Literal(s)]))
         }
         Variable(s) => {
           let _ = self.advance()
@@ -419,6 +443,14 @@ fn Parser::parse_test_bracket(self : Parser) -> Ast raise ParseError {
       Word(s) => {
         let _ = self.advance()
         words.push(Literal(s))
+      }
+      SingleQuotedWord(s) => {
+        let _ = self.advance()
+        words.push(Quoted([Literal(s)]))
+      }
+      DoubleQuotedWord(s) => {
+        let _ = self.advance()
+        words.push(Quoted([Literal(s)]))
       }
       Variable(s) => {
         let _ = self.advance()

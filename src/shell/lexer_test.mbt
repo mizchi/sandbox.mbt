@@ -166,14 +166,14 @@ test "tokenize brackets" {
 test "tokenize single quoted" {
   let tokens = tokenize("echo 'hello world'")
   assert_eq(tokens[0], Token::Word("echo"))
-  assert_eq(tokens[1], Token::Word("hello world"))
+  assert_eq(tokens[1], Token::SingleQuotedWord("hello world"))
 }
 
 ///|
 test "tokenize double quoted" {
   let tokens = tokenize("echo \"hello world\"")
   assert_eq(tokens[0], Token::Word("echo"))
-  assert_eq(tokens[1], Token::Word("hello world"))
+  assert_eq(tokens[1], Token::DoubleQuotedWord("hello world"))
 }
 
 ///|
