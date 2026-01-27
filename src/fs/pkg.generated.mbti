@@ -64,6 +64,50 @@ pub(all) enum FsEntry {
   Symlink(String)
 }
 
+pub struct HostFs {
+  ops : HostFsOps
+  base_path : String
+}
+pub fn HostFs::new(HostFsOps, base_path? : String) -> Self
+pub impl FileSystem for HostFs
+
+pub(all) struct HostFsOps {
+  exists : (String) -> Bool
+  is_dir : (String) -> Bool
+  is_file : (String) -> Bool
+  is_symlink : (String) -> Bool
+  read_file : (String) -> Bytes?
+  write_file : (String, Bytes) -> Bool
+  read_string : (String) -> String?
+  write_string : (String, String) -> Bool
+  size : (String) -> Int
+  remove : (String) -> Bool
+  mkdir : (String) -> Bool
+  mkdir_p : (String) -> Bool
+  rmdir : (String) -> Bool
+  readdir : (String) -> Array[String]?
+  symlink : (String, String) -> Bool
+  read_link : (String) -> String?
+  rename : (String, String) -> Bool
+  truncate : (String, Int) -> Bool
+  resolve_path : (String) -> String?
+}
+pub fn HostFsOps::stub() -> Self
+
+pub struct OverlayFs {
+  base : &FileSystem
+  overlay : Fs
+  whiteouts : Map[String, Bool]
+}
+pub fn OverlayFs::clear_whiteouts(Self) -> Unit
+pub fn OverlayFs::get_modified_paths(Self) -> Array[String]
+pub fn OverlayFs::get_overlay(Self) -> Fs
+pub fn OverlayFs::get_whiteouts(Self) -> Array[String]
+pub fn OverlayFs::is_modified(Self, String) -> Bool
+pub fn OverlayFs::new(&FileSystem) -> Self
+pub fn OverlayFs::new_with_overlay(&FileSystem, Fs) -> Self
+pub impl FileSystem for OverlayFs
+
 pub struct S3Backend {
   bucket : String
   prefix : String
