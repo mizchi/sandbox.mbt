@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "@moonbit/moonc-worker": "^0.1.202601213"
+  }
+}

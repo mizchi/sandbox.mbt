@@ -77,7 +77,7 @@ fn pack_object(obj : PackObject, result : Array[Byte]) -> Unit {
   encode_type_and_size(obj_type, size, result)
 
   // Compress data with zlib
-  let compressed = zlib_compress_stored(data)
+  let compressed = @zlib.zlib_compress_stored(data)
 
   // Append compressed data
   for b in compressed {

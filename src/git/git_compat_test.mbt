@@ -130,8 +130,8 @@ test "git compat: zlib roundtrip" {
   let bytes = Bytes::from_array(
     FixedArray::makei(data.length(), fn(i) { data[i] }),
   )
-  let compressed = zlib_compress_stored(bytes)
-  let decompressed = zlib_decompress_stored(compressed)
+  let compressed = @zlib.zlib_compress_stored(bytes)
+  let decompressed = @zlib.zlib_decompress_stored(compressed)
   assert_true(decompressed.length() == bytes.length())
   for i = 0; i < bytes.length(); i = i + 1 {
     assert_true(decompressed[i] == bytes[i])
@@ -141,7 +141,7 @@ test "git compat: zlib roundtrip" {
 ///|
 test "git compat: zlib header" {
   let data = Bytes::from_array([b'x'])
-  let compressed = zlib_compress_stored(data)
+  let compressed = @zlib.zlib_compress_stored(data)
 
   // Zlib header: 0x78 0x01 (deflate, fastest)
   inspect(compressed[0], content="b'\\x78'")

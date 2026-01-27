@@ -2,10 +2,6 @@
 package "mizchi/sandbox/git"
 
 // Values
-pub fn adler32(Bytes) -> Int
-
-pub fn adler32_fixed(FixedArray[Byte]) -> Int
-
 pub fn build_receive_pack_body(PushRequest) -> Bytes
 
 pub fn build_ref_update(ObjectId, ObjectId, String, String) -> String
@@ -44,6 +40,10 @@ pub fn hash_blob_string(String) -> ObjectId
 
 pub fn hex_dump(Bytes) -> String
 
+pub fn parse_packfile(Bytes) -> Array[PackObject] raise GitError
+
+pub fn parse_packfile_with_bases(Bytes, Array[PackObject]) -> Array[PackObject] raise GitError
+
 pub fn parse_receive_pack_response(Bytes) -> Result[String, GitError]
 
 pub fn parse_refs(Bytes) -> Array[(ObjectId, String)] raise GitError
@@ -67,10 +67,6 @@ pub async fn push_file(Remote, Bytes, String, String, String, Int64, ObjectId?) 
 pub fn sha1(Bytes) -> ObjectId
 
 pub fn sha1_array(Array[Byte]) -> ObjectId
-
-pub fn zlib_compress_stored(Bytes) -> Bytes
-
-pub fn zlib_decompress_stored(Bytes) -> Bytes raise GitError
 
 // Errors
 pub(all) suberror GitError {
@@ -115,6 +111,7 @@ pub(all) enum ObjectType {
 }
 pub fn ObjectType::to_packfile_type(Self) -> Int
 pub fn ObjectType::to_string(Self) -> String
+pub impl Eq for ObjectType
 pub impl Show for ObjectType
 
 pub struct PackObject {

@@ -160,7 +160,11 @@ fn is_subpath(allowed : String, requested : String) -> Bool {
   }
   if requested.has_prefix(allowed) {
     // Make sure it's a proper subpath (not just prefix match)
-    let suffix = requested.substring(start=allowed.length())
+    let suffix = String::unsafe_substring(
+      requested,
+      start=allowed.length(),
+      end=requested.length(),
+    )
     return suffix.has_prefix("/")
   }
   false

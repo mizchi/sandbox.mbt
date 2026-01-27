@@ -1,5 +1,11 @@
 ///| Zlib stored blocks implementation (no compression)
 
+///|
+/// Errors raised by zlib helpers
+pub(all) suberror ZlibError {
+  InvalidData(String)
+} derive(Show, Eq)
+
 ///| Git servers accept uncompressed deflate data
 
 ///|
@@ -76,36 +82,43 @@ pub fn zlib_compress_stored(data : Bytes) -> Bytes {
 }
 
 ///|
-/// Decompress zlib stored blocks
-pub fn zlib_decompress_stored(data : Bytes) -> Bytes raise GitError {
-  if data.length() < 6 {
-    raise GitError::InvalidObject("Zlib data too short")
+/// Decompress zlib stored blocks from the given offset.
+/// Returns (decompressed_bytes, next_offset).
+pub fn zlib_decompress_stored_at(
+  data : Bytes,
+  start : Int,
+) -> (Bytes, Int) raise ZlibError {
+  if start < 0 || start + 2 > data.length() {
+    raise ZlibError::InvalidData("Zlib data too short")
   }
 
   // Verify zlib header
-  let cmf = data[0].to_int()
-  let flg = data[1].to_int()
+  let cmf = data[start].to_int()
+  let flg = data[start + 1].to_int()
   if cmf != 0x78 {
-    raise GitError::InvalidObject("Invalid zlib CMF: \{cmf}")
+    raise ZlibError::InvalidData("Invalid zlib CMF: \{cmf}")
   }
   // FLG should make (CMF * 256 + FLG) % 31 == 0
   if (cmf * 256 + flg) % 31 != 0 {
-    raise GitError::InvalidObject("Invalid zlib FLG checksum")
+    raise ZlibError::InvalidData("Invalid zlib FLG checksum")
   }
   let result : Array[Byte] = []
-  let mut offset = 2
+  let mut offset = start + 2
 
   // Read blocks
   while true {
-    if offset >= data.length() - 4 {
-      raise GitError::InvalidObject("Unexpected end of zlib data")
+    if offset >= data.length() {
+      raise ZlibError::InvalidData("Unexpected end of zlib data")
+    }
+    if offset + 5 > data.length() {
+      raise ZlibError::InvalidData("Unexpected end of zlib block header")
     }
     let header = data[offset].to_int()
     offset += 1
     let bfinal = header & 1
     let btype = (header >> 1) & 3
     if btype != 0 {
-      raise GitError::InvalidObject(
+      raise ZlibError::InvalidData(
         "Only stored blocks supported, got BTYPE=\{btype}",
       )
     }
@@ -122,9 +135,12 @@ pub fn zlib_decompress_stored(data : Bytes) -> Bytes raise GitError {
     let nlen = nlen_lo | (nlen_hi << 8)
     offset += 2
     if (block_len ^ nlen) != 0xffff {
-      raise GitError::InvalidObject("Invalid stored block length")
+      raise ZlibError::InvalidData("Invalid stored block length")
     }
 
+    if offset + block_len > data.length() {
+      raise ZlibError::InvalidData("Unexpected end of stored block data")
+    }
     // Copy raw data
     for i = 0; i < block_len; i = i + 1 {
       result.push(data[offset])
@@ -137,18 +153,81 @@ pub fn zlib_decompress_stored(data : Bytes) -> Bytes raise GitError {
 
   // Verify Adler-32 (big-endian)
   if offset + 4 > data.length() {
-    raise GitError::InvalidObject("Missing Adler-32 checksum")
+    raise ZlibError::InvalidData("Missing Adler-32 checksum")
   }
   let stored_checksum = (data[offset].to_int() << 24) |
     (data[offset + 1].to_int() << 16) |
     (data[offset + 2].to_int() << 8) |
     data[offset + 3].to_int()
+  offset += 4
   let result_bytes = zlib_array_to_bytes(result)
   let computed_checksum = adler32(result_bytes)
   if stored_checksum != computed_checksum {
-    raise GitError::InvalidObject(
+    raise ZlibError::InvalidData(
       "Adler-32 mismatch: stored=\{stored_checksum}, computed=\{computed_checksum}",
     )
   }
-  result_bytes
+  (result_bytes, offset)
+}
+
+///|
+/// Decompress zlib stored blocks (single stream)
+pub fn zlib_decompress_stored(data : Bytes) -> Bytes raise ZlibError {
+  let (result, offset) = zlib_decompress_stored_at(data, 0)
+  if offset != data.length() {
+    raise ZlibError::InvalidData("Trailing data after zlib stream")
+  }
+  result
+}
+
+///|
+/// Decompress a zlib stream (deflate with checksum) from the given offset.
+/// Returns (decompressed_bytes, next_offset).
+pub fn zlib_decompress_at(
+  data : Bytes,
+  start : Int,
+) -> (Bytes, Int) raise ZlibError {
+  if start < 0 || start + 2 > data.length() {
+    raise ZlibError::InvalidData("Zlib data too short")
+  }
+
+  let cmf = data[start].to_int()
+  let flg = data[start + 1].to_int()
+  if (cmf & 0x0f) != 8 {
+    raise ZlibError::InvalidData("Unsupported compression method")
+  }
+  if (cmf * 256 + flg) % 31 != 0 {
+    raise ZlibError::InvalidData("Invalid zlib FLG checksum")
+  }
+  let fdict = (flg >> 5) & 1
+  if fdict == 1 {
+    raise ZlibError::InvalidData("Preset dictionary not supported")
+  }
+  let deflate_start = start + 2
+  let (result, offset) = inflate_deflate_stream(data, deflate_start)
+
+  if offset + 4 > data.length() {
+    raise ZlibError::InvalidData("Missing Adler-32 checksum")
+  }
+  let stored_checksum = (data[offset].to_int() << 24) |
+    (data[offset + 1].to_int() << 16) |
+    (data[offset + 2].to_int() << 8) |
+    data[offset + 3].to_int()
+  let computed_checksum = adler32(result)
+  if stored_checksum != computed_checksum {
+    raise ZlibError::InvalidData(
+      "Adler-32 mismatch: stored=\{stored_checksum}, computed=\{computed_checksum}",
+    )
+  }
+  (result, offset + 4)
+}
+
+///|
+/// Decompress a full zlib stream.
+pub fn zlib_decompress(data : Bytes) -> Bytes raise ZlibError {
+  let (result, offset) = zlib_decompress_at(data, 0)
+  if offset != data.length() {
+    raise ZlibError::InvalidData("Trailing data after zlib stream")
+  }
+  result
 }

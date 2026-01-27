@@ -85,7 +85,7 @@ test "integration: tree format is correct" {
   let (tree_id, compressed) = create_tree([entry])
 
   // Decompress and verify format
-  let decompressed = zlib_decompress_stored(compressed)
+  let decompressed = @zlib.zlib_decompress_stored(compressed)
 
   // Should start with "tree {size}\0"
   assert_true(decompressed[0] == b't')
@@ -117,7 +117,7 @@ test "integration: commit format is correct" {
   let (_, compressed) = create_commit(commit)
 
   // Decompress and verify format
-  let decompressed = zlib_decompress_stored(compressed)
+  let decompressed = @zlib.zlib_decompress_stored(compressed)
 
   // Should start with "commit {size}\0"
   assert_true(decompressed[0] == b'c')

@@ -26,7 +26,6 @@ struct OpenFile {
   // For pipes
   is_pipe : Bool
   pipe_buffer : Array[Byte]?
-  pipe_read_end : Bool // true if this is the read end
 }
 
 ///|
@@ -39,7 +38,6 @@ fn OpenFile::new(path : String, flags : OpenFlags, mode : FileMode) -> OpenFile 
     closed: false,
     is_pipe: false,
     pipe_buffer: None,
-    pipe_read_end: false,
   }
 }
 
@@ -57,7 +55,6 @@ fn OpenFile::new_pipe(buffer : Array[Byte], is_read_end : Bool) -> OpenFile {
     closed: false,
     is_pipe: true,
     pipe_buffer: Some(buffer),
-    pipe_read_end: is_read_end,
   }
 }
 
@@ -66,25 +63,12 @@ fn OpenFile::new_pipe(buffer : Array[Byte], is_read_end : Bool) -> OpenFile {
 ///|
 /// Internal process state
 struct Process {
-  pid : Pid
-  ppid : Pid
-  command : String
-  args : Array[String]
-  env : Map[String, String]
-  cwd : String
   mut exit_code : Int?
 }
 
 ///|
-fn Process::new(
-  pid : Pid,
-  ppid : Pid,
-  command : String,
-  args : Array[String],
-  env : Map[String, String],
-  cwd : String,
-) -> Process {
-  { pid, ppid, command, args, env, cwd, exit_code: None }
+fn Process::new() -> Process {
+  { exit_code: None }
 }
 
 ///|
@@ -168,7 +152,7 @@ pub fn[T : @fs.FileSystem] PosixContext::new(fs : T) -> PosixContext {
   // Create initial process
   ctx.processes.set(
     Pid(1),
-    Process::new(Pid(1), Pid(0), "/bin/init", [], ctx.env, "/"),
+    Process::new(),
   )
   ctx
 }
@@ -734,14 +718,9 @@ pub fn PosixContext::spawn(
 ) -> Pid {
   let pid = Pid(self.next_pid)
   self.next_pid += 1
-  let process = Process::new(
-    pid,
-    self.current_pid,
-    command,
-    args,
-    self.env,
-    self.cwd,
-  )
+  ignore(command)
+  ignore(args)
+  let process = Process::new()
   self.processes.set(pid, process)
   pid
 }
@@ -924,7 +903,7 @@ pub fn PosixContext::poll(
 ///|
 /// Check if fd is readable (has data or is regular file)
 fn PosixContext::is_readable(
-  self : PosixContext,
+  _self : PosixContext,
   _fd : Fd,
   file : OpenFile,
 ) -> Bool {
@@ -951,7 +930,7 @@ fn PosixContext::is_readable(
 ///|
 /// Check if fd is writable
 fn PosixContext::is_writable(
-  self : PosixContext,
+  _self : PosixContext,
   _fd : Fd,
   file : OpenFile,
 ) -> Bool {

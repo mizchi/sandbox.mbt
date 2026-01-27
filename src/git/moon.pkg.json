@@ -1,9 +1,13 @@
 {
   "import": [
+    "mizchi/sandbox/zlib",
     {
       "path": "moonbitlang/async/http",
       "targets": ["wasm-gc", "wasm"]
     }
+  ],
+  "test-import": [
+    "mizchi/sandbox/fs"
   ],
   "targets": {
     "remote.mbt": ["wasm-gc", "wasm"],

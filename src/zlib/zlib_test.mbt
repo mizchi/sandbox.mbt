@@ -77,3 +77,58 @@ test "zlib header format" {
   // Check data
   inspect(compressed[7], content="b'\\x78'") // 'x'
 }
+
+///|
+test "zlib decompress at offset" {
+  let payload = Bytes::from_array([b'a', b'b'])
+  let compressed = zlib_compress_stored(payload)
+  let bytes : Array[Byte] = []
+  bytes.push(b'X')
+  bytes.push(b'Y')
+  for b in compressed {
+    bytes.push(b)
+  }
+  bytes.push(b'Z')
+  let data = Bytes::from_array(
+    FixedArray::makei(bytes.length(), fn(i) { bytes[i] }),
+  )
+  let (out, next_offset) = zlib_decompress_stored_at(data, 2)
+  assert_true(out.length() == payload.length())
+  for i = 0; i < payload.length(); i = i + 1 {
+    assert_true(out[i] == payload[i])
+  }
+  assert_true(next_offset == 2 + compressed.length())
+}
+
+///|
+test "zlib decompress deflate" {
+  // zlib.deflateSync(Buffer.from("hello")).toString("hex")
+  let hex = "789ccb48cdc9c90700062c0215"
+  let bytes : Array[Byte] = []
+  let chars = hex.to_array()
+  for i in 0..<(hex.length() / 2) {
+    let hi = hex_char_to_int(chars[i * 2])
+    let lo = hex_char_to_int(chars[i * 2 + 1])
+    bytes.push(((hi << 4) | lo).to_byte())
+  }
+  let compressed = Bytes::from_array(
+    FixedArray::makei(bytes.length(), fn(i) { bytes[i] }),
+  )
+  let decompressed = zlib_decompress(compressed)
+  inspect(decompressed.length(), content="5")
+  inspect(decompressed[0], content="b'\\x68'")
+  inspect(decompressed[4], content="b'\\x6F'")
+}
+
+///|
+fn hex_char_to_int(c : Char) -> Int {
+  if c >= '0' && c <= '9' {
+    c.to_int() - '0'.to_int()
+  } else if c >= 'a' && c <= 'f' {
+    c.to_int() - 'a'.to_int() + 10
+  } else if c >= 'A' && c <= 'F' {
+    c.to_int() - 'A'.to_int() + 10
+  } else {
+    0
+  }
+}

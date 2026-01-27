@@ -87,7 +87,7 @@ pub(all) enum ObjectType {
   Tree
   Commit
   Tag
-}
+} derive(Eq)
 
 ///|
 pub fn ObjectType::to_string(self : ObjectType) -> String {

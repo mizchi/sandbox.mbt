@@ -69,7 +69,6 @@ struct OpenFileState {
 ///|
 /// Internal process state
 struct ProcessState {
-  pid : Pid
   io : ProcessIO
   mut exit_code : Int?
 }
@@ -396,7 +395,7 @@ pub impl ProcessManager for MemfsBackend with spawn(self, cmd) {
 
       // Execute handler synchronously
       let exit_code = handler(ctx)
-      let state : ProcessState = { pid, io, exit_code: Some(exit_code) }
+      let state : ProcessState = { io, exit_code: Some(exit_code) }
       self.processes.set(pid, state)
       Process::{ pid, }
     }
@@ -490,42 +489,42 @@ pub impl ProcessManager for MemfsBackend with write_stdin(self, pid, data) {
 // ============ Network implementation (stub) ============
 
 ///|
-pub impl Network for MemfsBackend with tcp_connect(self, addr) {
+pub impl Network for MemfsBackend with tcp_connect(_self, addr) {
   raise NetworkError::Other("Network not supported in memfs mode: \{addr}")
 }
 
 ///|
-pub impl Network for MemfsBackend with tcp_read(self, _conn, _len) {
+pub impl Network for MemfsBackend with tcp_read(_self, _conn, _len) {
   raise NetworkError::Other("Network not supported in memfs mode")
 }
 
 ///|
-pub impl Network for MemfsBackend with tcp_write(self, _conn, _data) {
+pub impl Network for MemfsBackend with tcp_write(_self, _conn, _data) {
   raise NetworkError::Other("Network not supported in memfs mode")
 }
 
 ///|
-pub impl Network for MemfsBackend with tcp_close(self, _conn) {
+pub impl Network for MemfsBackend with tcp_close(_self, _conn) {
   // No-op
 }
 
 ///|
-pub impl Network for MemfsBackend with tcp_listen(self, addr) {
+pub impl Network for MemfsBackend with tcp_listen(_self, addr) {
   raise NetworkError::Other("Network not supported in memfs mode: \{addr}")
 }
 
 ///|
-pub impl Network for MemfsBackend with tcp_accept(self, _listener) {
+pub impl Network for MemfsBackend with tcp_accept(_self, _listener) {
   raise NetworkError::Other("Network not supported in memfs mode")
 }
 
 ///|
-pub impl Network for MemfsBackend with tcp_listener_close(self, _listener) {
+pub impl Network for MemfsBackend with tcp_listener_close(_self, _listener) {
   // No-op
 }
 
 ///|
-pub impl Network for MemfsBackend with resolve(self, host) {
+pub impl Network for MemfsBackend with resolve(_self, host) {
   raise NetworkError::HostNotFound(host)
 }
 

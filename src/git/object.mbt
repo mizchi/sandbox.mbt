@@ -15,7 +15,7 @@ pub fn create_object(
 ) -> (ObjectId, Bytes) {
   let raw = format_object(obj_type, content)
   let id = sha1(raw)
-  let compressed = zlib_compress_stored(raw)
+  let compressed = @zlib.zlib_compress_stored(raw)
   (id, compressed)
 }
 

@@ -2,8 +2,7 @@
   "is-main": true,
   "import": [
     "mizchi/sandbox/shell",
-    "mizchi/sandbox/posix",
-    "mizchi/sandbox/fs"
+    "mizchi/sandbox/posix"
   ],
   "targets": {
     "wasi.mbt": ["wasm"],

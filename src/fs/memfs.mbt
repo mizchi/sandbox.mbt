@@ -505,7 +505,7 @@ pub fn Fs::truncate(
         }
       }
       self.current_size = self.current_size - old_len + length
-      self.entries.set(normalized, File(Bytes::from_fixedarray(new_content)))
+      self.entries.set(normalized, File(Bytes::from_array(new_content[:])))
     }
     Some(Dir) => raise NotAFile(normalized)
     Some(Symlink(_)) => {

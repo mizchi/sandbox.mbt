@@ -126,7 +126,11 @@ fn parse_flag_value(arg : String, prefix : String) -> String? {
   }
   let prefix_eq = prefix + "="
   if arg.has_prefix(prefix_eq) {
-    let value = arg.substring(start=prefix_eq.length())
+    let value = String::unsafe_substring(
+      arg,
+      start=prefix_eq.length(),
+      end=arg.length(),
+    )
     if value.is_empty() {
       return None
     }

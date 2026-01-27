@@ -153,7 +153,7 @@ pub async fn SandboxContext::read_text(
   // Simple UTF-8 decode (lossy)
   let chars : Array[Char] = []
   for i in 0..<data.length() {
-    chars.push(Char::from_int(data[i].to_int()))
+    chars.push(data[i].to_int().unsafe_to_char())
   }
   String::from_array(chars)
 }
