@@ -1,0 +1,90 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "mizchi/sandbox/wasi"
+
+import {
+  "mizchi/sandbox/fs",
+  "mizchi/sandbox/posix",
+  "mizchi/sandbox/sandbox",
+}
+
+// Values
+pub fn create_posix_context(RuntimeConfig) -> @posix.PosixContext
+
+// Errors
+
+// Types and methods
+pub(all) enum BackendMode {
+  Sandbox
+  Native
+  WasiNative
+}
+pub impl Eq for BackendMode
+pub impl Show for BackendMode
+
+pub struct RuntimeConfig {
+  mode : BackendMode
+  fs : @fs.Fs?
+  wasi_config : WasiSandboxConfig?
+}
+pub fn RuntimeConfig::get_fs(Self) -> @fs.Fs?
+pub fn RuntimeConfig::get_wasi_config(Self) -> WasiSandboxConfig?
+pub fn RuntimeConfig::is_native(Self) -> Bool
+pub fn RuntimeConfig::is_sandbox(Self) -> Bool
+pub fn RuntimeConfig::is_wasi_native(Self) -> Bool
+pub fn RuntimeConfig::native() -> Self
+pub fn RuntimeConfig::sandbox() -> Self
+pub fn RuntimeConfig::sandbox_with(@fs.Fs) -> Self
+pub fn RuntimeConfig::wasi_native() -> Self
+pub fn RuntimeConfig::wasi_native_with(WasiSandboxConfig) -> Self
+
+pub struct WasiSandbox {
+  config : WasiSandboxConfig
+  sandbox : @sandbox.Sandbox
+}
+pub fn WasiSandbox::check_env(Self, String) -> Bool
+pub fn WasiSandbox::check_host(Self, String) -> Bool
+pub fn WasiSandbox::check_port(Self, Int) -> Bool
+pub fn WasiSandbox::close(Self, @posix.Fd) -> Unit raise @sandbox.SandboxError
+pub fn WasiSandbox::exec(Self, String, Array[String]) -> @posix.Pid raise @sandbox.SandboxError
+pub fn WasiSandbox::get_config(Self) -> WasiSandboxConfig
+pub fn WasiSandbox::get_sandbox(Self) -> @sandbox.Sandbox
+pub fn WasiSandbox::map_path(Self, String) -> String
+pub fn WasiSandbox::mkdir(Self, String) -> Unit raise @sandbox.SandboxError
+pub fn WasiSandbox::new(WasiSandboxConfig) -> Self
+pub fn WasiSandbox::open(Self, String, @posix.OpenFlags, @posix.FileMode) -> @posix.Fd raise @sandbox.SandboxError
+pub fn WasiSandbox::read(Self, @posix.Fd, Int) -> Bytes raise @sandbox.SandboxError
+pub fn WasiSandbox::remove(Self, String) -> Unit raise @sandbox.SandboxError
+pub fn WasiSandbox::with_config(RuntimeConfig) -> Self
+pub fn WasiSandbox::with_fs(@fs.Fs, WasiSandboxConfig) -> Self
+pub fn WasiSandbox::write(Self, @posix.Fd, Bytes) -> Int raise @sandbox.SandboxError
+
+pub struct WasiSandboxConfig {
+  mode : WasiSandboxMode
+  caps : @sandbox.Capabilities
+  path_mappings : Array[(String, String)]
+  env_whitelist : Array[String]?
+  allow_network : Bool
+  allowed_hosts : Array[String]?
+  allowed_ports : Array[Int]?
+}
+pub fn WasiSandboxConfig::default() -> Self
+pub fn WasiSandboxConfig::permissive() -> Self
+pub fn WasiSandboxConfig::restricted() -> Self
+pub fn WasiSandboxConfig::with_allowed_hosts(Self, Array[String]) -> Self
+pub fn WasiSandboxConfig::with_caps(Self, @sandbox.Capabilities) -> Self
+pub fn WasiSandboxConfig::with_mode(Self, WasiSandboxMode) -> Self
+pub fn WasiSandboxConfig::with_network(Self, Bool) -> Self
+pub fn WasiSandboxConfig::with_path_mapping(Self, String, String) -> Self
+
+pub(all) enum WasiSandboxMode {
+  GuestOnly
+  HostEnforced
+  Hybrid
+}
+pub impl Eq for WasiSandboxMode
+pub impl Show for WasiSandboxMode
+
+// Type aliases
+
+// Traits
+

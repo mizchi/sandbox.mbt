@@ -1,0 +1,343 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "mizchi/sandbox/runtime"
+
+import {
+  "mizchi/sandbox/fs",
+}
+
+// Values
+pub fn create_sandbox_from_args(Array[String]) -> (SandboxedBackend, Array[String])
+
+pub fn parse_args(Array[String]) -> ParsedArgs
+
+pub fn sigint() -> Signal
+
+pub fn sigkill() -> Signal
+
+pub fn sigterm() -> Signal
+
+// Errors
+pub(all) suberror IOError {
+  NotFound(String)
+  PermissionDenied(String)
+  AlreadyExists(String)
+  IsDirectory(String)
+  NotDirectory(String)
+  InvalidInput(String)
+  BrokenPipe
+  Closed
+  Other(String)
+}
+pub impl Eq for IOError
+pub impl Show for IOError
+
+pub(all) suberror NetworkError {
+  ConnectionRefused(String)
+  ConnectionReset
+  ConnectionClosed
+  AddrInUse(String)
+  AddrNotAvailable(String)
+  PermissionDenied(String)
+  Timeout
+  HostNotFound(String)
+  Other(String)
+}
+pub impl Eq for NetworkError
+pub impl Show for NetworkError
+
+pub(all) suberror PermissionDenied {
+  Read(String)
+  Write(String)
+  Net(String)
+  Env(String)
+  Run(String)
+}
+pub impl Eq for PermissionDenied
+pub impl Show for PermissionDenied
+
+pub(all) suberror ProcessError {
+  NotFound(String)
+  NotSupported(String)
+  InvalidPid(Pid)
+  AlreadyExited(Pid)
+  SpawnFailed(String)
+  Other(String)
+}
+pub impl Eq for ProcessError
+pub impl Show for ProcessError
+
+// Types and methods
+pub(all) struct Command {
+  program : String
+  args : Array[String]
+  env : Map[String, String]
+  cwd : String?
+  stdin : Stdio
+  stdout : Stdio
+  stderr : Stdio
+}
+pub fn Command::arg(Self, String) -> Self
+pub fn Command::args(Self, Array[String]) -> Self
+pub fn Command::cwd(Self, String) -> Self
+pub fn Command::env(Self, String, String) -> Self
+pub fn Command::new(String) -> Self
+pub fn Command::stderr(Self, Stdio) -> Self
+pub fn Command::stdin(Self, Stdio) -> Self
+pub fn Command::stdout(Self, Stdio) -> Self
+
+pub(all) struct DirEntry {
+  name : String
+  file_type : FileType
+}
+
+pub(all) struct ExitStatus {
+  code : Int
+}
+pub fn ExitStatus::is_success(Self) -> Bool
+pub fn ExitStatus::success() -> Self
+
+pub(all) struct Fd(Int)
+#deprecated
+pub fn Fd::inner(Self) -> Int
+pub impl Eq for Fd
+pub impl Hash for Fd
+pub impl Show for Fd
+
+pub(all) struct FileMode(Int)
+pub fn FileMode::default() -> Self
+#deprecated
+pub fn FileMode::inner(Self) -> Int
+pub impl Eq for FileMode
+pub impl Show for FileMode
+
+pub(all) struct FileStat {
+  file_type : FileType
+  size : Int64
+  mode : FileMode
+  mtime : Int64
+}
+
+pub(all) enum FileType {
+  File
+  Directory
+  Symlink
+  Other
+}
+
+pub struct MemfsBackend {
+  fs : @fs.Fs
+  fd_table : Map[Fd, OpenFileState]
+  mut next_fd : Int
+  processes : Map[Pid, ProcessState]
+  mut next_pid : Int
+  current_pid : Pid
+  registry : Map[String, (ProcessContext) -> Int]
+  env : Map[String, String]
+  mut cwd : String
+  args : Array[String]
+}
+pub fn MemfsBackend::new() -> Self
+pub fn MemfsBackend::register(Self, String, (ProcessContext) -> Int) -> Unit
+pub fn MemfsBackend::register_builtins(Self) -> Unit
+pub fn MemfsBackend::with_fs(@fs.Fs) -> Self
+pub impl Environment for MemfsBackend
+pub impl Filesystem for MemfsBackend
+pub impl Network for MemfsBackend
+pub impl ProcessManager for MemfsBackend
+
+type OpenFileState
+
+pub(all) struct OpenFlags {
+  read : Bool
+  write : Bool
+  append : Bool
+  create : Bool
+  truncate : Bool
+  exclusive : Bool
+}
+pub fn OpenFlags::create() -> Self
+pub fn OpenFlags::is_readable(Self) -> Bool
+pub fn OpenFlags::is_writable(Self) -> Bool
+pub fn OpenFlags::read_only() -> Self
+pub fn OpenFlags::read_write() -> Self
+pub fn OpenFlags::write_only() -> Self
+
+pub struct ParsedArgs {
+  permissions : Permissions
+  program_args : Array[String]
+}
+
+pub(all) enum PermissionDescriptor {
+  Read(path~ : String?)
+  Write(path~ : String?)
+  Net(host~ : String?)
+  Env(variable~ : String?)
+  Run(command~ : String?)
+}
+pub impl Eq for PermissionDescriptor
+pub impl Show for PermissionDescriptor
+
+pub(all) enum PermissionState {
+  Granted
+  Prompt
+  Denied
+}
+pub impl Eq for PermissionState
+pub impl Show for PermissionState
+
+pub(all) struct PermissionStatus {
+  state : PermissionState
+  descriptor : PermissionDescriptor
+}
+
+pub struct Permissions {
+  allowed : Array[PermissionDescriptor]
+  denied : Array[PermissionDescriptor]
+}
+pub fn Permissions::allow(Self, PermissionDescriptor) -> Unit
+pub fn Permissions::allow_all() -> Self
+pub fn Permissions::check_env(Self, String) -> Unit raise PermissionDenied
+pub fn Permissions::check_net(Self, String) -> Unit raise PermissionDenied
+pub fn Permissions::check_read(Self, String) -> Unit raise PermissionDenied
+pub fn Permissions::check_run(Self, String) -> Unit raise PermissionDenied
+pub fn Permissions::check_write(Self, String) -> Unit raise PermissionDenied
+pub fn Permissions::deny(Self, PermissionDescriptor) -> Unit
+pub fn Permissions::new() -> Self
+pub fn Permissions::query(Self, PermissionDescriptor) -> PermissionStatus
+
+pub(all) struct Pid(Int)
+#deprecated
+pub fn Pid::inner(Self) -> Int
+pub impl Eq for Pid
+pub impl Hash for Pid
+pub impl Show for Pid
+
+pub struct Pipe {
+  buffer : Array[Byte]
+  mut closed : Bool
+}
+pub fn Pipe::available(Self) -> Int
+pub fn Pipe::close(Self) -> Unit
+pub fn Pipe::is_closed(Self) -> Bool
+pub fn Pipe::new() -> Self
+pub fn Pipe::read(Self, Int) -> Bytes
+pub fn Pipe::read_all(Self) -> Bytes
+pub fn Pipe::read_string(Self) -> String
+pub fn Pipe::write(Self, Bytes) -> Int
+pub fn Pipe::write_string(Self, String) -> Int
+
+pub(all) struct Process {
+  pid : Pid
+}
+pub fn Process::pid(Self) -> Pid
+
+pub struct ProcessContext {
+  backend : MemfsBackend
+  args : Array[String]
+  io : ProcessIO
+}
+pub fn ProcessContext::read_stdin(Self) -> String
+pub fn ProcessContext::write_stderr(Self, String) -> Unit
+pub fn ProcessContext::write_stdout(Self, String) -> Unit
+
+pub struct ProcessIO {
+  stdin : Pipe?
+  stdout : Pipe?
+  stderr : Pipe?
+}
+pub fn ProcessIO::new() -> Self
+pub fn ProcessIO::with_pipes() -> Self
+pub fn ProcessIO::with_stderr() -> Self
+pub fn ProcessIO::with_stdout() -> Self
+pub fn ProcessIO::with_stdout_stderr() -> Self
+
+type ProcessState
+
+pub struct SandboxedBackend {
+  inner : MemfsBackend
+  permissions : Permissions
+}
+pub fn SandboxedBackend::new(Permissions) -> Self
+pub fn SandboxedBackend::register(Self, String, (ProcessContext) -> Int) -> Unit
+pub fn SandboxedBackend::register_builtins(Self) -> Unit
+pub fn SandboxedBackend::with_backend(MemfsBackend, Permissions) -> Self
+pub impl Environment for SandboxedBackend
+pub impl Filesystem for SandboxedBackend
+pub impl Network for SandboxedBackend
+pub impl ProcessManager for SandboxedBackend
+
+pub(all) struct Signal(Int)
+#deprecated
+pub fn Signal::inner(Self) -> Int
+pub impl Eq for Signal
+pub impl Show for Signal
+
+pub(all) struct SocketAddr {
+  host : String
+  port : Int
+}
+pub fn SocketAddr::new(String, Int) -> Self
+pub impl Show for SocketAddr
+
+pub(all) enum Stdio {
+  Inherit
+  Null
+  Piped
+}
+
+pub(all) struct TcpConn {
+  id : Int
+}
+
+pub(all) struct TcpListenerHandle {
+  id : Int
+}
+
+// Type aliases
+
+// Traits
+pub(open) trait Environment {
+  get_env(Self, String) -> String?
+  set_env(Self, String, String) -> Unit
+  env_vars(Self) -> Map[String, String]
+  args(Self) -> Array[String]
+  cwd(Self) -> String
+  chdir(Self, String) -> Unit raise IOError
+}
+
+pub(open) trait Filesystem {
+  open(Self, String, OpenFlags) -> Fd raise IOError
+  read(Self, Fd, Int) -> Bytes raise IOError
+  write(Self, Fd, Bytes) -> Int raise IOError
+  close(Self, Fd) -> Unit raise IOError
+  stat(Self, String) -> FileStat raise IOError
+  exists(Self, String) -> Bool
+  mkdir(Self, String) -> Unit raise IOError
+  readdir(Self, String) -> Array[DirEntry] raise IOError
+  unlink(Self, String) -> Unit raise IOError
+  rename(Self, String, String) -> Unit raise IOError
+  realpath(Self, String) -> String raise IOError
+}
+
+pub(open) trait Network {
+  tcp_connect(Self, SocketAddr) -> TcpConn raise NetworkError
+  tcp_read(Self, TcpConn, Int) -> Bytes raise NetworkError
+  tcp_write(Self, TcpConn, Bytes) -> Int raise NetworkError
+  tcp_close(Self, TcpConn) -> Unit
+  tcp_listen(Self, SocketAddr) -> TcpListenerHandle raise NetworkError
+  tcp_accept(Self, TcpListenerHandle) -> TcpConn raise NetworkError
+  tcp_listener_close(Self, TcpListenerHandle) -> Unit
+  resolve(Self, String) -> Array[String] raise NetworkError
+}
+
+pub(open) trait ProcessManager {
+  spawn(Self, Command) -> Process raise ProcessError
+  wait(Self, Pid) -> ExitStatus raise ProcessError
+  try_wait(Self, Pid) -> ExitStatus? raise ProcessError
+  kill(Self, Pid, Signal) -> Unit raise ProcessError
+  current_pid(Self) -> Pid
+  read_stdout(Self, Pid) -> String raise ProcessError
+  read_stderr(Self, Pid) -> String raise ProcessError
+  write_stdin(Self, Pid, String) -> Unit raise ProcessError
+}
+

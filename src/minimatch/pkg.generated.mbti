@@ -1,0 +1,22 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "mizchi/sandbox/minimatch"
+
+// Values
+pub fn filter(String, Array[String]) -> Array[String]
+
+pub fn has_glob_chars(String) -> Bool
+
+pub fn match_(String, String) -> Bool
+
+pub fn match_all(Array[String], String) -> Bool
+
+pub fn match_any(Array[String], String) -> Bool
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+
+// Traits
+

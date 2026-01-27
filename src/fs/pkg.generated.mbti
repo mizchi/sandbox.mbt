@@ -1,0 +1,107 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "mizchi/sandbox/fs"
+
+// Values
+
+// Errors
+pub(all) suberror FsError {
+  NotFound(String)
+  AlreadyExists(String)
+  NotAFile(String)
+  NotADirectory(String)
+  InvalidPath(String)
+  SymlinkLoop(String)
+}
+pub impl Eq for FsError
+pub impl Show for FsError
+
+// Types and methods
+pub struct FileStat {
+  size : Int
+  is_dir : Bool
+  is_file : Bool
+  is_symlink : Bool
+}
+pub fn FileStat::dir() -> Self
+pub fn FileStat::file(Int) -> Self
+pub fn FileStat::symlink() -> Self
+
+pub struct Fs {
+  entries : Map[String, FsEntry]
+  mut current_size : Int
+  max_total_size : Int?
+  max_file_count : Int?
+}
+pub fn Fs::default() -> Self
+pub fn Fs::exists(Self, String) -> Bool
+pub fn Fs::file_count(Self) -> Int
+pub fn Fs::is_dir(Self, String) -> Bool
+pub fn Fs::is_file(Self, String) -> Bool
+pub fn Fs::is_symlink(Self, String) -> Bool
+pub fn Fs::mkdir(Self, String) -> Unit raise FsError
+pub fn Fs::mkdir_p(Self, String) -> Unit raise FsError
+pub fn Fs::new(max_total_size? : Int, max_file_count? : Int) -> Self
+pub fn Fs::read_file(Self, String) -> Bytes raise FsError
+pub fn Fs::read_link(Self, String) -> String raise FsError
+pub fn Fs::read_string(Self, String) -> String raise FsError
+pub fn Fs::readdir(Self, String) -> Array[String] raise FsError
+pub fn Fs::remove(Self, String) -> Unit raise FsError
+pub fn Fs::rename(Self, String, String) -> Unit raise FsError
+pub fn Fs::resolve_path(Self, String) -> String raise FsError
+pub fn Fs::rmdir(Self, String) -> Unit raise FsError
+pub fn Fs::size(Self, String) -> Int?
+pub fn Fs::stat(Self, String) -> FileStat raise FsError
+pub fn Fs::symlink(Self, String, String) -> Unit raise FsError
+pub fn Fs::total_size(Self) -> Int
+pub fn Fs::truncate(Self, String, Int) -> Unit raise FsError
+pub fn Fs::write_file(Self, String, Bytes) -> Unit raise FsError
+pub fn Fs::write_string(Self, String, String) -> Unit raise FsError
+pub impl FileSystem for Fs
+
+pub(all) enum FsEntry {
+  File(Bytes)
+  Dir
+  Symlink(String)
+}
+
+pub struct S3Backend {
+  bucket : String
+  prefix : String
+  inner : Fs
+}
+pub fn S3Backend::new(String, prefix? : String) -> Self
+pub impl FileSystem for S3Backend
+
+pub struct SqliteBackend {
+  db_path : String
+  inner : Fs
+}
+pub fn SqliteBackend::new(String) -> Self
+pub impl FileSystem for SqliteBackend
+
+// Type aliases
+
+// Traits
+pub trait FileSystem {
+  exists(Self, String) -> Bool
+  is_dir(Self, String) -> Bool
+  is_file(Self, String) -> Bool
+  is_symlink(Self, String) -> Bool
+  resolve_path(Self, String) -> String raise FsError
+  read_file(Self, String) -> Bytes raise FsError
+  write_file(Self, String, Bytes) -> Unit raise FsError
+  read_string(Self, String) -> String raise FsError
+  write_string(Self, String, String) -> Unit raise FsError
+  truncate(Self, String, Int) -> Unit raise FsError
+  size(Self, String) -> Int?
+  remove(Self, String) -> Unit raise FsError
+  mkdir(Self, String) -> Unit raise FsError
+  mkdir_p(Self, String) -> Unit raise FsError
+  rmdir(Self, String) -> Unit raise FsError
+  readdir(Self, String) -> Array[String] raise FsError
+  symlink(Self, String, String) -> Unit raise FsError
+  read_link(Self, String) -> String raise FsError
+  rename(Self, String, String) -> Unit raise FsError
+  stat(Self, String) -> FileStat raise FsError
+}
+

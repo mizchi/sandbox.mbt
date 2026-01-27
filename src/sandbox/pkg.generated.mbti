@@ -1,0 +1,75 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "mizchi/sandbox/sandbox"
+
+import {
+  "mizchi/sandbox/fs",
+  "mizchi/sandbox/posix",
+}
+
+// Values
+
+// Errors
+pub(all) suberror SandboxError {
+  PermissionDenied(String)
+  PathDenied(String)
+  CommandDenied(String)
+  ResourceLimitExceeded(String)
+  IOError(String)
+}
+pub impl Eq for SandboxError
+pub impl Show for SandboxError
+
+// Types and methods
+pub struct Capabilities {
+  can_read : Bool
+  can_write : Bool
+  can_create : Bool
+  can_delete : Bool
+  can_mkdir : Bool
+  can_rmdir : Bool
+  can_list : Bool
+  can_exec : Bool
+  allowed_commands : Array[String]?
+  allowed_paths : Array[String]?
+  denied_paths : Array[String]
+  max_file_size : Int?
+  max_total_size : Int?
+  max_open_files : Int?
+  max_path_depth : Int?
+  max_exec_time_ms : Int64?
+  max_memory_bytes : Int?
+}
+pub fn Capabilities::build_sandbox() -> Self
+pub fn Capabilities::plugin_sandbox() -> Self
+pub fn Capabilities::read_only() -> Self
+pub fn Capabilities::unrestricted() -> Self
+pub fn Capabilities::with_allowed_commands(Self, Array[String]) -> Self
+pub fn Capabilities::with_allowed_paths(Self, Array[String]) -> Self
+pub fn Capabilities::with_delete(Self, Bool) -> Self
+pub fn Capabilities::with_denied_paths(Self, Array[String]) -> Self
+pub fn Capabilities::with_exec(Self, Bool) -> Self
+pub fn Capabilities::with_max_file_size(Self, Int) -> Self
+pub fn Capabilities::with_max_open_files(Self, Int) -> Self
+pub fn Capabilities::with_max_path_depth(Self, Int) -> Self
+
+pub struct Sandbox {
+  ctx : @posix.PosixContext
+  caps : Capabilities
+  mut open_file_count : Int
+}
+pub fn Sandbox::close(Self, @posix.Fd) -> Unit raise SandboxError
+pub fn Sandbox::exec(Self, String, Array[String]) -> @posix.Pid raise SandboxError
+pub fn Sandbox::get_caps(Self) -> Capabilities
+pub fn Sandbox::get_ctx(Self) -> @posix.PosixContext
+pub fn Sandbox::mkdir(Self, String) -> Unit raise SandboxError
+pub fn Sandbox::new(Capabilities) -> Self
+pub fn Sandbox::open(Self, String, @posix.OpenFlags, @posix.FileMode) -> @posix.Fd raise SandboxError
+pub fn Sandbox::read(Self, @posix.Fd, Int) -> Bytes raise SandboxError
+pub fn Sandbox::remove(Self, String) -> Unit raise SandboxError
+pub fn Sandbox::with_fs(@fs.Fs, Capabilities) -> Self
+pub fn Sandbox::write(Self, @posix.Fd, Bytes) -> Int raise SandboxError
+
+// Type aliases
+
+// Traits
+

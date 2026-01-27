@@ -1,0 +1,320 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "mizchi/sandbox/posix"
+
+import {
+  "mizchi/sandbox/fs",
+}
+
+// Values
+pub fn s_irgrp() -> Int
+
+pub fn s_iroth() -> Int
+
+pub fn s_irusr() -> Int
+
+pub fn s_irwxg() -> Int
+
+pub fn s_irwxo() -> Int
+
+pub fn s_irwxu() -> Int
+
+pub fn s_iwgrp() -> Int
+
+pub fn s_iwoth() -> Int
+
+pub fn s_iwusr() -> Int
+
+pub fn s_ixgrp() -> Int
+
+pub fn s_ixoth() -> Int
+
+pub fn s_ixusr() -> Int
+
+pub fn stderr_fileno() -> Fd
+
+pub fn stdin_fileno() -> Fd
+
+pub fn stdout_fileno() -> Fd
+
+// Errors
+pub(all) suberror PosixError {
+  PosixErrno(Errno, String)
+}
+pub fn PosixError::errno(Self) -> Errno
+
+// Types and methods
+pub(all) enum AccessMode {
+  F_OK
+  R_OK
+  W_OK
+  X_OK
+}
+pub fn AccessMode::to_int(Self) -> Int
+pub impl Eq for AccessMode
+pub impl Show for AccessMode
+
+pub(all) enum ClockId {
+  CLOCK_REALTIME
+  CLOCK_MONOTONIC
+  CLOCK_PROCESS_CPUTIME_ID
+  CLOCK_THREAD_CPUTIME_ID
+}
+pub impl Eq for ClockId
+pub impl Show for ClockId
+
+pub(all) enum Errno {
+  EPERM
+  ENOENT
+  ESRCH
+  EINTR
+  EIO
+  ENXIO
+  E2BIG
+  ENOEXEC
+  EBADF
+  ECHILD
+  EAGAIN
+  ENOMEM
+  EACCES
+  EFAULT
+  EBUSY
+  EEXIST
+  EXDEV
+  ENODEV
+  ENOTDIR
+  EISDIR
+  EINVAL
+  ENFILE
+  EMFILE
+  ENOTTY
+  EFBIG
+  ENOSPC
+  ESPIPE
+  EROFS
+  EMLINK
+  EPIPE
+  EDOM
+  ERANGE
+  EDEADLK
+  ENAMETOOLONG
+  ENOLCK
+  ENOSYS
+  ENOTEMPTY
+  ELOOP
+  ETIMEDOUT
+  ECONNREFUSED
+}
+pub fn Errno::code(Self) -> Int
+pub impl Eq for Errno
+pub impl Show for Errno
+
+pub struct Fd(Int)
+pub fn Fd::from_int(Int) -> Self
+#deprecated
+pub fn Fd::inner(Self) -> Int
+pub fn Fd::to_int(Self) -> Int
+pub impl Compare for Fd
+pub impl Eq for Fd
+pub impl Hash for Fd
+pub impl Show for Fd
+
+pub struct FileMode {
+  bits : Int
+}
+pub fn FileMode::default_dir() -> Self
+pub fn FileMode::default_file() -> Self
+pub fn FileMode::has(Self, Int) -> Bool
+pub fn FileMode::new(Int) -> Self
+pub fn FileMode::to_int(Self) -> Int
+
+pub(all) enum FileType {
+  S_IFREG
+  S_IFDIR
+  S_IFLNK
+  S_IFCHR
+  S_IFBLK
+  S_IFIFO
+  S_IFSOCK
+}
+pub impl Eq for FileType
+pub impl Show for FileType
+
+type OpenFile
+
+pub(all) enum OpenFlag {
+  O_RDONLY
+  O_WRONLY
+  O_RDWR
+  O_CREAT
+  O_EXCL
+  O_TRUNC
+  O_APPEND
+  O_NONBLOCK
+  O_SYNC
+  O_DIRECTORY
+  O_NOFOLLOW
+  O_CLOEXEC
+}
+pub impl Eq for OpenFlag
+pub impl Show for OpenFlag
+
+pub struct OpenFlags {
+  flags : Array[OpenFlag]
+}
+pub fn OpenFlags::add(Self, OpenFlag) -> Self
+pub fn OpenFlags::from(Array[OpenFlag]) -> Self
+pub fn OpenFlags::has(Self, OpenFlag) -> Bool
+pub fn OpenFlags::is_readable(Self) -> Bool
+pub fn OpenFlags::is_writable(Self) -> Bool
+pub fn OpenFlags::new() -> Self
+
+pub struct Pid(Int)
+pub fn Pid::from_int(Int) -> Self
+#deprecated
+pub fn Pid::inner(Self) -> Int
+pub fn Pid::to_int(Self) -> Int
+pub impl Compare for Pid
+pub impl Eq for Pid
+pub impl Hash for Pid
+pub impl Show for Pid
+
+pub struct PipeFds {
+  read_fd : Fd
+  write_fd : Fd
+}
+
+pub(all) enum PollEvent {
+  POLLIN
+  POLLOUT
+  POLLERR
+  POLLHUP
+  POLLNVAL
+  POLLPRI
+}
+pub fn PollEvent::to_int(Self) -> Int
+pub impl Eq for PollEvent
+pub impl Show for PollEvent
+
+pub struct PollFd {
+  fd : Fd
+  events : Int
+  mut revents : Int
+}
+pub fn PollFd::clear_revents(Self) -> Unit
+pub fn PollFd::get_fd(Self) -> Fd
+pub fn PollFd::has_event(Self, PollEvent) -> Bool
+pub fn PollFd::has_revent(Self, PollEvent) -> Bool
+pub fn PollFd::new(Fd, PollEvent) -> Self
+pub fn PollFd::new_multi(Fd, Array[PollEvent]) -> Self
+pub fn PollFd::set_revent(Self, PollEvent) -> Unit
+
+pub struct PosixContext {
+  fd_table : Map[Fd, OpenFile]
+  mut next_fd : Int
+  fs : &@fs.FileSystem
+  processes : Map[Pid, Process]
+  mut next_pid : Int
+  current_pid : Pid
+  env : Map[String, String]
+  mut cwd : String
+  mut mock_time : Int64?
+  monotonic_base : Int64
+  uid : Int
+  gid : Int
+  euid : Int
+  egid : Int
+}
+pub fn PosixContext::access(Self, String, AccessMode) -> Unit raise PosixError
+pub fn PosixContext::chdir(Self, String) -> Unit raise PosixError
+pub fn PosixContext::clock_gettime(Self, ClockId) -> Timespec
+pub fn PosixContext::close(Self, Fd) -> Unit raise PosixError
+pub fn PosixContext::default() -> Self
+pub fn PosixContext::dup(Self, Fd) -> Fd raise PosixError
+pub fn PosixContext::dup2(Self, Fd, Fd) -> Fd raise PosixError
+pub fn PosixContext::fcntl_dupfd(Self, Fd, Int) -> Fd raise PosixError
+pub fn PosixContext::fcntl_getfl(Self, Fd) -> OpenFlags raise PosixError
+pub fn PosixContext::fcntl_setfl(Self, Fd, OpenFlags) -> Unit raise PosixError
+pub fn PosixContext::fstat(Self, Fd) -> Stat raise PosixError
+pub fn PosixContext::ftruncate(Self, Fd, Int64) -> Unit raise PosixError
+pub fn PosixContext::get_fs(Self) -> &@fs.FileSystem
+pub fn PosixContext::get_time(Self) -> Int64
+pub fn PosixContext::getcwd(Self) -> String
+pub fn PosixContext::getegid(Self) -> Int
+pub fn PosixContext::getenv(Self, String) -> String?
+pub fn PosixContext::geteuid(Self) -> Int
+pub fn PosixContext::getgid(Self) -> Int
+pub fn PosixContext::getpid(Self) -> Pid
+pub fn PosixContext::getuid(Self) -> Int
+pub fn PosixContext::lseek(Self, Fd, Int64, Whence) -> Int64 raise PosixError
+pub fn PosixContext::lstat(Self, String) -> Stat raise PosixError
+pub fn PosixContext::mkdir(Self, String, FileMode) -> Unit raise PosixError
+pub fn[T : @fs.FileSystem] PosixContext::new(T) -> Self
+pub fn PosixContext::open(Self, String, OpenFlags, FileMode) -> Fd raise PosixError
+pub fn PosixContext::pipe(Self) -> PipeFds
+pub fn PosixContext::poll(Self, Array[PollFd], Int) -> Int
+pub fn PosixContext::process_exit(Self, Pid, Int) -> Unit
+pub fn PosixContext::process_running(Self, Pid) -> Bool
+pub fn PosixContext::read(Self, Fd, Int) -> Bytes raise PosixError
+pub fn PosixContext::readlink(Self, String) -> String raise PosixError
+pub fn PosixContext::rename(Self, String, String) -> Unit raise PosixError
+pub fn PosixContext::resolve_path(Self, String) -> String
+pub fn PosixContext::rmdir(Self, String) -> Unit raise PosixError
+pub fn PosixContext::set_mock_time(Self, Int64) -> Unit
+pub fn PosixContext::setenv(Self, String, String) -> Unit
+pub fn PosixContext::spawn(Self, String, Array[String]) -> Pid
+pub fn PosixContext::stat(Self, String) -> Stat raise PosixError
+pub fn PosixContext::symlink(Self, String, String) -> Unit raise PosixError
+pub fn PosixContext::time(Self) -> Int64
+pub fn PosixContext::truncate(Self, String, Int64) -> Unit raise PosixError
+pub fn PosixContext::unlink(Self, String) -> Unit raise PosixError
+pub fn PosixContext::unsetenv(Self, String) -> Unit
+pub fn PosixContext::waitpid(Self, Pid) -> Int?
+pub fn PosixContext::write(Self, Fd, Bytes) -> Int raise PosixError
+
+type Process
+
+pub struct Stat {
+  st_dev : Int
+  st_ino : Int
+  st_mode : FileMode
+  st_nlink : Int
+  st_uid : Int
+  st_gid : Int
+  st_rdev : Int
+  st_size : Int64
+  st_blksize : Int
+  st_blocks : Int64
+  st_atime : Int64
+  st_mtime : Int64
+  st_ctime : Int64
+  st_type : FileType
+}
+pub fn Stat::is_dir(Self) -> Bool
+pub fn Stat::is_file(Self) -> Bool
+pub fn Stat::is_symlink(Self) -> Bool
+pub fn Stat::new_dir(FileMode, Int64) -> Self
+pub fn Stat::new_file(Int64, FileMode, Int64) -> Self
+pub fn Stat::new_symlink(Int, Int64) -> Self
+
+pub struct Timespec {
+  tv_sec : Int64
+  tv_nsec : Int64
+}
+pub fn Timespec::from_millis(Int64) -> Self
+pub fn Timespec::from_seconds(Int64) -> Self
+pub fn Timespec::new(Int64, Int64) -> Self
+pub fn Timespec::to_millis(Self) -> Int64
+pub fn Timespec::to_nanos(Self) -> Int64
+
+pub(all) enum Whence {
+  SEEK_SET
+  SEEK_CUR
+  SEEK_END
+}
+pub impl Eq for Whence
+pub impl Show for Whence
+
+// Type aliases
+
+// Traits
+

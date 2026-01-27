@@ -1,0 +1,199 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "mizchi/sandbox/shell"
+
+import {
+  "mizchi/sandbox/fs",
+  "mizchi/sandbox/posix",
+  "mizchi/sandbox/runtime",
+}
+
+// Values
+pub fn expand_glob(String, &@fs.FileSystem, String) -> Array[String]
+
+pub fn expand_globs(Array[String], &@fs.FileSystem, String) -> Array[String]
+
+pub fn expand_word(Word, VarEnv, @posix.PosixContext) -> String
+
+pub fn expand_words(Array[Word], VarEnv, @posix.PosixContext) -> Array[String]
+
+pub fn expand_words_with_glob(Array[Word], VarEnv, @posix.PosixContext) -> Array[String]
+
+pub fn glob_match(String, String) -> Bool
+
+pub fn has_glob_chars(String) -> Bool
+
+pub fn parse(String) -> Ast raise ParseError
+
+pub fn token_to_word(Token) -> Word?
+
+pub fn tokenize(String) -> Array[Token]
+
+// Errors
+pub suberror ParseError {
+  ParseError(String)
+}
+pub impl Show for ParseError
+
+// Types and methods
+pub(all) enum Ast {
+  SimpleCommand(Array[Word], Array[Redirect])
+  Pipeline(Array[Ast])
+  AndList(Ast, Ast)
+  OrList(Ast, Ast)
+  Sequence(Ast, Ast)
+  IfStmt(Ast, Ast, Array[(Ast, Ast)], Ast?)
+  ForLoop(String, Array[Word], Ast)
+  WhileLoop(Ast, Ast, Bool)
+  CaseStmt(Word, Array[CaseItem])
+  Assignment(String, Word)
+  Empty
+}
+pub impl Show for Ast
+
+pub struct CaseItem {
+  patterns : Array[Word]
+  body : Ast
+}
+pub fn CaseItem::new(Array[Word], Ast) -> Self
+
+pub struct ExecResult {
+  exit_code : Int
+  stdout : String
+  stderr : String
+}
+
+pub struct Executor {
+  ctx : @posix.PosixContext
+  env : VarEnv
+  commands : Map[String, (@posix.PosixContext, Array[String], StringBuilder, StringBuilder) -> Int]
+}
+pub fn Executor::exec_script(Self, String) -> ExecResult
+pub fn Executor::execute(Self, Ast) -> ExecResult
+pub fn Executor::get_env(Self) -> VarEnv
+pub fn Executor::new(@posix.PosixContext) -> Self
+pub fn Executor::register(Self, String, (@posix.PosixContext, Array[String], StringBuilder, StringBuilder) -> Int) -> Unit
+pub fn Executor::with_args(@posix.PosixContext, Array[String]) -> Self
+
+pub struct Lexer {
+  input : Array[Char]
+  mut pos : Int
+  mut at_command_pos : Bool
+}
+pub fn Lexer::new(String) -> Self
+pub fn Lexer::next_token(Self) -> Token
+pub fn Lexer::tokenize(Self) -> Array[Token]
+
+pub struct Parser {
+  tokens : Array[Token]
+  mut pos : Int
+}
+pub fn Parser::new(Array[Token]) -> Self
+pub fn Parser::parse(Self) -> Ast raise ParseError
+
+pub struct Redirect {
+  fd : Int
+  kind : RedirectKind
+  target : Word
+}
+pub fn Redirect::new(Int, RedirectKind, Word) -> Self
+pub impl Show for Redirect
+
+pub(all) enum RedirectKind {
+  Out
+  Append
+  In
+}
+pub impl Eq for RedirectKind
+pub impl Show for RedirectKind
+
+pub struct RuntimeShell {
+  backend : @runtime.MemfsBackend
+  mut running : Bool
+}
+pub fn RuntimeShell::execute(Self, String) -> ExecResult
+pub fn RuntimeShell::execute_script(Self, String) -> Array[ExecResult]
+pub fn RuntimeShell::get_backend(Self) -> @runtime.MemfsBackend
+pub fn RuntimeShell::is_running(Self) -> Bool
+pub fn RuntimeShell::new() -> Self
+pub fn RuntimeShell::with_backend(@runtime.MemfsBackend) -> Self
+
+pub struct Shell {
+  ctx : @posix.PosixContext
+  executor : Executor
+  commands : Map[String, (@posix.PosixContext, Array[String], StringBuilder, StringBuilder) -> Int]
+  mut last_exit_code : Int
+}
+pub fn Shell::default() -> Self
+pub fn Shell::exec_line(Self, String) -> ExecResult
+pub fn Shell::exec_script(Self, String) -> ExecResult
+pub fn Shell::get_ctx(Self) -> @posix.PosixContext
+pub fn Shell::new(@posix.PosixContext) -> Self
+pub fn Shell::register(Self, String, (@posix.PosixContext, Array[String], StringBuilder, StringBuilder) -> Int) -> Unit
+
+pub(all) enum Token {
+  Word(String)
+  SingleQuotedWord(String)
+  DoubleQuotedWord(String)
+  Assignment(String, String)
+  Variable(String)
+  ExitCode
+  ArgN(Int)
+  Pipe
+  And
+  Or
+  Semi
+  RedirectOut
+  RedirectAppend
+  RedirectIn
+  RedirectErr
+  If
+  Then
+  Elif
+  Else
+  Fi
+  For
+  In
+  Do
+  Done
+  While
+  Until
+  Case
+  Esac
+  LeftBracket
+  RightBracket
+  LeftParen
+  RightParen
+  DoubleSemi
+  Newline
+  EOF
+}
+pub impl Eq for Token
+pub impl Show for Token
+
+pub struct VarEnv {
+  vars : Map[String, String]
+  args : Array[String]
+  mut last_exit : Int
+}
+pub fn VarEnv::get(Self, String) -> String?
+pub fn VarEnv::get_arg(Self, Int) -> String?
+pub fn VarEnv::get_last_exit(Self) -> Int
+pub fn VarEnv::new() -> Self
+pub fn VarEnv::set(Self, String, String) -> Unit
+pub fn VarEnv::set_last_exit(Self, Int) -> Unit
+pub fn VarEnv::with_args(Array[String]) -> Self
+
+pub(all) enum Word {
+  Literal(String)
+  Variable(String)
+  ExitCode
+  ArgN(Int)
+  Quoted(Array[Word])
+}
+pub impl Eq for Word
+pub impl Show for Word
+
+// Type aliases
+
+// Traits
+

@@ -34,9 +34,15 @@ pub fn encode_type_and_size(Int, Int, Array[Byte]) -> Unit
 
 pub fn extract_capabilities(Bytes) -> Array[String]
 
+pub fn generate_commit_packfile() -> (ObjectId, Bytes)
+
+pub fn generate_test_packfile() -> Bytes
+
 pub fn hash_blob(Bytes) -> ObjectId
 
 pub fn hash_blob_string(String) -> ObjectId
+
+pub fn hex_dump(Bytes) -> String
 
 pub fn parse_receive_pack_response(Bytes) -> Result[String, GitError]
 

@@ -1,0 +1,292 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "mizchi/sandbox/async"
+
+import {
+  "mizchi/sandbox/coroutine",
+  "mizchi/sandbox/posix",
+  "mizchi/sandbox/runtime",
+}
+
+// Values
+pub fn new_byte_stream() -> (ReadEnd, WriteEnd)
+
+pub fn[T] new_channel() -> (Sender[T], Receiver[T])
+
+pub fn[T] new_channel_with_capacity(Int) -> (Sender[T], Receiver[T])
+
+pub fn[T] new_future() -> (FutureRead[T], FutureWrite[T])
+
+pub async fn[A : Waitable, B : Waitable] select2(A, B) -> (Bool, Bool)
+
+pub fn spawn(async () -> Unit) -> Unit
+
+pub async fn[W : Waitable] wait_all(Array[W]) -> Unit
+
+pub async fn[W : Waitable] wait_any(Array[W]) -> WaitResult
+
+pub async fn[W : Waitable] wait_any_timeout(Array[W], Int) -> Result[WaitResult, TimeoutError]
+
+pub async fn[W : Waitable] wait_with_timeout(W, Int) -> Result[Unit, TimeoutError]
+
+pub async fn[T] with_timeout(Int, async () -> T) -> Result[T, TimeoutError]
+
+// Errors
+pub(all) suberror TimeoutError {
+  TimeoutError(String)
+}
+
+// Types and methods
+pub struct AsyncPosixContext {
+  ctx : @posix.PosixContext
+}
+pub fn AsyncPosixContext::close(Self, @posix.Fd) -> Unit raise @posix.PosixError
+pub fn AsyncPosixContext::get_ctx(Self) -> @posix.PosixContext
+pub fn AsyncPosixContext::new(@posix.PosixContext) -> Self
+pub fn AsyncPosixContext::open(Self, String, @posix.OpenFlags, @posix.FileMode) -> @posix.Fd raise @posix.PosixError
+pub async fn AsyncPosixContext::read(Self, @posix.Fd, Int) -> Bytes
+pub async fn AsyncPosixContext::sleep_ms(Self, Int64) -> Unit
+pub async fn AsyncPosixContext::sleep_ns(Self, Int64) -> Unit
+pub fn AsyncPosixContext::subscribe_duration(Self, Int64) -> TimerPollable
+pub fn AsyncPosixContext::subscribe_read(Self, @posix.Fd) -> PollableFd
+pub fn AsyncPosixContext::subscribe_write(Self, @posix.Fd) -> PollableFd
+pub async fn AsyncPosixContext::wait_readable(Self, @posix.Fd) -> Unit
+pub async fn AsyncPosixContext::wait_writable(Self, @posix.Fd) -> Unit
+pub async fn AsyncPosixContext::write(Self, @posix.Fd, Bytes) -> Int
+
+pub struct BackpressureController {
+  mut active : Bool
+  mut max_concurrent : Int
+  mut current_count : Int
+  waiters : Array[@coroutine.Coroutine]
+}
+pub async fn BackpressureController::acquire(Self) -> Unit
+pub async fn BackpressureController::acquire_guard(Self) -> BackpressureGuard
+pub fn BackpressureController::activate(Self) -> Unit
+pub fn BackpressureController::current(Self) -> Int
+pub fn BackpressureController::deactivate(Self) -> Unit
+pub fn BackpressureController::is_active(Self) -> Bool
+pub fn BackpressureController::max(Self) -> Int
+pub fn BackpressureController::new(max_concurrent? : Int) -> Self
+pub fn BackpressureController::release(Self) -> Unit
+pub fn BackpressureController::set_max(Self, Int) -> Unit
+pub fn BackpressureController::try_acquire(Self) -> Bool
+pub async fn[T] BackpressureController::with_backpressure(Self, async () -> T) -> T
+
+pub struct BackpressureGuard {
+  controller : BackpressureController
+}
+pub fn BackpressureGuard::release(Self) -> Unit
+
+pub struct ChannelInner[T] {
+  mut state : ChannelState
+  buffer : Array[T]
+  capacity : Int
+  receivers : Array[@coroutine.Coroutine]
+  senders : Array[@coroutine.Coroutine]
+}
+
+pub(all) enum ChannelState {
+  Open
+  Closed
+}
+
+pub struct FutureInner[T] {
+  mut state : FutureState[T]
+  waiters : Array[@coroutine.Coroutine]
+}
+
+pub struct FutureRead[T] {
+  inner : FutureInner[T]
+}
+pub fn[T] FutureRead::as_waitable(Self[T]) -> WaitableFuture[T]
+pub async fn[T] FutureRead::await_(Self[T]) -> T
+pub fn[T] FutureRead::is_done(Self[T]) -> Bool
+pub fn[T] FutureRead::is_pending(Self[T]) -> Bool
+pub fn[T] FutureRead::poll(Self[T]) -> T??
+
+pub(all) enum FutureState[T] {
+  Pending
+  Resolved(T)
+  Failed(Error)
+}
+
+pub struct FutureWrite[T] {
+  inner : FutureInner[T]
+}
+pub fn[T] FutureWrite::fail(Self[T], Error) -> Bool
+pub fn[T] FutureWrite::is_pending(Self[T]) -> Bool
+pub fn[T] FutureWrite::resolve(Self[T], T) -> Bool
+
+pub struct PollableFd {
+  ctx : @posix.PosixContext
+  fd : @posix.Fd
+  events : @posix.PollEvent
+  mut waiter : @coroutine.Coroutine?
+}
+pub fn PollableFd::get_waiter(Self) -> @coroutine.Coroutine?
+pub fn PollableFd::is_ready(Self) -> Bool
+pub fn PollableFd::new(@posix.PosixContext, @posix.Fd, @posix.PollEvent) -> Self
+pub fn PollableFd::set_waiter(Self, @coroutine.Coroutine?) -> Unit
+pub impl Waitable for PollableFd
+
+pub struct ReadEnd {
+  inner : StreamInner
+}
+pub fn ReadEnd::as_waitable(Self) -> WaitableRead
+pub fn ReadEnd::is_closed(Self) -> Bool
+pub fn ReadEnd::poll(Self) -> Bytes?
+pub async fn ReadEnd::read(Self) -> Bytes
+
+pub struct Receiver[T] {
+  inner : ChannelInner[T]
+}
+pub fn[T] Receiver::is_closed(Self[T]) -> Bool
+pub fn[T] Receiver::is_ready(Self[T]) -> Bool
+pub fn[T] Receiver::len(Self[T]) -> Int
+pub async fn[T] Receiver::recv(Self[T]) -> T?
+pub fn[T] Receiver::try_recv(Self[T]) -> T?
+
+pub struct SandboxContext {
+  backend : @runtime.MemfsBackend
+}
+pub fn SandboxContext::backend(Self) -> @runtime.MemfsBackend
+pub async fn SandboxContext::chdir(Self, String) -> Unit raise @runtime.IOError
+pub async fn SandboxContext::close(Self, @runtime.Fd) -> Unit raise @runtime.IOError
+pub fn SandboxContext::create_stream(Self) -> (ReadEnd, WriteEnd)
+pub fn SandboxContext::cwd(Self) -> String
+pub async fn SandboxContext::exists(Self, String) -> Bool
+pub fn SandboxContext::get_env(Self, String) -> String?
+pub async fn SandboxContext::mkdir(Self, String) -> Unit raise @runtime.IOError
+pub fn SandboxContext::new() -> Self
+pub async fn SandboxContext::open(Self, String, @runtime.OpenFlags) -> @runtime.Fd raise @runtime.IOError
+pub async fn SandboxContext::read(Self, @runtime.Fd, Int) -> Bytes raise @runtime.IOError
+pub async fn SandboxContext::read_file(Self, String) -> Bytes raise @runtime.IOError
+pub async fn SandboxContext::read_stderr(Self, @runtime.Pid) -> String raise @runtime.ProcessError
+pub async fn SandboxContext::read_stdout(Self, @runtime.Pid) -> String raise @runtime.ProcessError
+pub async fn SandboxContext::read_text(Self, String) -> String raise @runtime.IOError
+pub async fn SandboxContext::readdir(Self, String) -> Array[@runtime.DirEntry] raise @runtime.IOError
+pub async fn SandboxContext::rename(Self, String, String) -> Unit raise @runtime.IOError
+pub fn SandboxContext::set_env(Self, String, String) -> Unit
+pub async fn SandboxContext::spawn(Self, @runtime.Command) -> @runtime.Process raise @runtime.ProcessError
+pub async fn SandboxContext::stat(Self, String) -> @runtime.FileStat raise @runtime.IOError
+pub async fn SandboxContext::unlink(Self, String) -> Unit raise @runtime.IOError
+pub async fn SandboxContext::wait(Self, @runtime.Pid) -> @runtime.ExitStatus raise @runtime.ProcessError
+pub fn SandboxContext::with_backend(@runtime.MemfsBackend) -> Self
+pub async fn SandboxContext::write(Self, @runtime.Fd, Bytes) -> Int raise @runtime.IOError
+pub async fn SandboxContext::write_file(Self, String, Bytes) -> Unit raise @runtime.IOError
+pub async fn SandboxContext::write_text(Self, String, String) -> Unit raise @runtime.IOError
+
+pub struct Sender[T] {
+  inner : ChannelInner[T]
+}
+pub fn[T] Sender::close(Self[T]) -> Unit
+pub fn[T] Sender::is_closed(Self[T]) -> Bool
+pub async fn[T] Sender::send(Self[T], T) -> Bool
+pub fn[T] Sender::try_send(Self[T], T) -> Bool
+
+pub struct StreamInner {
+  mut state : StreamState
+  mut reader_waiting : @coroutine.Coroutine?
+  mut writer_waiting : @coroutine.Coroutine?
+}
+
+pub(all) enum StreamState {
+  Empty
+  HasData(Bytes)
+  Closed
+}
+
+pub struct Subtask {
+  id : SubtaskId
+  task : Task
+  mut completed : Bool
+}
+pub fn Subtask::complete(Self) -> Unit
+
+pub(all) struct SubtaskId(Int)
+#deprecated
+pub fn SubtaskId::inner(Self) -> Int
+pub impl Eq for SubtaskId
+pub impl Hash for SubtaskId
+pub impl Show for SubtaskId
+
+pub struct Task {
+  id : TaskId
+  mut state : TaskState
+  threads : Array[@coroutine.Coroutine]
+  subtasks : Array[Subtask]
+  mut backpressure : Bool
+  parent : Task?
+}
+pub fn Task::all_subtasks_complete(Self) -> Bool
+pub fn Task::apply_backpressure(Self) -> Unit
+pub fn Task::create_subtask(Self) -> Subtask
+pub fn Task::current() -> Self?
+pub fn Task::get_state(Self) -> TaskState
+pub fn Task::get_threads(Self) -> Array[@coroutine.Coroutine]
+pub fn Task::has_backpressure(Self) -> Bool
+pub fn Task::id(Self) -> TaskId
+pub fn Task::is_blocked(Self) -> Bool
+pub fn Task::new(parent? : Self) -> Self
+pub fn Task::parent(Self) -> Self?
+pub fn Task::pending_subtasks(Self) -> Array[Subtask]
+pub fn Task::release_backpressure(Self) -> Unit
+pub async fn[T] Task::run(async () -> T, parent? : Self) -> T
+pub fn Task::spawn_thread(async () -> Unit) -> @coroutine.Coroutine
+
+pub(all) struct TaskId(Int)
+#deprecated
+pub fn TaskId::inner(Self) -> Int
+pub impl Eq for TaskId
+pub impl Hash for TaskId
+pub impl Show for TaskId
+
+pub(all) enum TaskState {
+  Running
+  Suspended
+  Completed
+  Failed(Error)
+}
+
+pub struct TimerPollable {
+  ctx : @posix.PosixContext
+  deadline_ns : Int64
+  mut waiter : @coroutine.Coroutine?
+}
+pub fn TimerPollable::after(@posix.PosixContext, Int64) -> Self
+pub fn TimerPollable::is_ready(Self) -> Bool
+pub fn TimerPollable::new(@posix.PosixContext, Int64) -> Self
+pub impl Waitable for TimerPollable
+
+pub(all) enum WaitResult {
+  Index(Int)
+  Timeout
+}
+
+pub struct WaitableFuture[T] {
+  future : FutureRead[T]
+}
+pub impl[T] Waitable for WaitableFuture[T]
+
+pub struct WaitableRead {
+  reader : ReadEnd
+}
+pub impl Waitable for WaitableRead
+
+pub struct WriteEnd {
+  inner : StreamInner
+}
+pub fn WriteEnd::close(Self) -> Unit
+pub fn WriteEnd::is_closed(Self) -> Bool
+pub async fn WriteEnd::write(Self, Bytes) -> Bool
+pub async fn WriteEnd::write_string(Self, String) -> Bool
+
+// Type aliases
+
+// Traits
+pub(open) trait Waitable {
+  is_ready(Self) -> Bool
+  get_waiter(Self) -> @coroutine.Coroutine?
+  set_waiter(Self, @coroutine.Coroutine?) -> Unit
+}
+
