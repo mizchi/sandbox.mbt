@@ -22,7 +22,8 @@
 
 ### Current limitations
 
-- Packfile parsing expects base objects to appear before deltas and does not support thin packs.
+- SSH/file transport uses `git-upload-pack --stateless-rpc` via ProcessManager and requires a real native backend (not provided by MemfsBackend).
+- HTTP upload-pack implemented only for wasm targets.
 
 ### Fixture format
 

@@ -170,3 +170,71 @@ cd /path/to/repo
 git index-pack /tmp/tmp_refdelta.pack
 node -e 'const fs=require("fs"); const crypto=require("crypto"); const {execSync}=require("child_process"); const packPath="/tmp/tmp_refdelta.pack"; const buf=fs.readFileSync(packPath); const trailerOffset=buf.length-20; const out=execSync("git verify-pack -v "+packPath,{encoding:"utf8"}); const lines=out.trim().split("\\n").filter(l=>/^[0-9a-f]{40} /.test(l)); const entries=lines.map(l=>{const parts=l.trim().split(/\\s+/); return {offset: parseInt(parts[4],10), isDelta: parts.length>=7};}).sort((a,b)=>a.offset-b.offset); const offsets=entries.map(e=>e.offset).concat([trailerOffset]); const slices=entries.map((e,i)=>({isDelta:e.isDelta, buf: buf.slice(e.offset, offsets[i+1])})); const reordered=slices.filter(s=>s.isDelta).concat(slices.filter(s=>!s.isDelta)); const header=buf.slice(0,12); const body=Buffer.concat(reordered.map(s=>s.buf)); const content=Buffer.concat([header, body]); const trailer=crypto.createHash("sha1").update(content).digest(); fs.writeFileSync("/path/to/src/git/fixtures/oracle_after_delta.pack", Buffer.concat([content,trailer]));'
 ```
+
+## upload-pack v2 fixtures (advertise/ls-refs/fetch)
+
+These are embedded as hex strings in `src/git/upload_pack_fixture_test.mbt`.
+
+```sh
+TMP_DIR=$(mktemp -d)
+cd "$TMP_DIR"
+git init -q repo
+cd repo
+echo hello > hello.txt
+git add hello.txt
+git commit -q -m init
+cd ..
+
+# Advertise refs (protocol v2)
+GIT_PROTOCOL=version=2 git-upload-pack --stateless-rpc --advertise-refs repo > adv.bin
+
+# Build ls-refs request and capture response
+node - <<'NODE'
+const fs=require('fs');
+function pkt(s){const b=Buffer.from(s,'utf8');const len=b.length+4;const hdr=len.toString(16).padStart(4,'0');return Buffer.concat([Buffer.from(hdr,'ascii'),b]);}
+const chunks=[];
+chunks.push(pkt('command=ls-refs\n'));
+chunks.push(pkt('agent=git/moonbit\n'));
+chunks.push(pkt('object-format=sha1\n'));
+chunks.push(Buffer.from('0001','ascii'));
+chunks.push(pkt('peel\n'));
+chunks.push(pkt('symrefs\n'));
+chunks.push(pkt('unborn\n'));
+chunks.push(pkt('ref-prefix refs/heads/\n'));
+chunks.push(pkt('ref-prefix refs/tags/\n'));
+chunks.push(pkt('ref-prefix HEAD\n'));
+chunks.push(Buffer.from('0000','ascii'));
+fs.writeFileSync('lsreq.bin', Buffer.concat(chunks));
+NODE
+GIT_PROTOCOL=version=2 git-upload-pack --stateless-rpc repo < lsreq.bin > lsresp.bin
+
+# Build fetch request and capture response
+HEAD=$(git -C repo rev-parse HEAD)
+HEAD="$HEAD" node - <<'NODE'
+const fs=require('fs');
+const head=process.env.HEAD;
+function pkt(s){const b=Buffer.from(s,'utf8');const len=b.length+4;const hdr=len.toString(16).padStart(4,'0');return Buffer.concat([Buffer.from(hdr,'ascii'),b]);}
+const chunks=[];
+chunks.push(pkt('command=fetch\n'));
+chunks.push(pkt('agent=git/moonbit\n'));
+chunks.push(pkt('object-format=sha1\n'));
+chunks.push(Buffer.from('0001','ascii'));
+chunks.push(pkt('thin-pack\n'));
+chunks.push(pkt('no-progress\n'));
+chunks.push(pkt('ofs-delta\n'));
+chunks.push(pkt(`want ${head}\n`));
+chunks.push(pkt('done\n'));
+chunks.push(Buffer.from('0000','ascii'));
+fs.writeFileSync('fetchreq.bin', Buffer.concat(chunks));
+NODE
+GIT_PROTOCOL=version=2 git-upload-pack --stateless-rpc repo < fetchreq.bin > fetchresp.bin
+
+# Convert to hex for embedding
+node - <<'NODE'
+const fs=require('fs');
+for (const f of ['adv.bin','lsresp.bin','fetchresp.bin']) {
+  const b=fs.readFileSync(f);
+  console.log(f+':'+b.toString('hex'));
+}
+NODE
+```
