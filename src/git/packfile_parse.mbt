@@ -404,19 +404,6 @@ fn read_delta_size(data : Bytes, start : Int) -> (Int, Int) raise GitError {
 }
 
 ///|
-fn hash_object_content(obj_type : ObjectType, content : Bytes) -> ObjectId {
-  let header = "\{obj_type.to_string()} \{content.length()}\u0000"
-  let bytes : Array[Byte] = []
-  for c in header {
-    bytes.push(c.to_int().to_byte())
-  }
-  for b in content {
-    bytes.push(b)
-  }
-  sha1(Bytes::from_array(FixedArray::makei(bytes.length(), fn(i) { bytes[i] })))
-}
-
-///|
 fn read_u32_be(data : Bytes, start : Int) -> Int raise GitError {
   if start < 0 || start + 4 > data.length() {
     raise GitError::PackfileError("Unexpected end of packfile header")

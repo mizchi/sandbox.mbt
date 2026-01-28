@@ -20,6 +20,16 @@ pub fn create_object(
 }
 
 ///|
+/// Hash object content (without compression)
+pub fn hash_object_content(
+  obj_type : ObjectType,
+  content : Bytes,
+) -> ObjectId {
+  let raw = format_object(obj_type, content)
+  sha1(raw)
+}
+
+///|
 /// Format a Git object (without compression)
 fn format_object(obj_type : ObjectType, content : Bytes) -> Bytes {
   let header = "\{obj_type.to_string()} \{content.length()}\u0000"

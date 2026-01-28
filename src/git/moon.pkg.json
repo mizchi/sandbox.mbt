@@ -1,6 +1,8 @@
 {
   "import": [
+    "mizchi/sandbox/fs",
     "mizchi/sandbox/zlib",
+    "moonbitlang/core/encoding/utf8",
     {
       "path": "moonbitlang/async/http",
       "targets": ["wasm-gc", "wasm"]
@@ -11,6 +13,7 @@
   ],
   "targets": {
     "remote.mbt": ["wasm-gc", "wasm"],
-    "remote_test.mbt": ["wasm-gc", "wasm"]
+    "remote_test.mbt": ["wasm-gc", "wasm"],
+    "upload_pack_http.mbt": ["wasm-gc", "wasm"]
   }
 }
