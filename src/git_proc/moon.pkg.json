@@ -1,0 +1,10 @@
+{
+  "import": [
+    "mizchi/sandbox/fs",
+    "mizchi/sandbox/git",
+    "mizchi/sandbox/runtime"
+  ],
+  "targets": {
+    "upload_pack_proc.mbt": ["native"]
+  }
+}
