@@ -449,37 +449,63 @@ pub impl ProcessManager for MemfsBackend with current_pid(self) {
 
 ///|
 pub impl ProcessManager for MemfsBackend with read_stdout(self, pid) {
-  match self.processes.get(pid) {
-    Some(state) =>
-      match state.io.stdout {
-        Some(pipe) => pipe.read_string()
-        None => ""
-      }
-    None => raise ProcessError::InvalidPid(pid)
-  }
+  @utf8.decode_lossy(self.read_stdout_bytes(pid)[:])
 }
 
 ///|
 pub impl ProcessManager for MemfsBackend with read_stderr(self, pid) {
+  @utf8.decode_lossy(self.read_stderr_bytes(pid)[:])
+}
+
+///|
+pub impl ProcessManager for MemfsBackend with write_stdin(self, pid, data) {
+  self.write_stdin_bytes(pid, @utf8.encode(data[:]))
+}
+
+///|
+pub impl ProcessManager for MemfsBackend with read_stdout_bytes(self, pid) {
   match self.processes.get(pid) {
     Some(state) =>
-      match state.io.stderr {
-        Some(pipe) => pipe.read_string()
-        None => ""
+      match state.io.stdout {
+        Some(pipe) => pipe.read_all()
+        None => Bytes::new(0)
       }
     None => raise ProcessError::InvalidPid(pid)
   }
 }
 
 ///|
-pub impl ProcessManager for MemfsBackend with write_stdin(self, pid, data) {
+pub impl ProcessManager for MemfsBackend with read_stderr_bytes(self, pid) {
+  match self.processes.get(pid) {
+    Some(state) =>
+      match state.io.stderr {
+        Some(pipe) => pipe.read_all()
+        None => Bytes::new(0)
+      }
+    None => raise ProcessError::InvalidPid(pid)
+  }
+}
+
+///|
+pub impl ProcessManager for MemfsBackend with write_stdin_bytes(self, pid, data) {
   match self.processes.get(pid) {
     Some(state) =>
       match state.io.stdin {
         Some(pipe) => {
-          let _ = pipe.write_string(data)
-
+          let _ = pipe.write(data)
         }
+        None => ()
+      }
+    None => raise ProcessError::InvalidPid(pid)
+  }
+}
+
+///|
+pub impl ProcessManager for MemfsBackend with close_stdin(self, pid) {
+  match self.processes.get(pid) {
+    Some(state) =>
+      match state.io.stdin {
+        Some(pipe) => pipe.close()
         None => ()
       }
     None => raise ProcessError::InvalidPid(pid)

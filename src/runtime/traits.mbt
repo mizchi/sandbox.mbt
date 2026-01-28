@@ -46,6 +46,10 @@ pub(open) trait ProcessManager {
   kill(Self, Pid, Signal) -> Unit raise ProcessError
   current_pid(Self) -> Pid
   // I/O
+  read_stdout_bytes(Self, Pid) -> Bytes raise ProcessError
+  read_stderr_bytes(Self, Pid) -> Bytes raise ProcessError
+  write_stdin_bytes(Self, Pid, Bytes) -> Unit raise ProcessError
+  close_stdin(Self, Pid) -> Unit raise ProcessError
   read_stdout(Self, Pid) -> String raise ProcessError
   read_stderr(Self, Pid) -> String raise ProcessError
   write_stdin(Self, Pid, String) -> Unit raise ProcessError

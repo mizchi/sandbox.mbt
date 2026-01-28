@@ -204,6 +204,26 @@ pub impl ProcessManager for SandboxedBackend with write_stdin(self, pid, data) {
   self.inner.write_stdin(pid, data)
 }
 
+///|
+pub impl ProcessManager for SandboxedBackend with read_stdout_bytes(self, pid) {
+  self.inner.read_stdout_bytes(pid)
+}
+
+///|
+pub impl ProcessManager for SandboxedBackend with read_stderr_bytes(self, pid) {
+  self.inner.read_stderr_bytes(pid)
+}
+
+///|
+pub impl ProcessManager for SandboxedBackend with write_stdin_bytes(self, pid, data) {
+  self.inner.write_stdin_bytes(pid, data)
+}
+
+///|
+pub impl ProcessManager for SandboxedBackend with close_stdin(self, pid) {
+  self.inner.close_stdin(pid)
+}
+
 // ============ Network implementation ============
 
 ///|
