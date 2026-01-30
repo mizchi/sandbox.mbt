@@ -305,3 +305,99 @@ test "parse with newlines" {
     _ => fail("Expected Sequence")
   }
 }
+
+///|
+test "parse subshell" {
+  let ast = try {
+    parse("( echo hello )")
+  } catch {
+    e => fail("Parse error: \{e}")
+  }
+  match ast {
+    Subshell(body) => {
+      assert_true(body is SimpleCommand(_))
+    }
+    _ => fail("Expected Subshell")
+  }
+}
+
+///|
+test "parse brace group" {
+  let ast = try {
+    parse("{ echo hello; }")
+  } catch {
+    e => fail("Parse error: \{e}")
+  }
+  match ast {
+    BraceGroup(body) => {
+      assert_true(body is SimpleCommand(_))
+    }
+    _ => fail("Expected BraceGroup")
+  }
+}
+
+///|
+test "parse redirect with fd" {
+  let ast = try {
+    parse("cmd 2>&1")
+  } catch {
+    e => fail("Parse error: \{e}")
+  }
+  match ast {
+    SimpleCommand(words, redirects) => {
+      assert_eq(words.length(), 1)
+      assert_eq(redirects.length(), 1)
+      assert_eq(redirects[0].fd, 2)
+      assert_eq(redirects[0].kind, OutDup)
+    }
+    _ => fail("Expected SimpleCommand with redirect")
+  }
+}
+
+///|
+test "parse function definition" {
+  let ast = try {
+    parse("greet() { echo hello; }")
+  } catch {
+    e => fail("Parse error: \{e}")
+  }
+  match ast {
+    FuncDef(name, body) => {
+      assert_eq(name, "greet")
+      assert_true(body is BraceGroup(_))
+    }
+    _ => fail("Expected FuncDef, got \{ast}")
+  }
+}
+
+///|
+test "parse background" {
+  let ast = try {
+    parse("sleep 10 &")
+  } catch {
+    e => fail("Parse error: \{e}")
+  }
+  match ast {
+    Background(cmd) => {
+      assert_true(cmd is SimpleCommand(_))
+    }
+    _ => fail("Expected Background, got \{ast}")
+  }
+}
+
+///|
+test "parse command substitution" {
+  let ast = try {
+    parse("echo $(pwd)")
+  } catch {
+    e => fail("Parse error: \{e}")
+  }
+  match ast {
+    SimpleCommand(words, _) => {
+      assert_eq(words.length(), 2)
+      assert_eq(words[0], Literal("echo"))
+      assert_eq(words[1], CommandSub("pwd"))
+    }
+    _ => fail("Expected SimpleCommand, got \{ast}")
+  }
+}

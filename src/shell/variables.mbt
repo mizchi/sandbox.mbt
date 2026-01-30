@@ -13,16 +13,30 @@ pub struct VarEnv {
   git_objects : Map[String, GitObject]
   /// Git index (path -> entry)
   git_index : Map[String, IndexEntry]
+  /// Command substitution handler
+  mut command_sub_handler : ((String) -> String)?
 }
 
 ///|
 pub fn VarEnv::new() -> VarEnv {
-  { vars: {}, args: [], last_exit: 0, git_objects: {}, git_index: {} }
+  { vars: {}, args: [], last_exit: 0, git_objects: {}, git_index: {}, command_sub_handler: None }
 }
 
 ///|
 pub fn VarEnv::with_args(args : Array[String]) -> VarEnv {
-  { vars: {}, args, last_exit: 0, git_objects: {}, git_index: {} }
+  { vars: {}, args, last_exit: 0, git_objects: {}, git_index: {}, command_sub_handler: None }
+}
+
+///|
+/// Set command substitution handler
+pub fn VarEnv::set_command_sub_handler(self : VarEnv, handler : (String) -> String) -> Unit {
+  self.command_sub_handler = Some(handler)
+}
+
+///|
+/// Get command substitution handler
+pub fn VarEnv::get_command_sub_handler(self : VarEnv) -> ((String) -> String)? {
+  self.command_sub_handler
 }
 
 ///|
@@ -99,6 +113,50 @@ pub fn expand_word(word : Word, env : VarEnv, ctx : @posix.PosixContext) -> Stri
       match env.get_arg(n) {
         Some(v) => v
         None => ""
+      }
+    }
+    ArgAll => {
+      // $@ - all positional params as separate words (joined with space for string)
+      let buf = StringBuilder::new()
+      for i = 1; i < env.args.length(); i = i + 1 {
+        if i > 1 {
+          buf.write_char(' ')
+        }
+        buf.write_string(env.args[i])
+      }
+      buf.to_string()
+    }
+    ArgAllString => {
+      // $* - all positional params as single string (joined with first char of IFS, default space)
+      let buf = StringBuilder::new()
+      for i = 1; i < env.args.length(); i = i + 1 {
+        if i > 1 {
+          buf.write_char(' ')
+        }
+        buf.write_string(env.args[i])
+      }
+      buf.to_string()
+    }
+    ArgCount => {
+      // $# - number of positional params (excluding $0)
+      let count = if env.args.length() > 0 { env.args.length() - 1 } else { 0 }
+      count.to_string()
+    }
+    LastPid => {
+      // $! - PID of last background command (not implemented, return 0)
+      "0"
+    }
+    ShellPid => {
+      // $$ - PID of current shell (not implemented, return fixed value)
+      "1"
+    }
+    CommandSub(cmd) => {
+      // $(cmd) - execute command and return its output
+      // We need to parse and execute the command
+      // This creates a circular dependency, so we use a callback stored in env
+      match env.get_command_sub_handler() {
+        Some(handler) => handler(cmd)
+        None => ""  // No handler available
       }
     }
     Quoted(words) => {

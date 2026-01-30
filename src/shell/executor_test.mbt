@@ -217,3 +217,59 @@ test "pipeline execution" {
   // The output should at least contain something
   assert_eq(result.exit_code, 0)
 }
+
+///|
+test "command substitution" {
+  let ctx = @posix.PosixContext::default()
+  let exec = Executor::new(ctx)
+  let result = exec.exec_script("echo $(echo hello)")
+  assert_eq(result.exit_code, 0)
+  assert_eq(result.stdout, "hello\n")
+}
+
+///|
+test "command substitution pwd" {
+  let ctx = @posix.PosixContext::default()
+  let exec = Executor::new(ctx)
+  let result = exec.exec_script("echo $(pwd)")
+  assert_eq(result.exit_code, 0)
+  assert_eq(result.stdout, "/\n")  // Default cwd is /
+}
+
+///|
+test "background execution" {
+  let ctx = @posix.PosixContext::default()
+  let exec = Executor::new(ctx)
+  let result = exec.exec_script("echo hello &")
+  // Background returns 0 immediately
+  assert_eq(result.exit_code, 0)
+  assert_eq(result.stdout, "hello\n")
+}
+
+///|
+test "subshell execution" {
+  let ctx = @posix.PosixContext::default()
+  let exec = Executor::new(ctx)
+  let result = exec.exec_script("( echo from subshell )")
+  assert_eq(result.exit_code, 0)
+  assert_eq(result.stdout, "from subshell\n")
+}
+
+///|
+test "brace group execution" {
+  let ctx = @posix.PosixContext::default()
+  let exec = Executor::new(ctx)
+  let result = exec.exec_script("{ echo from brace; }")
+  assert_eq(result.exit_code, 0)
+  assert_eq(result.stdout, "from brace\n")
+}
+
+///|
+test "function definition and call" {
+  let ctx = @posix.PosixContext::default()
+  let exec = Executor::new(ctx)
+  ignore(exec.exec_script("greet() { echo hello; }"))
+  let result = exec.exec_script("greet")
+  assert_eq(result.exit_code, 0)
+  assert_eq(result.stdout, "hello\n")
+}

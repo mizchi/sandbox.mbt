@@ -35,6 +35,16 @@ fn Parser::peek(self : Parser) -> Token {
 }
 
 ///|
+fn Parser::peek_at(self : Parser, offset : Int) -> Token {
+  let idx = self.pos + offset
+  if idx < self.tokens.length() {
+    self.tokens[idx]
+  } else {
+    EOF
+  }
+}
+
+///|
 fn Parser::advance(self : Parser) -> Token {
   let tok = self.peek()
   self.pos += 1
@@ -63,7 +73,7 @@ fn Parser::skip_newlines(self : Parser) -> Unit {
 fn Parser::is_command_end(self : Parser) -> Bool {
   match self.peek() {
     EOF | Semi | Newline | And | Or | Pipe | Then | Do | Done | Fi | Else |
-    Elif | Esac | DoubleSemi | RightParen => true
+    Elif | Esac | DoubleSemi | RightParen | RightBrace | Amp => true
     _ => false
   }
 }
@@ -79,7 +89,7 @@ pub fn Parser::parse(self : Parser) -> Ast raise ParseError {
 }
 
 ///|
-/// Parse a list of commands (separated by ; or newlines)
+/// Parse a list of commands (separated by ; or & or newlines)
 fn Parser::parse_list(self : Parser) -> Ast raise ParseError {
   let mut result = self.parse_and_or()
   while true {
@@ -87,7 +97,18 @@ fn Parser::parse_list(self : Parser) -> Ast raise ParseError {
       Semi => {
         let _ = self.advance()
         self.skip_newlines()
-        if self.is_command_end() {
+        if self.is_command_end() || self.peek() == EOF {
+          break
+        }
+        let right = self.parse_and_or()
+        result = Sequence(result, right)
+      }
+      Amp => {
+        let _ = self.advance()
+        // Wrap current command in Background
+        result = Background(result)
+        self.skip_newlines()
+        if self.is_command_end() || self.peek() == EOF {
           break
         }
         let right = self.parse_and_or()
@@ -159,8 +180,38 @@ fn Parser::parse_command(self : Parser) -> Ast raise ParseError {
     Until => self.parse_until()
     Case => self.parse_case()
     LeftBracket => self.parse_test_bracket()
+    LeftParen => self.parse_subshell()
+    LeftBrace => self.parse_brace_group()
     _ => self.parse_simple_command()
   }
+}
+
+///|
+/// Parse subshell: ( list )
+fn Parser::parse_subshell(self : Parser) -> Ast raise ParseError {
+  self.expect(LeftParen)
+  self.skip_newlines()
+  let body = self.parse_list()
+  self.skip_newlines()
+  self.expect(RightParen)
+  Subshell(body)
+}
+
+///|
+/// Parse brace group: { list; }
+fn Parser::parse_brace_group(self : Parser) -> Ast raise ParseError {
+  self.expect(LeftBrace)
+  self.skip_newlines()
+  let body = self.parse_list()
+  self.skip_newlines()
+  // Brace group needs ; or newline before }
+  match self.peek() {
+    Semi => { let _ = self.advance() }
+    _ => ()
+  }
+  self.skip_newlines()
+  self.expect(RightBrace)
+  BraceGroup(body)
 }
 
 ///|
@@ -174,6 +225,21 @@ fn Parser::parse_simple_command(self : Parser) -> Ast raise ParseError {
     Assignment(name, value) => {
       let _ = self.advance()
       return Ast::Assignment(name, Literal(value))
+    }
+    _ => ()
+  }
+
+  // Check for function definition: name() { ... }
+  match self.peek() {
+    Word(name) => {
+      if self.peek_at(1) == LeftParen && self.peek_at(2) == RightParen {
+        let _ = self.advance()  // consume name
+        let _ = self.advance()  // consume (
+        let _ = self.advance()  // consume )
+        self.skip_newlines()
+        let body = self.parse_command()
+        return FuncDef(name, body)
+      }
     }
     _ => ()
   }
@@ -204,6 +270,35 @@ fn Parser::parse_simple_command(self : Parser) -> Ast raise ParseError {
         let _ = self.advance()
         words.push(Word::ArgN(n))
       }
+      Token::ArgAll => {
+        let _ = self.advance()
+        words.push(Word::ArgAll)
+      }
+      Token::ArgAllString => {
+        let _ = self.advance()
+        words.push(Word::ArgAllString)
+      }
+      Token::ArgCount => {
+        let _ = self.advance()
+        words.push(Word::ArgCount)
+      }
+      Token::LastPid => {
+        let _ = self.advance()
+        words.push(Word::LastPid)
+      }
+      Token::ShellPid => {
+        let _ = self.advance()
+        words.push(Word::ShellPid)
+      }
+      Token::CommandSub(cmd) => {
+        let _ = self.advance()
+        words.push(Word::CommandSub(cmd))
+      }
+      IoNumber(fd) => {
+        let _ = self.advance()
+        // Next token should be a redirect operator
+        self.parse_redirect_with_fd(fd, redirects)
+      }
       RedirectOut => {
         let _ = self.advance()
         let target = self.parse_word()
@@ -224,6 +319,28 @@ fn Parser::parse_simple_command(self : Parser) -> Ast raise ParseError {
         let target = self.parse_word()
         redirects.push(Redirect::new(2, Out, target))
       }
+      RedirectOutAnd => {
+        let _ = self.advance()
+        let target = self.parse_word()
+        redirects.push(Redirect::new(1, OutDup, target))
+      }
+      RedirectInAnd => {
+        let _ = self.advance()
+        let target = self.parse_word()
+        redirects.push(Redirect::new(0, InDup, target))
+      }
+      Token::HereDoc(delim, content) => {
+        let _ = self.advance()
+        // Here document: target is the content, stored in a Literal
+        redirects.push(Redirect::new(0, RedirectKind::HereDoc, Literal(content)))
+        // Note: delim is stored for reference but content is what matters
+        let _ = delim
+      }
+      Token::HereDocStrip(delim, content) => {
+        let _ = self.advance()
+        redirects.push(Redirect::new(0, RedirectKind::HereDocStrip, Literal(content)))
+        let _ = delim
+      }
       _ => break
     }
   }
@@ -231,6 +348,43 @@ fn Parser::parse_simple_command(self : Parser) -> Ast raise ParseError {
     Empty
   } else {
     SimpleCommand(words, redirects)
+  }
+}
+
+///|
+/// Parse redirect operator with a given fd
+fn Parser::parse_redirect_with_fd(
+  self : Parser,
+  fd : Int,
+  redirects : Array[Redirect]
+) -> Unit raise ParseError {
+  match self.peek() {
+    RedirectOut => {
+      let _ = self.advance()
+      let target = self.parse_word()
+      redirects.push(Redirect::new(fd, Out, target))
+    }
+    RedirectAppend => {
+      let _ = self.advance()
+      let target = self.parse_word()
+      redirects.push(Redirect::new(fd, Append, target))
+    }
+    RedirectIn => {
+      let _ = self.advance()
+      let target = self.parse_word()
+      redirects.push(Redirect::new(fd, In, target))
+    }
+    RedirectOutAnd => {
+      let _ = self.advance()
+      let target = self.parse_word()
+      redirects.push(Redirect::new(fd, OutDup, target))
+    }
+    RedirectInAnd => {
+      let _ = self.advance()
+      let target = self.parse_word()
+      redirects.push(Redirect::new(fd, InDup, target))
+    }
+    tok => raise ParseError("Expected redirect after fd number, got \{tok}")
   }
 }
 
@@ -261,6 +415,30 @@ fn Parser::parse_word(self : Parser) -> Word raise ParseError {
     ArgN(n) => {
       let _ = self.advance()
       Word::ArgN(n)
+    }
+    Token::ArgAll => {
+      let _ = self.advance()
+      Word::ArgAll
+    }
+    Token::ArgAllString => {
+      let _ = self.advance()
+      Word::ArgAllString
+    }
+    Token::ArgCount => {
+      let _ = self.advance()
+      Word::ArgCount
+    }
+    Token::LastPid => {
+      let _ = self.advance()
+      Word::LastPid
+    }
+    Token::ShellPid => {
+      let _ = self.advance()
+      Word::ShellPid
+    }
+    Token::CommandSub(cmd) => {
+      let _ = self.advance()
+      Word::CommandSub(cmd)
     }
     tok => raise ParseError("Expected word, got \{tok}")
   }

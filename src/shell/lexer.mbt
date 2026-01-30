@@ -13,18 +13,30 @@ pub(all) enum Token {
   Variable(String)          // $VAR, ${VAR}
   ExitCode                  // $?
   ArgN(Int)                 // $0, $1...
+  ArgAll                    // $@
+  ArgAllString              // $*
+  ArgCount                  // $#
+  LastPid                   // $!
+  ShellPid                  // $$
+  CommandSub(String)        // $(cmd) or `cmd`
 
   // Operators
   Pipe                      // |
   And                       // &&
   Or                        // ||
   Semi                      // ;
+  Amp                       // & (background)
 
   // Redirects
   RedirectOut               // >
   RedirectAppend            // >>
   RedirectIn                // <
   RedirectErr               // 2>
+  RedirectOutAnd            // >&
+  RedirectInAnd             // <&
+  HereDoc(String, String)   // <<DELIM content (delimiter, content)
+  HereDocStrip(String, String) // <<-DELIM content (strip leading tabs)
+  IoNumber(Int)             // fd number before redirect (e.g., 2 in 2>&1)
 
   // Control keywords
   If
@@ -46,6 +58,8 @@ pub(all) enum Token {
   RightBracket              // ]
   LeftParen                 // (
   RightParen                // )
+  LeftBrace                 // {
+  RightBrace                // }
   DoubleSemi                // ;;
 
   // Special
@@ -63,14 +77,26 @@ pub impl Show for Token with output(self, logger) {
     Variable(s) => logger.write_string("Variable($\{s})")
     ExitCode => logger.write_string("ExitCode($?)")
     ArgN(n) => logger.write_string("ArgN($\{n})")
+    ArgAll => logger.write_string("ArgAll($@)")
+    ArgAllString => logger.write_string("ArgAllString($*)")
+    ArgCount => logger.write_string("ArgCount($#)")
+    LastPid => logger.write_string("LastPid($!)")
+    ShellPid => logger.write_string("ShellPid($$)")
+    CommandSub(cmd) => logger.write_string("CommandSub($(\{cmd}))")
     Pipe => logger.write_string("Pipe(|)")
     And => logger.write_string("And(&&)")
     Or => logger.write_string("Or(||)")
     Semi => logger.write_string("Semi(;)")
+    Amp => logger.write_string("Amp(&)")
     RedirectOut => logger.write_string("RedirectOut(>)")
     RedirectAppend => logger.write_string("RedirectAppend(>>)")
     RedirectIn => logger.write_string("RedirectIn(<)")
     RedirectErr => logger.write_string("RedirectErr(2>)")
+    RedirectOutAnd => logger.write_string("RedirectOutAnd(>&)")
+    RedirectInAnd => logger.write_string("RedirectInAnd(<&)")
+    HereDoc(delim, _) => logger.write_string("HereDoc(<<\{delim})")
+    HereDocStrip(delim, _) => logger.write_string("HereDocStrip(<<-\{delim})")
+    IoNumber(n) => logger.write_string("IoNumber(\{n})")
     If => logger.write_string("If")
     Then => logger.write_string("Then")
     Elif => logger.write_string("Elif")
@@ -88,6 +114,8 @@ pub impl Show for Token with output(self, logger) {
     RightBracket => logger.write_string("RightBracket(])")
     LeftParen => logger.write_string("LeftParen[(]")
     RightParen => logger.write_string("RightParen[)]")
+    LeftBrace => logger.write_string("LeftBrace({)")
+    RightBrace => logger.write_string("RightBrace(})")
     DoubleSemi => logger.write_string("DoubleSemi(;;)")
     Newline => logger.write_string("Newline")
     EOF => logger.write_string("EOF")
@@ -104,14 +132,26 @@ pub impl Eq for Token with equal(self, other) {
     (Variable(a), Variable(b)) => a == b
     (ExitCode, ExitCode) => true
     (ArgN(a), ArgN(b)) => a == b
+    (ArgAll, ArgAll) => true
+    (ArgAllString, ArgAllString) => true
+    (ArgCount, ArgCount) => true
+    (LastPid, LastPid) => true
+    (ShellPid, ShellPid) => true
+    (CommandSub(a), CommandSub(b)) => a == b
     (Pipe, Pipe) => true
     (And, And) => true
     (Or, Or) => true
     (Semi, Semi) => true
+    (Amp, Amp) => true
     (RedirectOut, RedirectOut) => true
     (RedirectAppend, RedirectAppend) => true
     (RedirectIn, RedirectIn) => true
     (RedirectErr, RedirectErr) => true
+    (RedirectOutAnd, RedirectOutAnd) => true
+    (RedirectInAnd, RedirectInAnd) => true
+    (HereDoc(d1, c1), HereDoc(d2, c2)) => d1 == d2 && c1 == c2
+    (HereDocStrip(d1, c1), HereDocStrip(d2, c2)) => d1 == d2 && c1 == c2
+    (IoNumber(a), IoNumber(b)) => a == b
     (If, If) => true
     (Then, Then) => true
     (Elif, Elif) => true
@@ -129,6 +169,8 @@ pub impl Eq for Token with equal(self, other) {
     (RightBracket, RightBracket) => true
     (LeftParen, LeftParen) => true
     (RightParen, RightParen) => true
+    (LeftBrace, LeftBrace) => true
+    (RightBrace, RightBrace) => true
     (DoubleSemi, DoubleSemi) => true
     (Newline, Newline) => true
     (EOF, EOF) => true
@@ -271,6 +313,31 @@ fn Lexer::read_variable(self : Lexer) -> Token {
       let _ = self.advance()
       ExitCode
     }
+    Some('@') => {
+      let _ = self.advance()
+      ArgAll
+    }
+    Some('*') => {
+      let _ = self.advance()
+      ArgAllString
+    }
+    Some('#') => {
+      let _ = self.advance()
+      ArgCount
+    }
+    Some('!') => {
+      let _ = self.advance()
+      LastPid
+    }
+    Some('$') => {
+      let _ = self.advance()
+      ShellPid
+    }
+    Some('(') => {
+      // $(cmd) - command substitution
+      let _ = self.advance()
+      self.read_command_substitution()
+    }
     Some('{') => {
       // ${VAR}
       let _ = self.advance()
@@ -309,6 +376,208 @@ fn Lexer::read_variable(self : Lexer) -> Token {
     }
     _ => Word("$")
   }
+}
+
+///|
+/// Read command substitution content $(...)
+fn Lexer::read_command_substitution(self : Lexer) -> Token {
+  let buf = StringBuilder::new()
+  let mut depth = 1
+  while depth > 0 {
+    match self.peek() {
+      Some('(') => {
+        buf.write_char('(')
+        depth += 1
+        let _ = self.advance()
+      }
+      Some(')') => {
+        depth -= 1
+        if depth > 0 {
+          buf.write_char(')')
+        }
+        let _ = self.advance()
+      }
+      Some(c) => {
+        buf.write_char(c)
+        let _ = self.advance()
+      }
+      None => break
+    }
+  }
+  CommandSub(buf.to_string())
+}
+
+///|
+/// Read backtick command substitution `...`
+fn Lexer::read_backtick(self : Lexer) -> String {
+  // Skip opening backtick
+  let _ = self.advance()
+  let buf = StringBuilder::new()
+  while true {
+    match self.peek() {
+      Some('`') => {
+        let _ = self.advance()
+        break
+      }
+      Some('\\') => {
+        // Handle escape in backticks
+        let _ = self.advance()
+        match self.peek() {
+          Some(c) => {
+            buf.write_char(c)
+            let _ = self.advance()
+          }
+          None => break
+        }
+      }
+      Some(c) => {
+        buf.write_char(c)
+        let _ = self.advance()
+      }
+      None => break
+    }
+  }
+  buf.to_string()
+}
+
+///|
+/// Read here document delimiter
+fn Lexer::read_heredoc_delimiter(self : Lexer) -> String {
+  let buf = StringBuilder::new()
+  // Check for quoted delimiter
+  match self.peek() {
+    Some('\'') => {
+      // Single-quoted delimiter - read until closing quote
+      let _ = self.advance()
+      while true {
+        match self.peek() {
+          Some('\'') => {
+            let _ = self.advance()
+            break
+          }
+          Some(c) => {
+            buf.write_char(c)
+            let _ = self.advance()
+          }
+          None => break
+        }
+      }
+    }
+    Some('"') => {
+      // Double-quoted delimiter
+      let _ = self.advance()
+      while true {
+        match self.peek() {
+          Some('"') => {
+            let _ = self.advance()
+            break
+          }
+          Some(c) => {
+            buf.write_char(c)
+            let _ = self.advance()
+          }
+          None => break
+        }
+      }
+    }
+    _ => {
+      // Unquoted delimiter - read word characters
+      while true {
+        match self.peek() {
+          Some(c) if Lexer::is_word_char(c) => {
+            buf.write_char(c)
+            let _ = self.advance()
+          }
+          _ => break
+        }
+      }
+    }
+  }
+  buf.to_string()
+}
+
+///|
+/// Read here document content until delimiter
+fn Lexer::read_heredoc_content(self : Lexer, delim : String, strip_tabs : Bool) -> String {
+  let buf = StringBuilder::new()
+  // Skip to next line
+  while true {
+    match self.peek() {
+      Some('\n') => {
+        let _ = self.advance()
+        break
+      }
+      Some(_) => { let _ = self.advance() }
+      None => return buf.to_string()
+    }
+  }
+
+  // Read content line by line
+  while true {
+    // Check if this line starts with delimiter
+    let line_start = self.pos
+
+    // Skip leading tabs if strip_tabs is true
+    if strip_tabs {
+      while self.peek() == Some('\t') {
+        let _ = self.advance()
+      }
+    }
+
+    // Check if the rest of the line is just the delimiter
+    let mut match_pos = 0
+    let delim_chars = delim.to_array()
+    let mut is_match = true
+
+    while match_pos < delim_chars.length() {
+      match self.peek() {
+        Some(c) if c == delim_chars[match_pos] => {
+          match_pos += 1
+          let _ = self.advance()
+        }
+        _ => {
+          is_match = false
+          break
+        }
+      }
+    }
+
+    // Check if we matched the full delimiter and are at end of line
+    if is_match && match_pos == delim_chars.length() {
+      match self.peek() {
+        Some('\n') | None => {
+          // Found delimiter, consume the newline and return
+          let _ = self.advance()
+          break
+        }
+        _ => {
+          // Not a match, restore and continue
+          self.pos = line_start
+        }
+      }
+    } else {
+      // Not a match, restore position
+      self.pos = line_start
+    }
+
+    // Read the line content
+    while true {
+      match self.peek() {
+        Some('\n') => {
+          buf.write_char('\n')
+          let _ = self.advance()
+          break
+        }
+        Some(c) => {
+          buf.write_char(c)
+          let _ = self.advance()
+        }
+        None => return buf.to_string()
+      }
+    }
+  }
+
+  buf.to_string()
 }
 
 ///|
@@ -405,10 +674,17 @@ pub fn Lexer::next_token(self : Lexer) -> Token {
           And
         }
         _ => {
-          // Background operator (not fully supported), treat as word
-          Word("&")
+          // Background operator
+          self.at_command_pos = true
+          Amp
         }
       }
+    }
+    Some('`') => {
+      // Backtick command substitution
+      let cmd = self.read_backtick()
+      self.at_command_pos = false
+      CommandSub(cmd)
     }
     Some('>') => {
       let _ = self.advance()
@@ -418,23 +694,56 @@ pub fn Lexer::next_token(self : Lexer) -> Token {
           let _ = self.advance()
           RedirectAppend
         }
+        Some('&') => {
+          let _ = self.advance()
+          RedirectOutAnd
+        }
         _ => RedirectOut
       }
     }
     Some('<') => {
       let _ = self.advance()
       self.at_command_pos = false
-      RedirectIn
+      match self.peek() {
+        Some('<') => {
+          let _ = self.advance()
+          // Here document
+          let strip_tabs = match self.peek() {
+            Some('-') => {
+              let _ = self.advance()
+              true
+            }
+            _ => false
+          }
+          self.skip_whitespace()
+          // Read delimiter
+          let delim = self.read_heredoc_delimiter()
+          // Read content until we find the delimiter on its own line
+          let content = self.read_heredoc_content(delim, strip_tabs)
+          if strip_tabs {
+            HereDocStrip(delim, content)
+          } else {
+            HereDoc(delim, content)
+          }
+        }
+        Some('&') => {
+          let _ = self.advance()
+          RedirectInAnd
+        }
+        _ => RedirectIn
+      }
     }
-    Some('2') => {
-      // Check for 2>
-      if self.peek_at(1) == Some('>') {
-        let _ = self.advance()
-        let _ = self.advance()
-        self.at_command_pos = false
-        RedirectErr
-      } else {
-        self.read_word_token()
+    Some(c) if c >= '0' && c <= '9' => {
+      // Check if this is a fd number (digit followed by < or >)
+      let next = self.peek_at(1)
+      match next {
+        Some('<') | Some('>') => {
+          let fd = (c.to_int() - '0'.to_int())
+          let _ = self.advance()  // consume digit
+          self.at_command_pos = false
+          IoNumber(fd)
+        }
+        _ => self.read_word_token()
       }
     }
     Some('[') => {
@@ -456,6 +765,16 @@ pub fn Lexer::next_token(self : Lexer) -> Token {
       let _ = self.advance()
       self.at_command_pos = false
       RightParen
+    }
+    Some('{') => {
+      let _ = self.advance()
+      self.at_command_pos = true
+      LeftBrace
+    }
+    Some('}') => {
+      let _ = self.advance()
+      self.at_command_pos = false
+      RightBrace
     }
     Some('$') => {
       let token = self.read_variable()

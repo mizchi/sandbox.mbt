@@ -67,8 +67,9 @@ test "tokenize redirect append" {
 test "tokenize redirect stderr" {
   let tokens = tokenize("cmd 2> err.log")
   assert_eq(tokens[0], Token::Word("cmd"))
-  assert_eq(tokens[1], Token::RedirectErr)
-  assert_eq(tokens[2], Token::Word("err.log"))
+  assert_eq(tokens[1], Token::IoNumber(2))
+  assert_eq(tokens[2], Token::RedirectOut)
+  assert_eq(tokens[3], Token::Word("err.log"))
 }
 
 ///|
@@ -217,4 +218,92 @@ test "keyword in argument position stays as word" {
   let tokens = tokenize("echo if")
   assert_eq(tokens[0], Token::Word("echo"))
   assert_eq(tokens[1], Token::Word("if"))
+}
+
+///|
+test "tokenize braces" {
+  let tokens = tokenize("{ echo hello; }")
+  assert_eq(tokens[0], Token::LeftBrace)
+  assert_eq(tokens[1], Token::Word("echo"))
+  assert_eq(tokens[2], Token::Word("hello"))
+  assert_eq(tokens[3], Token::Semi)
+  assert_eq(tokens[4], Token::RightBrace)
+}
+
+///|
+test "tokenize redirect dup 2>&1" {
+  let tokens = tokenize("cmd 2>&1")
+  assert_eq(tokens[0], Token::Word("cmd"))
+  assert_eq(tokens[1], Token::IoNumber(2))
+  assert_eq(tokens[2], Token::RedirectOutAnd)
+  assert_eq(tokens[3], Token::Word("1"))
+}
+
+///|
+test "tokenize redirect dup 1>&2" {
+  let tokens = tokenize("cmd 1>&2")
+  assert_eq(tokens[0], Token::Word("cmd"))
+  assert_eq(tokens[1], Token::IoNumber(1))
+  assert_eq(tokens[2], Token::RedirectOutAnd)
+  assert_eq(tokens[3], Token::Word("2"))
+}
+
+///|
+test "tokenize input dup <&" {
+  let tokens = tokenize("cmd <&3")
+  assert_eq(tokens[0], Token::Word("cmd"))
+  assert_eq(tokens[1], Token::RedirectInAnd)
+  assert_eq(tokens[2], Token::Word("3"))
+}
+
+///|
+test "tokenize special variables" {
+  let tokens = tokenize("echo $@ $* $# $! $$")
+  assert_eq(tokens[0], Token::Word("echo"))
+  assert_eq(tokens[1], Token::ArgAll)
+  assert_eq(tokens[2], Token::ArgAllString)
+  assert_eq(tokens[3], Token::ArgCount)
+  assert_eq(tokens[4], Token::LastPid)
+  assert_eq(tokens[5], Token::ShellPid)
+}
+
+///|
+test "tokenize command substitution" {
+  let tokens = tokenize("echo $(pwd)")
+  assert_eq(tokens[0], Token::Word("echo"))
+  assert_eq(tokens[1], Token::CommandSub("pwd"))
+}
+
+///|
+test "tokenize nested command substitution" {
+  let tokens = tokenize("echo $(echo $(pwd))")
+  assert_eq(tokens[0], Token::Word("echo"))
+  assert_eq(tokens[1], Token::CommandSub("echo $(pwd)"))
+}
+
+///|
+test "tokenize backtick command substitution" {
+  let tokens = tokenize("echo `pwd`")
+  assert_eq(tokens[0], Token::Word("echo"))
+  assert_eq(tokens[1], Token::CommandSub("pwd"))
+}
+
+///|
+test "tokenize background" {
+  let tokens = tokenize("cmd &")
+  assert_eq(tokens[0], Token::Word("cmd"))
+  assert_eq(tokens[1], Token::Amp)
+}
+
+///|
+test "tokenize here document" {
+  let tokens = tokenize("cat <<EOF\nhello\nworld\nEOF\n")
+  assert_eq(tokens[0], Token::Word("cat"))
+  match tokens[1] {
+    Token::HereDoc(delim, content) => {
+      assert_eq(delim, "EOF")
+      assert_eq(content, "hello\nworld\n")
+    }
+    _ => fail("Expected HereDoc token")
+  }
 }
