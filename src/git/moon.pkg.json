@@ -14,6 +14,7 @@
   "targets": {
     "remote.mbt": ["wasm-gc", "wasm"],
     "remote_test.mbt": ["wasm-gc", "wasm"],
-    "upload_pack_http.mbt": ["wasm-gc", "wasm"]
+    "upload_pack_http.mbt": ["wasm-gc", "wasm"],
+    "integration_test.mbt": ["wasm-gc", "wasm"]
   }
 }

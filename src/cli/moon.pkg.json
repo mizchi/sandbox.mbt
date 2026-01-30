@@ -1,6 +1,7 @@
 {
   "is-main": true,
   "import": [
+    "mizchi/sandbox/fs",
     "mizchi/sandbox/shell",
     "mizchi/sandbox/posix"
   ],
