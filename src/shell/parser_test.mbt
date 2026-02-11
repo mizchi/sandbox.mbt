@@ -2,11 +2,7 @@
 
 ///|
 test "parse simple command" {
-  let ast = try {
-    parse("echo hello world")
-  } catch {
-    e => fail("Parse error: \{e}")
-  }
+  let ast = parse("echo hello world") catch { e => fail("Parse error: \{e}") }
   match ast {
     SimpleCommand(words, _) => {
       assert_eq(words.length(), 3)
@@ -20,26 +16,16 @@ test "parse simple command" {
 
 ///|
 test "parse pipeline" {
-  let ast = try {
-    parse("echo hello | cat")
-  } catch {
-    e => fail("Parse error: \{e}")
-  }
+  let ast = parse("echo hello | cat") catch { e => fail("Parse error: \{e}") }
   match ast {
-    Pipeline(cmds) => {
-      assert_eq(cmds.length(), 2)
-    }
+    Pipeline(cmds) => assert_eq(cmds.length(), 2)
     _ => fail("Expected Pipeline")
   }
 }
 
 ///|
 test "parse and operator" {
-  let ast = try {
-    parse("true && echo yes")
-  } catch {
-    e => fail("Parse error: \{e}")
-  }
+  let ast = parse("true && echo yes") catch { e => fail("Parse error: \{e}") }
   match ast {
     AndList(_, _) => ()
     _ => fail("Expected AndList")
@@ -48,9 +34,7 @@ test "parse and operator" {
 
 ///|
 test "parse or operator" {
-  let ast = try {
-    parse("false || echo fallback")
-  } catch {
+  let ast = parse("false || echo fallback") catch {
     e => fail("Parse error: \{e}")
   }
   match ast {
@@ -61,11 +45,7 @@ test "parse or operator" {
 
 ///|
 test "parse sequence" {
-  let ast = try {
-    parse("echo a; echo b")
-  } catch {
-    e => fail("Parse error: \{e}")
-  }
+  let ast = parse("echo a; echo b") catch { e => fail("Parse error: \{e}") }
   match ast {
     Sequence(_, _) => ()
     _ => fail("Expected Sequence")
@@ -74,9 +54,7 @@ test "parse sequence" {
 
 ///|
 test "parse redirect out" {
-  let ast = try {
-    parse("echo hello > file.txt")
-  } catch {
+  let ast = parse("echo hello > file.txt") catch {
     e => fail("Parse error: \{e}")
   }
   match ast {
@@ -92,24 +70,18 @@ test "parse redirect out" {
 
 ///|
 test "parse redirect append" {
-  let ast = try {
-    parse("echo hello >> file.txt")
-  } catch {
+  let ast = parse("echo hello >> file.txt") catch {
     e => fail("Parse error: \{e}")
   }
   match ast {
-    SimpleCommand(_, redirects) => {
-      assert_eq(redirects[0].kind, Append)
-    }
+    SimpleCommand(_, redirects) => assert_eq(redirects[0].kind, Append)
     _ => fail("Expected SimpleCommand with redirect")
   }
 }
 
 ///|
 test "parse if statement" {
-  let ast = try {
-    parse("if true; then echo yes; fi")
-  } catch {
+  let ast = parse("if true; then echo yes; fi") catch {
     e => fail("Parse error: \{e}")
   }
   match ast {
@@ -125,24 +97,20 @@ test "parse if statement" {
 
 ///|
 test "parse if else statement" {
-  let ast = try {
-    parse("if false; then echo no; else echo yes; fi")
-  } catch {
+  let ast = parse("if false; then echo no; else echo yes; fi") catch {
     e => fail("Parse error: \{e}")
   }
   match ast {
-    IfStmt(_, _, _, else_body) => {
-      assert_true(else_body is Some(_))
-    }
+    IfStmt(_, _, _, else_body) => assert_true(else_body is Some(_))
     _ => fail("Expected IfStmt")
   }
 }
 
 ///|
 test "parse if elif else statement" {
-  let ast = try {
-    parse("if false; then echo 1; elif true; then echo 2; else echo 3; fi")
-  } catch {
+  let ast = parse(
+    "if false; then echo 1; elif true; then echo 2; else echo 3; fi",
+  ) catch {
     e => fail("Parse error: \{e}")
   }
   match ast {
@@ -156,9 +124,7 @@ test "parse if elif else statement" {
 
 ///|
 test "parse for loop" {
-  let ast = try {
-    parse("for i in a b c; do echo $i; done")
-  } catch {
+  let ast = parse("for i in a b c; do echo $i; done") catch {
     e => fail("Parse error: \{e}")
   }
   match ast {
@@ -175,39 +141,29 @@ test "parse for loop" {
 
 ///|
 test "parse while loop" {
-  let ast = try {
-    parse("while true; do echo x; done")
-  } catch {
+  let ast = parse("while true; do echo x; done") catch {
     e => fail("Parse error: \{e}")
   }
   match ast {
-    WhileLoop(_, _, is_until) => {
-      assert_false(is_until)
-    }
+    WhileLoop(_, _, is_until) => assert_false(is_until)
     _ => fail("Expected WhileLoop")
   }
 }
 
 ///|
 test "parse until loop" {
-  let ast = try {
-    parse("until false; do echo x; done")
-  } catch {
+  let ast = parse("until false; do echo x; done") catch {
     e => fail("Parse error: \{e}")
   }
   match ast {
-    WhileLoop(_, _, is_until) => {
-      assert_true(is_until)
-    }
+    WhileLoop(_, _, is_until) => assert_true(is_until)
     _ => fail("Expected WhileLoop (until)")
   }
 }
 
 ///|
 test "parse case statement" {
-  let ast = try {
-    parse("case x in a) echo a;; b) echo b;; esac")
-  } catch {
+  let ast = parse("case x in a) echo a;; b) echo b;; esac") catch {
     e => fail("Parse error: \{e}")
   }
   match ast {
@@ -221,11 +177,7 @@ test "parse case statement" {
 
 ///|
 test "parse test bracket" {
-  let ast = try {
-    parse("[ -f file.txt ]")
-  } catch {
-    e => fail("Parse error: \{e}")
-  }
+  let ast = parse("[ -f file.txt ]") catch { e => fail("Parse error: \{e}") }
   match ast {
     SimpleCommand(words, _) => {
       assert_eq(words[0], Literal("test"))
@@ -238,11 +190,7 @@ test "parse test bracket" {
 
 ///|
 test "parse assignment" {
-  let ast = try {
-    parse("NAME=value")
-  } catch {
-    e => fail("Parse error: \{e}")
-  }
+  let ast = parse("NAME=value") catch { e => fail("Parse error: \{e}") }
   match ast {
     Assignment(name, value) => {
       assert_eq(name, "NAME")
@@ -254,11 +202,7 @@ test "parse assignment" {
 
 ///|
 test "parse variable in command" {
-  let ast = try {
-    parse("echo $NAME")
-  } catch {
-    e => fail("Parse error: \{e}")
-  }
+  let ast = parse("echo $NAME") catch { e => fail("Parse error: \{e}") }
   match ast {
     SimpleCommand(words, _) => {
       assert_eq(words.length(), 2)
@@ -271,9 +215,7 @@ test "parse variable in command" {
 
 ///|
 test "parse complex command" {
-  let ast = try {
-    parse("cat file.txt | grep pattern && echo found || echo not found")
-  } catch {
+  let ast = parse("cat file.txt | grep pattern && echo found || echo not found") catch {
     e => fail("Parse error: \{e}")
   }
   // Should be: OrList(AndList(Pipeline(...), ...), ...)
@@ -285,21 +227,13 @@ test "parse complex command" {
 
 ///|
 test "parse empty input" {
-  let ast = try {
-    parse("")
-  } catch {
-    e => fail("Parse error: \{e}")
-  }
+  let ast = parse("") catch { e => fail("Parse error: \{e}") }
   assert_true(ast is Empty)
 }
 
 ///|
 test "parse with newlines" {
-  let ast = try {
-    parse("echo a\necho b")
-  } catch {
-    e => fail("Parse error: \{e}")
-  }
+  let ast = parse("echo a\necho b") catch { e => fail("Parse error: \{e}") }
   match ast {
     Sequence(_, _) => ()
     _ => fail("Expected Sequence")
@@ -308,41 +242,25 @@ test "parse with newlines" {
 
 ///|
 test "parse subshell" {
-  let ast = try {
-    parse("( echo hello )")
-  } catch {
-    e => fail("Parse error: \{e}")
-  }
+  let ast = parse("( echo hello )") catch { e => fail("Parse error: \{e}") }
   match ast {
-    Subshell(body) => {
-      assert_true(body is SimpleCommand(_))
-    }
+    Subshell(body) => assert_true(body is SimpleCommand(_))
     _ => fail("Expected Subshell")
   }
 }
 
 ///|
 test "parse brace group" {
-  let ast = try {
-    parse("{ echo hello; }")
-  } catch {
-    e => fail("Parse error: \{e}")
-  }
+  let ast = parse("{ echo hello; }") catch { e => fail("Parse error: \{e}") }
   match ast {
-    BraceGroup(body) => {
-      assert_true(body is SimpleCommand(_))
-    }
+    BraceGroup(body) => assert_true(body is SimpleCommand(_))
     _ => fail("Expected BraceGroup")
   }
 }
 
 ///|
 test "parse redirect with fd" {
-  let ast = try {
-    parse("cmd 2>&1")
-  } catch {
-    e => fail("Parse error: \{e}")
-  }
+  let ast = parse("cmd 2>&1") catch { e => fail("Parse error: \{e}") }
   match ast {
     SimpleCommand(words, redirects) => {
       assert_eq(words.length(), 1)
@@ -356,9 +274,7 @@ test "parse redirect with fd" {
 
 ///|
 test "parse function definition" {
-  let ast = try {
-    parse("greet() { echo hello; }")
-  } catch {
+  let ast = parse("greet() { echo hello; }") catch {
     e => fail("Parse error: \{e}")
   }
   match ast {
@@ -372,26 +288,16 @@ test "parse function definition" {
 
 ///|
 test "parse background" {
-  let ast = try {
-    parse("sleep 10 &")
-  } catch {
-    e => fail("Parse error: \{e}")
-  }
+  let ast = parse("sleep 10 &") catch { e => fail("Parse error: \{e}") }
   match ast {
-    Background(cmd) => {
-      assert_true(cmd is SimpleCommand(_))
-    }
+    Background(cmd) => assert_true(cmd is SimpleCommand(_))
     _ => fail("Expected Background, got \{ast}")
   }
 }
 
 ///|
 test "parse command substitution" {
-  let ast = try {
-    parse("echo $(pwd)")
-  } catch {
-    e => fail("Parse error: \{e}")
-  }
+  let ast = parse("echo $(pwd)") catch { e => fail("Parse error: \{e}") }
   match ast {
     SimpleCommand(words, _) => {
       assert_eq(words.length(), 2)

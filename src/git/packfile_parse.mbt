@@ -27,12 +27,14 @@ priv enum DeltaBaseRef {
   Ref(String)
 }
 
+///|
 priv struct PendingDelta {
   index : Int
   base : DeltaBaseRef
   delta : Bytes
 }
 
+///|
 fn parse_packfile_internal(
   data : Bytes,
   by_offset : Map[Int, Int],
@@ -44,8 +46,8 @@ fn parse_packfile_internal(
 
   // Magic: "PACK"
   if not(
-    data[0] == b'P' && data[1] == b'A' && data[2] == b'C' && data[3] == b'K'
-  ) {
+      data[0] == b'P' && data[1] == b'A' && data[2] == b'C' && data[3] == b'K',
+    ) {
     raise GitError::PackfileError("Invalid packfile magic")
   }
 
@@ -92,13 +94,16 @@ fn parse_packfile_internal(
             "Delta size mismatch: expected=\{size}, got=\{delta.length()}",
           )
         }
-        let placeholder = PackObject::new(ObjectType::Blob, Bytes::from_array([]))
+        let placeholder = PackObject::new(
+          ObjectType::Blob,
+          Bytes::from_array([]),
+        )
         objects.push(placeholder)
         resolved.push(false)
         let idx = objects.length() - 1
         by_offset[obj_offset] = idx
         match by_offset.get(base_offset) {
-          Some(base_index) => {
+          Some(base_index) =>
             if resolved[base_index] {
               let base = objects[base_index]
               let content = apply_delta(base.data, delta)
@@ -108,17 +113,14 @@ fn parse_packfile_internal(
               let obj_id = hash_object_content(obj.obj_type, obj.data)
               by_id[obj_id.to_hex()] = obj
             } else {
-            pending.push({
-              index: idx,
-              base: DeltaBaseRef::Ofs(base_index),
-              delta,
-            })
+              pending.push({
+                index: idx,
+                base: DeltaBaseRef::Ofs(base_index),
+                delta,
+              })
             }
-          }
           None =>
-            raise GitError::PackfileError(
-              "Missing base object for OFS_DELTA",
-            )
+            raise GitError::PackfileError("Missing base object for OFS_DELTA")
         }
         (ObjectType::Blob, Bytes::from_array([]), after)
       }
@@ -132,7 +134,10 @@ fn parse_packfile_internal(
             "Delta size mismatch: expected=\{size}, got=\{delta.length()}",
           )
         }
-        let placeholder = PackObject::new(ObjectType::Blob, Bytes::from_array([]))
+        let placeholder = PackObject::new(
+          ObjectType::Blob,
+          Bytes::from_array([]),
+        )
         objects.push(placeholder)
         resolved.push(false)
         let idx = objects.length() - 1
@@ -146,13 +151,8 @@ fn parse_packfile_internal(
             let obj_id = hash_object_content(obj.obj_type, obj.data)
             by_id[obj_id.to_hex()] = obj
           }
-          None => {
-            pending.push({
-              index: idx,
-              base: DeltaBaseRef::Ref(base_id),
-              delta,
-            })
-          }
+          None =>
+            pending.push({ index: idx, base: DeltaBaseRef::Ref(base_id), delta })
         }
         (ObjectType::Blob, Bytes::from_array([]), after)
       }
@@ -180,8 +180,10 @@ fn parse_packfile_internal(
     let next_pending : Array[PendingDelta] = []
     for p in pending_list {
       match p.base {
-        DeltaBaseRef::Ofs(base_index) => {
-          if base_index >= 0 && base_index < objects.length() && resolved[base_index] {
+        DeltaBaseRef::Ofs(base_index) =>
+          if base_index >= 0 &&
+            base_index < objects.length() &&
+            resolved[base_index] {
             let base = objects[base_index]
             let content = apply_delta(base.data, p.delta)
             let obj = PackObject::new(base.obj_type, content)
@@ -193,8 +195,7 @@ fn parse_packfile_internal(
           } else {
             next_pending.push(p)
           }
-        }
-        DeltaBaseRef::Ref(base_id) => {
+        DeltaBaseRef::Ref(base_id) =>
           match by_id.get(base_id) {
             Some(base) => {
               let content = apply_delta(base.data, p.delta)
@@ -207,7 +208,6 @@ fn parse_packfile_internal(
             }
             None => next_pending.push(p)
           }
-        }
       }
     }
     pending_list = next_pending
@@ -269,12 +269,16 @@ fn packfile_type_to_object_type(type_id : Int) -> ObjectType raise GitError {
     2 => ObjectType::Tree
     3 => ObjectType::Blob
     4 => ObjectType::Tag
-    _ => raise GitError::PackfileError("Unknown packfile object type: \{type_id}")
+    _ =>
+      raise GitError::PackfileError("Unknown packfile object type: \{type_id}")
   }
 }
 
 ///|
-fn read_ofs_delta_offset(data : Bytes, start : Int) -> (Int, Int) raise GitError {
+fn read_ofs_delta_offset(
+  data : Bytes,
+  start : Int,
+) -> (Int, Int) raise GitError {
   if start >= data.length() {
     raise GitError::PackfileError("Unexpected end of packfile delta")
   }

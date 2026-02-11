@@ -45,14 +45,13 @@ fn match_impl(pat : Array[Char], pi : Int, txt : Array[Char], ti : Int) -> Bool 
       }
       false
     }
-    '?' => {
+    '?' =>
       // Match exactly one character
       if ti < txt.length() {
         match_impl(pat, pi + 1, txt, ti + 1)
       } else {
         false
       }
-    }
     '[' => {
       // Character class
       if ti >= txt.length() {
@@ -66,14 +65,13 @@ fn match_impl(pat : Array[Char], pi : Int, txt : Array[Char], ti : Int) -> Bool 
         false
       }
     }
-    _ => {
+    _ =>
       // Literal character
       if ti < txt.length() && txt[ti] == pc {
         match_impl(pat, pi + 1, txt, ti + 1)
       } else {
         false
       }
-    }
   }
 }
 

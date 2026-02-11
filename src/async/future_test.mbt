@@ -4,10 +4,7 @@ test "future: basic resolve and await" {
     let (reader, writer) = @async.new_future()
 
     // Spawn resolver
-    let _ = @coroutine.spawn(async fn() {
-      let _ = writer.resolve(42)
-
-    })
+    let _ = @coroutine.spawn(async fn() { let _ = writer.resolve(42) })
 
     // Await
     let value : Int = reader.await_()

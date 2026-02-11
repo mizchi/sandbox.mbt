@@ -1,0 +1,17 @@
+import {
+  "mizchi/sandbox/fs",
+  "mizchi/sandbox/shell",
+  "mizchi/sandbox/posix",
+}
+
+warnings = "-29"
+
+options(
+  "is-main": true,
+  targets: {
+    "main.mbt": [ "wasm" ],
+    "main_demo.mbt": [ "wasm-gc" ],
+    "main_native.mbt": [ "native" ],
+    "wasi.mbt": [ "wasm" ],
+  },
+)

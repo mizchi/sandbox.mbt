@@ -33,7 +33,6 @@ test "bench: PosixContext read" (b : @bench.T) {
     try {
       let _ = ctx.lseek(fd, 0L, SEEK_SET)
       let _ = ctx.read(fd, 100)
-
     } catch {
       _ => ()
     }
@@ -50,20 +49,14 @@ test "bench: PosixContext write" (b : @bench.T) {
     FileMode::default_file(),
   )
   let data = b"hello world"
-  let result = b.bench(fn() {
-    let _ = ctx.write(fd, data) catch { _ => 0 }
-
-  })
+  let result = b.bench(fn() { let _ = ctx.write(fd, data) catch { _ => 0 } })
   b.keep(result)
 }
 
 ///|
 test "bench: PosixContext resolve_path" (b : @bench.T) {
   let ctx = PosixContext::default()
-  let result = b.bench(fn() {
-    let _ = ctx.resolve_path("./a/b/../c/./d")
-
-  })
+  let result = b.bench(fn() { let _ = ctx.resolve_path("./a/b/../c/./d") })
   b.keep(result)
 }
 
@@ -74,7 +67,6 @@ test "bench: PosixContext stat" (b : @bench.T) {
   let result = b.bench(fn() {
     try {
       let _ = ctx.stat("/test.txt")
-
     } catch {
       _ => ()
     }
@@ -150,7 +142,6 @@ test "bench: poll single fd ready" (b : @bench.T) {
   let result = b.bench(fn() {
     pollfds[0].clear_revents()
     let _ = ctx.poll(pollfds, 0)
-
   })
   b.keep(result)
 }
@@ -176,7 +167,6 @@ test "bench: poll multiple fds" (b : @bench.T) {
       pfd.clear_revents()
     }
     let _ = ctx.poll(pollfds, 0)
-
   })
   b.keep(result)
 }
@@ -191,7 +181,6 @@ test "bench: poll pipe" (b : @bench.T) {
   let result = b.bench(fn() {
     pollfds[0].clear_revents()
     let _ = ctx.poll(pollfds, 0)
-
   })
   b.keep(result)
 }
@@ -209,7 +198,6 @@ test "bench: fcntl_getfl" (b : @bench.T) {
   )
   let result = b.bench(fn() {
     let _ = ctx.fcntl_getfl(fd) catch { _ => OpenFlags::new() }
-
   })
   b.keep(result)
 }
@@ -292,7 +280,6 @@ test "bench: pipe write/read small" (b : @bench.T) {
     try {
       let _ = ctx.write(pipe.write_fd, data)
       let _ = ctx.read(pipe.read_fd, 10)
-
     } catch {
       _ => ()
     }
@@ -309,7 +296,6 @@ test "bench: pipe write/read 1KB" (b : @bench.T) {
     try {
       let _ = ctx.write(pipe.write_fd, data)
       let _ = ctx.read(pipe.read_fd, 1024)
-
     } catch {
       _ => ()
     }

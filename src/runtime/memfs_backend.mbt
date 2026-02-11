@@ -13,7 +13,6 @@ pub fn ProcessContext::write_stdout(self : ProcessContext, s : String) -> Unit {
   match self.io.stdout {
     Some(pipe) => {
       let _ = pipe.write_string(s)
-
     }
     None => ()
   }
@@ -24,7 +23,6 @@ pub fn ProcessContext::write_stderr(self : ProcessContext, s : String) -> Unit {
   match self.io.stderr {
     Some(pipe) => {
       let _ = pipe.write_string(s)
-
     }
     None => ()
   }
@@ -156,10 +154,8 @@ fn convert_memfs_error(e : @fs.FsError) -> IOError {
     @fs.FsError::AlreadyExists(p) => IOError::AlreadyExists(p)
     @fs.FsError::NotAFile(p) => IOError::InvalidInput("Not a file: \{p}")
     @fs.FsError::NotADirectory(p) => IOError::NotDirectory(p)
-    @fs.FsError::InvalidPath(p) =>
-      IOError::InvalidInput("Invalid path: \{p}")
-    @fs.FsError::SymlinkLoop(p) =>
-      IOError::InvalidInput("Symlink loop: \{p}")
+    @fs.FsError::InvalidPath(p) => IOError::InvalidInput("Invalid path: \{p}")
+    @fs.FsError::SymlinkLoop(p) => IOError::InvalidInput("Symlink loop: \{p}")
   }
 }
 
@@ -217,7 +213,7 @@ pub impl Filesystem for MemfsBackend with read(self, fd, len) {
   if start >= data.length() {
     return Bytes::new(0)
   }
-  let result = data.sub(start~, end~).to_bytes()
+  let result = data[start:end].to_bytes()
   file.offset = end.to_int64()
   result
 }

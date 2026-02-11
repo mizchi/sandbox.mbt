@@ -91,10 +91,7 @@ test "bench: Raw PosixContext (no sandbox)" (b : @bench.T) {
 
 ///|
 test "bench: Capabilities creation" (b : @bench.T) {
-  let result = b.bench(fn() {
-    let _ = Capabilities::build_sandbox()
-
-  })
+  let result = b.bench(fn() { let _ = Capabilities::build_sandbox() })
   b.keep(result)
 }
 
@@ -105,7 +102,6 @@ test "bench: Capabilities with_allowed_paths" (b : @bench.T) {
     let _ = caps.with_allowed_paths([
       "/tmp", "/home", "/var", "/sandbox", "/app",
     ])
-
   })
   b.keep(result)
 }

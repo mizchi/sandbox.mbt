@@ -149,7 +149,6 @@ pub async fn[W : Waitable] wait_all(waitables : Array[W]) -> Unit {
     if found >= 0 {
       // Remove from remaining
       let _ = remaining.remove(found)
-
     } else {
       // Wait for any to become ready
       let current = @coroutine.current_coroutine()

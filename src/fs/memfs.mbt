@@ -31,12 +31,7 @@ pub struct Fs {
 ///|
 /// Create a new Fs
 pub fn Fs::new(max_total_size? : Int, max_file_count? : Int) -> Fs {
-  let fs : Fs = {
-    entries: {},
-    current_size: 0,
-    max_total_size,
-    max_file_count,
-  }
+  let fs : Fs = { entries: {}, current_size: 0, max_total_size, max_file_count }
   // Create root directory
   fs.entries.set("/", Dir)
   fs
@@ -147,10 +142,7 @@ fn Fs::resolve_symlinks(
 
 ///|
 /// Resolve path following symlinks
-pub fn Fs::resolve_path(
-  self : Fs,
-  path : String,
-) -> String raise FsError {
+pub fn Fs::resolve_path(self : Fs, path : String) -> String raise FsError {
   self.resolve_symlinks(normalize_path(path), 40)
 }
 
@@ -293,10 +285,7 @@ pub fn Fs::write_string(
 
 ///|
 /// Read file as string
-pub fn Fs::read_string(
-  self : Fs,
-  path : String,
-) -> String raise FsError {
+pub fn Fs::read_string(self : Fs, path : String) -> String raise FsError {
   let bytes = self.read_file(path)
   let result = StringBuilder::new()
   for b in bytes {
@@ -370,10 +359,7 @@ pub fn Fs::rmdir(self : Fs, path : String) -> Unit raise FsError {
 
 ///|
 /// List directory contents
-pub fn Fs::readdir(
-  self : Fs,
-  path : String,
-) -> Array[String] raise FsError {
+pub fn Fs::readdir(self : Fs, path : String) -> Array[String] raise FsError {
   let resolved = self.resolve_path(path)
   if not(self.is_dir(resolved)) {
     raise NotADirectory(path)

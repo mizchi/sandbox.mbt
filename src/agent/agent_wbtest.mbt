@@ -1,5 +1,6 @@
 /// Tests for the agent module
 
+///|
 /// Mock LLM client for testing
 struct MockLLMClient {
   responses : Array[Message]
@@ -60,9 +61,7 @@ test "ToolExecutor executes write and read file" {
 
   // Write file
   let write_call = ToolCall::new(
-    "1",
-    "write_file",
-    "{\"path\":\"/test.txt\",\"content\":\"hello world\"}",
+    "1", "write_file", "{\"path\":\"/test.txt\",\"content\":\"hello world\"}",
   )
   let write_result = executor.execute(write_call)
   assert_true(write_result.success)
@@ -119,15 +118,12 @@ test "Agent run with mock client" {
   let agent = Agent::new(shell, ctx)
 
   // Mock client that first returns a tool call, then a final response
-  let client = MockLLMClient::new(
-    [
-      Message::assistant(
-        "Let me check the directory.",
-        [ToolCall::new("tc1", "bash", "{\"command\":\"pwd\"}")],
-      ),
-      Message::assistant("The current directory is /.", []),
-    ],
-  )
+  let client = MockLLMClient::new([
+    Message::assistant("Let me check the directory.", [
+      ToolCall::new("tc1", "bash", "{\"command\":\"pwd\"}"),
+    ]),
+    Message::assistant("The current directory is /.", []),
+  ])
   let result = agent.run(client, "What is the current directory?")
   assert_eq(result, "The current directory is /.")
   assert_eq(client.call_count, 2)
@@ -145,16 +141,11 @@ test "AgentRunner step-by-step execution" {
   assert_false(runner.has_pending_tools())
 
   // Process LLM response with tool call
-  runner.process_response(
-    "I'll create a file.",
-    [
-      ToolCall::new(
-        "tc1",
-        "write_file",
-        "{\"path\":\"/hello.txt\",\"content\":\"Hello!\"}",
-      ),
-    ],
-  )
+  runner.process_response("I'll create a file.", [
+    ToolCall::new(
+      "tc1", "write_file", "{\"path\":\"/hello.txt\",\"content\":\"Hello!\"}",
+    ),
+  ])
   assert_true(runner.has_pending_tools())
 
   // Execute tools

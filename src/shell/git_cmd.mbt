@@ -4,9 +4,14 @@
 /// Register git commands
 pub fn register_git_commands(
   exec : Executor,
-  register : (String, (@posix.PosixContext, Array[String], StringBuilder, StringBuilder) -> Int) -> Unit
+  register : (
+    String,
+    (@posix.PosixContext, Array[String], StringBuilder, StringBuilder) -> Int,
+  ) -> Unit,
 ) -> Unit {
-  register("git", fn(ctx, args, stdout, stderr) { cmd_git(ctx, args, stdout, stderr, exec) })
+  register("git", fn(ctx, args, stdout, stderr) {
+    cmd_git(ctx, args, stdout, stderr, exec)
+  })
 }
 
 ///|
@@ -16,7 +21,7 @@ fn cmd_git(
   args : Array[String],
   stdout : StringBuilder,
   stderr : StringBuilder,
-  exec : Executor
+  exec : Executor,
 ) -> Int {
   if args.length() == 0 {
     stderr.write_string("usage: git <command> [<args>]\n")
@@ -61,7 +66,7 @@ fn git_hash_object(
   ctx : @posix.PosixContext,
   args : Array[String],
   stdout : StringBuilder,
-  stderr : StringBuilder
+  stderr : StringBuilder,
 ) -> Int {
   let mut write_object = false
   let mut use_stdin = false
@@ -85,11 +90,11 @@ fn git_hash_object(
   } else if file_path.length() > 0 {
     let abs_path = ctx.resolve_path(file_path)
     let data = ctx.get_fs().read_file(abs_path) catch {
-      e => {
-        stderr.write_string("fatal: Cannot open '\{file_path}': \{e}\n")
-        return 128
+        e => {
+          stderr.write_string("fatal: Cannot open '\{file_path}': \{e}\n")
+          return 128
+        }
       }
-    }
     data
   } else {
     stderr.write_string("usage: git hash-object [-w] [--stdin] <file>\n")
@@ -112,12 +117,16 @@ fn git_hash_object(
     // Create object directory
     let hex = id.to_hex()
     let obj_dir = git_dir + "/objects/" + hex_substr(hex, 0, 2)
-    ctx.get_fs().mkdir_p(obj_dir) catch { _ => () }
+    ctx.get_fs().mkdir_p(obj_dir) catch {
+      _ => ()
+    }
 
     // Write compressed object
     let (_, compressed) = @git.create_blob(content)
     let obj_path = obj_dir + "/" + hex_substr(hex, 2, 38)
-    ctx.get_fs().write_file(obj_path, compressed) catch { _ => () }
+    ctx.get_fs().write_file(obj_path, compressed) catch {
+      _ => ()
+    }
   }
 
   0
@@ -142,7 +151,7 @@ fn git_cat_file(
   args : Array[String],
   stdout : StringBuilder,
   stderr : StringBuilder,
-  exec : Executor
+  exec : Executor,
 ) -> Int {
   if args.length() < 2 {
     stderr.write_string("usage: git cat-file <type> <object>\n")
@@ -167,9 +176,7 @@ fn git_cat_file(
           stdout.write_string(obj.size.to_string())
           stdout.write_string("\n")
         }
-        "-p" | "blob" | "tree" | "commit" => {
-          stdout.write_string(obj.content)
-        }
+        "-p" | "blob" | "tree" | "commit" => stdout.write_string(obj.content)
         _ => {
           stderr.write_string("git cat-file: unknown option '\{flag}'\n")
           return 1
@@ -191,17 +198,25 @@ fn git_init(
   _args : Array[String],
   stdout : StringBuilder,
   _stderr : StringBuilder,
-  _exec : Executor
+  _exec : Executor,
 ) -> Int {
   let git_dir = ctx.resolve_path(".git")
 
   // Create .git directory structure
-  ctx.get_fs().mkdir_p(git_dir) catch { _ => () }
-  ctx.get_fs().mkdir_p(git_dir + "/objects") catch { _ => () }
-  ctx.get_fs().mkdir_p(git_dir + "/refs/heads") catch { _ => () }
+  ctx.get_fs().mkdir_p(git_dir) catch {
+    _ => ()
+  }
+  ctx.get_fs().mkdir_p(git_dir + "/objects") catch {
+    _ => ()
+  }
+  ctx.get_fs().mkdir_p(git_dir + "/refs/heads") catch {
+    _ => ()
+  }
 
   // Create HEAD
-  ctx.get_fs().write_string(git_dir + "/HEAD", "ref: refs/heads/main\n") catch { _ => () }
+  ctx.get_fs().write_string(git_dir + "/HEAD", "ref: refs/heads/main\n") catch {
+    _ => ()
+  }
 
   stdout.write_string("Initialized empty Git repository in \{git_dir}/\n")
   0
@@ -214,7 +229,7 @@ fn git_add(
   args : Array[String],
   _stdout : StringBuilder,
   stderr : StringBuilder,
-  exec : Executor
+  exec : Executor,
 ) -> Int {
   if args.length() == 0 {
     stderr.write_string("usage: git add <file>...\n")
@@ -232,11 +247,13 @@ fn git_add(
   for file_path in args {
     let abs_path = ctx.resolve_path(file_path)
     let content = ctx.get_fs().read_file(abs_path) catch {
-      e => {
-        stderr.write_string("fatal: pathspec '\{file_path}' did not match any files: \{e}\n")
-        return 128
+        e => {
+          stderr.write_string(
+            "fatal: pathspec '\{file_path}' did not match any files: \{e}\n",
+          )
+          return 128
+        }
       }
-    }
 
     // Compute blob hash
     let id = @git.hash_blob(content)
@@ -244,11 +261,13 @@ fn git_add(
     // Store object in memory
     let (_, compressed) = @git.create_blob(content)
     let hex = id.to_hex()
-    exec.get_env().store_git_object(hex, GitObject::{
+    exec
+    .get_env()
+    .store_git_object(hex, GitObject::{
       obj_type: "blob",
       size: content.length(),
       content: bytes_to_string(content),
-      compressed: compressed,
+      compressed,
     })
 
     // Add to index
@@ -269,7 +288,7 @@ fn git_commit(
   args : Array[String],
   stdout : StringBuilder,
   stderr : StringBuilder,
-  exec : Executor
+  exec : Executor,
 ) -> Int {
   let git_dir = ctx.resolve_path(".git")
   if not(ctx.get_fs().exists(git_dir)) {
@@ -297,21 +316,27 @@ fn git_commit(
   let index = exec.get_env().get_git_index()
 
   if index.length() == 0 {
-    stderr.write_string("nothing to commit (create/copy files and use \"git add\" to track)\n")
+    stderr.write_string(
+      "nothing to commit (create/copy files and use \"git add\" to track)\n",
+    )
     return 1
   }
 
   // 1. Write tree from index
   let entries : Array[@git.TreeEntry] = []
   for path, entry in index {
-    let id = @git.ObjectId::from_hex(entry.hash) catch { _ => @git.ObjectId::zero() }
+    let id = @git.ObjectId::from_hex(entry.hash) catch {
+      _ => @git.ObjectId::zero()
+    }
     entries.push(@git.TreeEntry::new(entry.mode, path, id))
   }
   let (tree_id, tree_compressed) = @git.create_tree(entries)
   let tree_hex = tree_id.to_hex()
 
   // Store tree object
-  exec.get_env().store_git_object(tree_hex, GitObject::{
+  exec
+  .get_env()
+  .store_git_object(tree_hex, GitObject::{
     obj_type: "tree",
     size: 0,
     content: "",
@@ -319,15 +344,27 @@ fn git_commit(
   })
 
   // 2. Get parent commit from HEAD
-  let head_ref = ctx.get_fs().read_string(git_dir + "/HEAD") catch { _ => "ref: refs/heads/main\n" }
+  let head_ref = ctx.get_fs().read_string(git_dir + "/HEAD") catch {
+      _ => "ref: refs/heads/main\n"
+    }
   let parent_hash : String? = if head_ref.has_prefix("ref: ") {
-    let ref_path = git_dir + "/" + trim_newline(hex_substr(head_ref, 5, head_ref.length() - 5))
+    let ref_path = git_dir +
+      "/" +
+      trim_newline(hex_substr(head_ref, 5, head_ref.length() - 5))
     let hash = ctx.get_fs().read_string(ref_path) catch { _ => "" }
     let trimmed = trim_newline(hash)
-    if trimmed.length() == 40 { Some(trimmed) } else { None }
+    if trimmed.length() == 40 {
+      Some(trimmed)
+    } else {
+      None
+    }
   } else {
     let trimmed = trim_newline(head_ref)
-    if trimmed.length() == 40 { Some(trimmed) } else { None }
+    if trimmed.length() == 40 {
+      Some(trimmed)
+    } else {
+      None
+    }
   }
 
   // 3. Create commit
@@ -340,7 +377,9 @@ fn git_commit(
   }
 
   let author = exec.get_env().get("GIT_AUTHOR_NAME").unwrap_or("User") +
-    " <" + exec.get_env().get("GIT_AUTHOR_EMAIL").unwrap_or("user@example.com") + ">"
+    " <" +
+    exec.get_env().get("GIT_AUTHOR_EMAIL").unwrap_or("user@example.com") +
+    ">"
 
   let timestamp = 1700000000L // TODO: get real timestamp
 
@@ -360,7 +399,9 @@ fn git_commit(
   let commit_hex = commit_id.to_hex()
 
   // Store commit object
-  exec.get_env().store_git_object(commit_hex, GitObject::{
+  exec
+  .get_env()
+  .store_git_object(commit_hex, GitObject::{
     obj_type: "commit",
     size: 0,
     content: "",
@@ -369,11 +410,17 @@ fn git_commit(
 
   // 4. Update HEAD ref
   if head_ref.has_prefix("ref: ") {
-    let ref_path = git_dir + "/" + trim_newline(hex_substr(head_ref, 5, head_ref.length() - 5))
+    let ref_path = git_dir +
+      "/" +
+      trim_newline(hex_substr(head_ref, 5, head_ref.length() - 5))
     // Ensure parent directory exists
     let refs_dir = git_dir + "/refs/heads"
-    ctx.get_fs().mkdir_p(refs_dir) catch { _ => () }
-    ctx.get_fs().write_string(ref_path, commit_hex + "\n") catch { _ => () }
+    ctx.get_fs().mkdir_p(refs_dir) catch {
+      _ => ()
+    }
+    ctx.get_fs().write_string(ref_path, commit_hex + "\n") catch {
+      _ => ()
+    }
   }
 
   // 5. Output
@@ -401,7 +448,7 @@ fn git_write_tree(
   _args : Array[String],
   stdout : StringBuilder,
   stderr : StringBuilder,
-  exec : Executor
+  exec : Executor,
 ) -> Int {
   let git_dir = ctx.resolve_path(".git")
   if not(ctx.get_fs().exists(git_dir)) {
@@ -419,7 +466,9 @@ fn git_write_tree(
   // Build tree entries from index
   let entries : Array[@git.TreeEntry] = []
   for path, entry in index {
-    let id = @git.ObjectId::from_hex(entry.hash) catch { _ => @git.ObjectId::zero() }
+    let id = @git.ObjectId::from_hex(entry.hash) catch {
+      _ => @git.ObjectId::zero()
+    }
     entries.push(@git.TreeEntry::new(entry.mode, path, id))
   }
 
@@ -428,11 +477,13 @@ fn git_write_tree(
   let hex = tree_id.to_hex()
 
   // Store tree object
-  exec.get_env().store_git_object(hex, GitObject::{
+  exec
+  .get_env()
+  .store_git_object(hex, GitObject::{
     obj_type: "tree",
     size: 0,
     content: "",
-    compressed: compressed,
+    compressed,
   })
 
   stdout.write_string(hex)
@@ -447,7 +498,7 @@ fn git_commit_tree(
   args : Array[String],
   stdout : StringBuilder,
   stderr : StringBuilder,
-  exec : Executor
+  exec : Executor,
 ) -> Int {
   let git_dir = ctx.resolve_path(".git")
   if not(ctx.get_fs().exists(git_dir)) {
@@ -456,7 +507,9 @@ fn git_commit_tree(
   }
 
   if args.length() == 0 {
-    stderr.write_string("usage: git commit-tree <tree> [-p <parent>] [-m <message>]\n")
+    stderr.write_string(
+      "usage: git commit-tree <tree> [-p <parent>] [-m <message>]\n",
+    )
     return 1
   }
 
@@ -501,7 +554,9 @@ fn git_commit_tree(
 
   // Get author from environment or use default
   let author = exec.get_env().get("GIT_AUTHOR_NAME").unwrap_or("User") +
-    " <" + exec.get_env().get("GIT_AUTHOR_EMAIL").unwrap_or("user@example.com") + ">"
+    " <" +
+    exec.get_env().get("GIT_AUTHOR_EMAIL").unwrap_or("user@example.com") +
+    ">"
 
   let timestamp = 1700000000L // TODO: get real timestamp
 
@@ -521,18 +576,26 @@ fn git_commit_tree(
   let hex = commit_id.to_hex()
 
   // Store commit object
-  exec.get_env().store_git_object(hex, GitObject::{
+  exec
+  .get_env()
+  .store_git_object(hex, GitObject::{
     obj_type: "commit",
     size: 0,
     content: "",
-    compressed: compressed,
+    compressed,
   })
 
   // Update HEAD
-  let head_ref = ctx.get_fs().read_string(git_dir + "/HEAD") catch { _ => "ref: refs/heads/main\n" }
+  let head_ref = ctx.get_fs().read_string(git_dir + "/HEAD") catch {
+      _ => "ref: refs/heads/main\n"
+    }
   if head_ref.has_prefix("ref: ") {
-    let ref_path = git_dir + "/" + trim_newline(hex_substr(head_ref, 5, head_ref.length() - 5))
-    ctx.get_fs().write_string(ref_path, hex + "\n") catch { _ => () }
+    let ref_path = git_dir +
+      "/" +
+      trim_newline(hex_substr(head_ref, 5, head_ref.length() - 5))
+    ctx.get_fs().write_string(ref_path, hex + "\n") catch {
+      _ => ()
+    }
   }
 
   stdout.write_string(hex)
@@ -547,7 +610,7 @@ fn git_log(
   _args : Array[String],
   stdout : StringBuilder,
   stderr : StringBuilder,
-  exec : Executor
+  exec : Executor,
 ) -> Int {
   let git_dir = ctx.resolve_path(".git")
   if not(ctx.get_fs().exists(git_dir)) {
@@ -559,8 +622,12 @@ fn git_log(
   let head_ref = ctx.get_fs().read_string(git_dir + "/HEAD") catch { _ => "" }
 
   let commit_hash = if head_ref.has_prefix("ref: ") {
-    let ref_path = git_dir + "/" + trim_newline(hex_substr(head_ref, 5, head_ref.length() - 5))
-    ctx.get_fs().read_string(ref_path) catch { _ => "" }
+    let ref_path = git_dir +
+      "/" +
+      trim_newline(hex_substr(head_ref, 5, head_ref.length() - 5))
+    ctx.get_fs().read_string(ref_path) catch {
+      _ => ""
+    }
   } else {
     head_ref
   }
@@ -579,9 +646,7 @@ fn git_log(
       stdout.write_string(obj.content)
       stdout.write_string("\n")
     }
-    None => {
-      stdout.write_string("commit \{hash}\n")
-    }
+    None => stdout.write_string("commit \{hash}\n")
   }
 
   0

@@ -69,7 +69,6 @@ pub async fn[T] with_timeout(
   let _ = @coroutine.spawn(async fn() {
     let result = f()
     let _ = writer.resolve(result)
-
   })
 
   // Wait with timeout

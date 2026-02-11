@@ -48,6 +48,10 @@ pub(all) enum Ast {
   WhileLoop(Ast, Ast, Bool)
   CaseStmt(Word, Array[CaseItem])
   Assignment(String, Word)
+  Subshell(Ast)
+  BraceGroup(Ast)
+  FuncDef(String, Ast)
+  Background(Ast)
   Empty
 }
 pub impl Show for Ast
@@ -117,6 +121,10 @@ pub(all) enum RedirectKind {
   Out
   Append
   In
+  OutDup
+  InDup
+  HereDoc
+  HereDocStrip
 }
 pub impl Eq for RedirectKind
 pub impl Show for RedirectKind
@@ -153,14 +161,26 @@ pub(all) enum Token {
   Variable(String)
   ExitCode
   ArgN(Int)
+  ArgAll
+  ArgAllString
+  ArgCount
+  LastPid
+  ShellPid
+  CommandSub(String)
   Pipe
   And
   Or
   Semi
+  Amp
   RedirectOut
   RedirectAppend
   RedirectIn
   RedirectErr
+  RedirectOutAnd
+  RedirectInAnd
+  HereDoc(String, String)
+  HereDocStrip(String, String)
+  IoNumber(Int)
   If
   Then
   Elif
@@ -178,6 +198,8 @@ pub(all) enum Token {
   RightBracket
   LeftParen
   RightParen
+  LeftBrace
+  RightBrace
   DoubleSemi
   Newline
   EOF
@@ -191,14 +213,17 @@ pub struct VarEnv {
   mut last_exit : Int
   git_objects : Map[String, GitObject]
   git_index : Map[String, IndexEntry]
+  mut command_sub_handler : ((String) -> String)?
 }
 pub fn VarEnv::get(Self, String) -> String?
 pub fn VarEnv::get_arg(Self, Int) -> String?
+pub fn VarEnv::get_command_sub_handler(Self) -> ((String) -> String)?
 pub fn VarEnv::get_git_index(Self) -> Map[String, IndexEntry]
 pub fn VarEnv::get_git_objects(Self) -> Map[String, GitObject]
 pub fn VarEnv::get_last_exit(Self) -> Int
 pub fn VarEnv::new() -> Self
 pub fn VarEnv::set(Self, String, String) -> Unit
+pub fn VarEnv::set_command_sub_handler(Self, (String) -> String) -> Unit
 pub fn VarEnv::set_last_exit(Self, Int) -> Unit
 pub fn VarEnv::store_git_object(Self, String, GitObject) -> Unit
 pub fn VarEnv::with_args(Array[String]) -> Self
@@ -208,7 +233,13 @@ pub(all) enum Word {
   Variable(String)
   ExitCode
   ArgN(Int)
+  ArgAll
+  ArgAllString
+  ArgCount
+  LastPid
+  ShellPid
   Quoted(Array[Word])
+  CommandSub(String)
 }
 pub impl Eq for Word
 pub impl Show for Word

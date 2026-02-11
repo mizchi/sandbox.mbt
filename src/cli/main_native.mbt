@@ -2,6 +2,7 @@
 /// Uses native stdin/stdout for interactive input
 
 // Native FFI for stdin/stdout
+
 ///|
 extern "C" fn native_getchar() -> Int = "getchar"
 

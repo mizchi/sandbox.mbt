@@ -66,7 +66,7 @@ pub struct HostFs {
 
 ///|
 /// Create a new host filesystem backend
-pub fn HostFs::new(ops : HostFsOps, base_path~ : String = "") -> HostFs {
+pub fn HostFs::new(ops : HostFsOps, base_path? : String = "") -> HostFs {
   { ops, base_path }
 }
 
@@ -149,7 +149,11 @@ pub impl FileSystem for HostFs with truncate(self, path, length) {
 ///|
 pub impl FileSystem for HostFs with size(self, path) {
   let s = (self.ops.size)(self.full_path(path))
-  if s >= 0 { Some(s) } else { None }
+  if s >= 0 {
+    Some(s)
+  } else {
+    None
+  }
 }
 
 ///|
@@ -206,7 +210,9 @@ pub impl FileSystem for HostFs with read_link(self, path) {
 ///|
 pub impl FileSystem for HostFs with rename(self, old_path, new_path) {
   if not((self.ops.rename)(self.full_path(old_path), self.full_path(new_path))) {
-    raise FsError::InvalidPath("Failed to rename: " + old_path + " -> " + new_path)
+    raise FsError::InvalidPath(
+      "Failed to rename: " + old_path + " -> " + new_path,
+    )
   }
 }
 

@@ -33,7 +33,6 @@ test "bench: WasiSandbox path mapping" (b : @bench.T) {
   let wasi = WasiSandbox::new(config)
   let result = b.bench(fn() {
     let _ = wasi.map_path("/sandbox/deep/nested/path/file.txt")
-
   })
   b.keep(result)
 }
@@ -46,10 +45,7 @@ test "bench: WasiSandbox host check" (b : @bench.T) {
       "localhost", "example.com", "api.example.com", "cdn.example.org",
     ])
   let wasi = WasiSandbox::new(config)
-  let result = b.bench(fn() {
-    let _ = wasi.check_host("api.example.com")
-
-  })
+  let result = b.bench(fn() { let _ = wasi.check_host("api.example.com") })
   b.keep(result)
 }
 
@@ -90,7 +86,6 @@ test "bench: Layer 0 - Direct MemFS" (b : @bench.T) {
   fs.write_string("/test.txt", "benchmark data")
   let result = b.bench(fn() {
     let _ = fs.read_string("/test.txt") catch { _ => "" }
-
   })
   b.keep(result)
 }
@@ -108,7 +103,6 @@ test "bench: Layer 1 - PosixContext" (b : @bench.T) {
     try {
       let _ = ctx.lseek(fd, 0L, @posix.SEEK_SET)
       let _ = ctx.read(fd, 100)
-
     } catch {
       _ => ()
     }
@@ -130,7 +124,6 @@ test "bench: Layer 2 - Sandbox" (b : @bench.T) {
       // Re-seek and read
       let _ = sandbox.get_ctx().lseek(fd, 0L, @posix.SEEK_SET)
       let _ = sandbox.read(fd, 100)
-
     } catch {
       _ => ()
     }
@@ -158,7 +151,6 @@ test "bench: Layer 3 - WasiSandbox" (b : @bench.T) {
     try {
       let _ = wasi.get_sandbox().get_ctx().lseek(fd, 0L, @posix.SEEK_SET)
       let _ = wasi.read(fd, 100)
-
     } catch {
       _ => ()
     }

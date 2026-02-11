@@ -1,5 +1,6 @@
 /// Tool definitions and execution for coding agent
 
+///|
 /// Built-in tools for the coding agent
 pub fn get_builtin_tools() -> Array[ToolDef] {
   let bash_schema =
@@ -12,44 +13,44 @@ pub fn get_builtin_tools() -> Array[ToolDef] {
     #|{"type":"object","properties":{"path":{"type":"string","description":"The directory path to list (default: current directory)"}},"required":[]}
   [
     ToolDef::new(
-      "bash",
-      "Execute a bash command in the shell. Use this for running commands, git operations, etc.",
+      "bash", "Execute a bash command in the shell. Use this for running commands, git operations, etc.",
       bash_schema,
     ),
     ToolDef::new(
-      "read_file",
-      "Read the contents of a file at the specified path.",
-      read_schema,
+      "read_file", "Read the contents of a file at the specified path.", read_schema,
     ),
     ToolDef::new(
-      "write_file",
-      "Write content to a file at the specified path. Creates the file if it doesn't exist.",
+      "write_file", "Write content to a file at the specified path. Creates the file if it doesn't exist.",
       write_schema,
     ),
     ToolDef::new(
-      "list_files",
-      "List files and directories at the specified path.",
-      list_schema,
+      "list_files", "List files and directories at the specified path.", list_schema,
     ),
   ]
 }
 
+///|
 /// Tool executor that uses the shell environment
 pub(all) struct ToolExecutor {
   shell : @shell.Shell
   ctx : @posix.PosixContext
 }
 
+///|
 /// Create a new tool executor
 pub fn ToolExecutor::new(
   shell : @shell.Shell,
-  ctx : @posix.PosixContext
+  ctx : @posix.PosixContext,
 ) -> ToolExecutor {
   { shell, ctx }
 }
 
+///|
 /// Execute a tool call
-pub fn ToolExecutor::execute(self : ToolExecutor, call : ToolCall) -> ToolResult {
+pub fn ToolExecutor::execute(
+  self : ToolExecutor,
+  call : ToolCall,
+) -> ToolResult {
   match call.name {
     "bash" => self.execute_bash(call.arguments)
     "read_file" => self.execute_read_file(call.arguments)
@@ -59,6 +60,7 @@ pub fn ToolExecutor::execute(self : ToolExecutor, call : ToolCall) -> ToolResult
   }
 }
 
+///|
 /// Execute bash command
 fn ToolExecutor::execute_bash(self : ToolExecutor, args : String) -> ToolResult {
   match parse_json_string(args, "command") {
@@ -89,8 +91,12 @@ fn ToolExecutor::execute_bash(self : ToolExecutor, args : String) -> ToolResult 
   }
 }
 
+///|
 /// Execute read_file
-fn ToolExecutor::execute_read_file(self : ToolExecutor, args : String) -> ToolResult {
+fn ToolExecutor::execute_read_file(
+  self : ToolExecutor,
+  args : String,
+) -> ToolResult {
   match parse_json_string(args, "path") {
     None => ToolResult::err("Missing 'path' argument")
     Some(path) => {
@@ -104,8 +110,12 @@ fn ToolExecutor::execute_read_file(self : ToolExecutor, args : String) -> ToolRe
   }
 }
 
+///|
 /// Execute write_file
-fn ToolExecutor::execute_write_file(self : ToolExecutor, args : String) -> ToolResult {
+fn ToolExecutor::execute_write_file(
+  self : ToolExecutor,
+  args : String,
+) -> ToolResult {
   let path = parse_json_string(args, "path")
   let content = parse_json_string(args, "content")
   match (path, content) {
@@ -123,8 +133,12 @@ fn ToolExecutor::execute_write_file(self : ToolExecutor, args : String) -> ToolR
   }
 }
 
+///|
 /// Execute list_files
-fn ToolExecutor::execute_list_files(self : ToolExecutor, args : String) -> ToolResult {
+fn ToolExecutor::execute_list_files(
+  self : ToolExecutor,
+  args : String,
+) -> ToolResult {
   let path = parse_json_string(args, "path").unwrap_or("/")
   let result = self.shell.exec_line("ls " + escape_shell_arg(path))
   if result.exit_code == 0 {
@@ -134,6 +148,7 @@ fn ToolExecutor::execute_list_files(self : ToolExecutor, args : String) -> ToolR
   }
 }
 
+///|
 /// Simple JSON string parser (extracts a string value by key)
 fn parse_json_string(json : String, key : String) -> String? {
   // Simple pattern: "key":"value" or "key": "value"
@@ -152,7 +167,10 @@ fn parse_json_string(json : String, key : String) -> String? {
   // Skip whitespace and find opening quote
   let mut quote_start = colon_pos + 1
   while quote_start < json.length() &&
-        (char_at(json, quote_start) == ' ' || char_at(json, quote_start) == '\t') {
+        (
+          char_at(json, quote_start) == ' ' ||
+          char_at(json, quote_start) == '\t'
+        ) {
     quote_start = quote_start + 1
   }
   guard quote_start < json.length() && char_at(json, quote_start) == '"' else {
@@ -176,15 +194,19 @@ fn parse_json_string(json : String, key : String) -> String? {
   guard quote_end < json.length() else { return None }
 
   // Extract and unescape the value
-  let value = try { json[quote_start + 1:quote_end].to_string() } catch { _ => return None }
+  let value = json[quote_start + 1:quote_end].to_string() catch {
+    _ => return None
+  }
   Some(unescape_json_string(value))
 }
 
+///|
 /// Get character at index
 fn char_at(s : String, i : Int) -> Char {
   s[i].unsafe_to_char()
 }
 
+///|
 /// Find substring and return start index, or -1 if not found
 fn find_substring(haystack : String, needle : String) -> Int {
   match haystack.find(needle[:]) {
@@ -193,6 +215,7 @@ fn find_substring(haystack : String, needle : String) -> Int {
   }
 }
 
+///|
 /// Unescape JSON string
 fn unescape_json_string(s : String) -> String {
   let result = StringBuilder::new()
@@ -221,6 +244,7 @@ fn unescape_json_string(s : String) -> String {
   result.to_string()
 }
 
+///|
 /// Escape a string for shell argument
 fn escape_shell_arg(s : String) -> String {
   "'" + s.replace(old="'", new="'\\''") + "'"

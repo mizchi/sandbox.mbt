@@ -150,10 +150,7 @@ pub fn[T : @fs.FileSystem] PosixContext::new(fs : T) -> PosixContext {
   ctx.env.set("PWD", "/")
 
   // Create initial process
-  ctx.processes.set(
-    Pid(1),
-    Process::new(),
-  )
+  ctx.processes.set(Pid(1), Process::new())
   ctx
 }
 

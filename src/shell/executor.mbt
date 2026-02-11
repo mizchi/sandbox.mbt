@@ -20,7 +20,10 @@ pub fn Executor::new(ctx : @posix.PosixContext) -> Executor {
 }
 
 ///|
-pub fn Executor::with_args(ctx : @posix.PosixContext, args : Array[String]) -> Executor {
+pub fn Executor::with_args(
+  ctx : @posix.PosixContext,
+  args : Array[String],
+) -> Executor {
   let exec : Executor = { ctx, env: VarEnv::with_args(args), commands: {} }
   exec.register_builtins()
   exec.setup_command_sub_handler()
@@ -36,7 +39,7 @@ fn Executor::setup_command_sub_handler(self : Executor) -> Unit {
   let commands = self.commands
   self.env.set_command_sub_handler(fn(cmd_str) {
     // Parse the command
-    let ast = try { parse(cmd_str) } catch { _ => return "" }
+    let ast = parse(cmd_str) catch { _ => return "" }
     // Create a temporary executor with shared state
     let temp_exec : Executor = { ctx, env, commands }
     // Execute and return stdout
@@ -69,7 +72,9 @@ fn Executor::register_builtins(self : Executor) -> Unit {
   self.commands.set("test", exec_test_cmd)
 
   // Register git commands
-  register_git_commands(self, fn(name, handler) { self.commands.set(name, handler) })
+  register_git_commands(self, fn(name, handler) {
+    self.commands.set(name, handler)
+  })
 }
 
 ///|
@@ -140,29 +145,24 @@ pub fn Executor::execute(self : Executor, ast : Ast) -> ExecResult {
       self.env.set(name, expanded)
       { exit_code: 0, stdout: "", stderr: "" }
     }
-    Subshell(body) => {
+    Subshell(body) =>
       // In a real shell, subshell would fork. Here we just execute in same context.
       self.execute(body)
-    }
-    BraceGroup(body) => {
+    BraceGroup(body) =>
       // Brace group executes in current context
       self.execute(body)
-    }
     FuncDef(name, body) => {
       // Register function as a command
       let func_body = body
-      self.commands.set(
-        name,
-        fn(ctx, args, stdout, stderr) {
-          // Create a new executor for the function
-          let func_exec = Executor::with_args(ctx, args)
-          // Execute the body
-          let result = func_exec.execute(func_body)
-          stdout.write_string(result.stdout)
-          stderr.write_string(result.stderr)
-          result.exit_code
-        },
-      )
+      self.commands.set(name, fn(ctx, args, stdout, stderr) {
+        // Create a new executor for the function
+        let func_exec = Executor::with_args(ctx, args)
+        // Execute the body
+        let result = func_exec.execute(func_body)
+        stdout.write_string(result.stdout)
+        stderr.write_string(result.stderr)
+        result.exit_code
+      })
       { exit_code: 0, stdout: "", stderr: "" }
     }
     Background(cmd) => {
@@ -220,51 +220,45 @@ fn Executor::exec_simple(
     let target_path = expand_word(redir.target, self.env, self.ctx)
     let abs_path = self.ctx.resolve_path(target_path)
     match redir.kind {
-      Out => {
+      Out =>
         if redir.fd == 1 {
-          self.ctx.get_fs().write_string(abs_path, stdout_str) catch { _ => () }
+          self.ctx.get_fs().write_string(abs_path, stdout_str) catch {
+            _ => ()
+          }
         } else if redir.fd == 2 {
-          self.ctx.get_fs().write_string(abs_path, stderr_str) catch { _ => () }
+          self.ctx.get_fs().write_string(abs_path, stderr_str) catch {
+            _ => ()
+          }
         }
-      }
       Append => {
-        let existing = try {
-          self.ctx.get_fs().read_string(abs_path)
-        } catch {
-          _ => ""
-        }
+        let existing = self.ctx.get_fs().read_string(abs_path) catch { _ => "" }
         if redir.fd == 1 {
           self.ctx.get_fs().write_string(abs_path, existing + stdout_str) catch {
             _ => ()
           }
         }
       }
-      In => {
+      In =>
         // Input redirect - would need to pass to command
         // For now, just ignore
         ()
-      }
-      OutDup => {
+      OutDup =>
         // Output dup: e.g., 2>&1 means redirect fd 2 to where fd 1 goes
         // For now, we simulate by copying the appropriate output
         ()
-      }
-      InDup => {
+      InDup =>
         // Input dup: e.g., 0<&3 means read from fd 3
         // For now, just ignore
         ()
-      }
-      RedirectKind::HereDoc => {
+      RedirectKind::HereDoc =>
         // Here document - content is in target
         // In a real shell, this would be fed to stdin of the command
         // For now, just ignore (would need stdin support in commands)
         ()
-      }
-      RedirectKind::HereDocStrip => {
+      RedirectKind::HereDocStrip =>
         // Here document with tab stripping
         // Same as above for now
         ()
-      }
     }
   }
 
@@ -274,8 +268,16 @@ fn Executor::exec_simple(
 
   {
     exit_code,
-    stdout: if has_stdout_redir { "" } else { stdout_str },
-    stderr: if has_stderr_redir { "" } else { stderr_str },
+    stdout: if has_stdout_redir {
+      ""
+    } else {
+      stdout_str
+    },
+    stderr: if has_stderr_redir {
+      ""
+    } else {
+      stderr_str
+    },
   }
 }
 
@@ -489,12 +491,9 @@ fn pattern_substr(s : String, start : Int, end : Int) -> String {
 ///|
 /// Execute a shell script string
 pub fn Executor::exec_script(self : Executor, script : String) -> ExecResult {
-  let ast = try {
-    parse(script)
-  } catch {
-    ParseError(msg) => {
+  let ast = parse(script) catch {
+    ParseError(msg) =>
       return { exit_code: 2, stdout: "", stderr: "Parse error: " + msg + "\n" }
-    }
   }
   self.execute(ast)
 }
@@ -531,7 +530,11 @@ fn exec_test_cmd(
 }
 
 ///|
-fn exec_test_unary(ctx : @posix.PosixContext, op : String, operand : String) -> Int {
+fn exec_test_unary(
+  ctx : @posix.PosixContext,
+  op : String,
+  operand : String,
+) -> Int {
   match op {
     "-z" => if operand.length() == 0 { 0 } else { 1 }
     "-n" => if operand.length() > 0 { 0 } else { 1 }
@@ -539,7 +542,11 @@ fn exec_test_unary(ctx : @posix.PosixContext, op : String, operand : String) -> 
       // Check if regular file (exists and not directory)
       let result : Int = try {
         let st = ctx.stat(operand)
-        if st.is_dir() { 1 } else { 0 }
+        if st.is_dir() {
+          1
+        } else {
+          0
+        }
       } catch {
         _ => 1
       }
@@ -549,7 +556,11 @@ fn exec_test_unary(ctx : @posix.PosixContext, op : String, operand : String) -> 
       // Check if directory
       let result : Int = try {
         let st = ctx.stat(operand)
-        if st.is_dir() { 0 } else { 1 }
+        if st.is_dir() {
+          0
+        } else {
+          1
+        }
       } catch {
         _ => 1
       }
@@ -558,7 +569,11 @@ fn exec_test_unary(ctx : @posix.PosixContext, op : String, operand : String) -> 
     "-e" => {
       // Check if exists
       let path = ctx.resolve_path(operand)
-      if ctx.get_fs().exists(path) { 0 } else { 1 }
+      if ctx.get_fs().exists(path) {
+        0
+      } else {
+        1
+      }
     }
     "!" => if operand == "0" || operand == "" { 0 } else { 1 }
     _ => 1
@@ -573,32 +588,56 @@ fn exec_test_binary(left : String, op : String, right : String) -> Int {
     "-eq" => {
       let l = parse_int_simple(left)
       let r = parse_int_simple(right)
-      if l == r { 0 } else { 1 }
+      if l == r {
+        0
+      } else {
+        1
+      }
     }
     "-ne" => {
       let l = parse_int_simple(left)
       let r = parse_int_simple(right)
-      if l != r { 0 } else { 1 }
+      if l != r {
+        0
+      } else {
+        1
+      }
     }
     "-lt" => {
       let l = parse_int_simple(left)
       let r = parse_int_simple(right)
-      if l < r { 0 } else { 1 }
+      if l < r {
+        0
+      } else {
+        1
+      }
     }
     "-le" => {
       let l = parse_int_simple(left)
       let r = parse_int_simple(right)
-      if l <= r { 0 } else { 1 }
+      if l <= r {
+        0
+      } else {
+        1
+      }
     }
     "-gt" => {
       let l = parse_int_simple(left)
       let r = parse_int_simple(right)
-      if l > r { 0 } else { 1 }
+      if l > r {
+        0
+      } else {
+        1
+      }
     }
     "-ge" => {
       let l = parse_int_simple(left)
       let r = parse_int_simple(right)
-      if l >= r { 0 } else { 1 }
+      if l >= r {
+        0
+      } else {
+        1
+      }
     }
     _ => 1
   }

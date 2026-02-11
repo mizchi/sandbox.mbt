@@ -23,11 +23,21 @@ pub fn write_git_metadata(
   root : String,
 ) -> Unit raise GitError {
   let git_dir = join_path(root, ".git")
-  fs.mkdir_p(git_dir) catch { e => raise GitError::IoError("mkdir_p failed: \{e}") }
-  fs.mkdir_p(join_path(git_dir, "objects")) catch { e => raise GitError::IoError("mkdir_p failed: \{e}") }
-  fs.mkdir_p(join_path(git_dir, "objects/info")) catch { e => raise GitError::IoError("mkdir_p failed: \{e}") }
-  fs.mkdir_p(join_path(git_dir, "refs/heads")) catch { e => raise GitError::IoError("mkdir_p failed: \{e}") }
-  fs.mkdir_p(join_path(git_dir, "refs/tags")) catch { e => raise GitError::IoError("mkdir_p failed: \{e}") }
+  fs.mkdir_p(git_dir) catch {
+    e => raise GitError::IoError("mkdir_p failed: \{e}")
+  }
+  fs.mkdir_p(join_path(git_dir, "objects")) catch {
+    e => raise GitError::IoError("mkdir_p failed: \{e}")
+  }
+  fs.mkdir_p(join_path(git_dir, "objects/info")) catch {
+    e => raise GitError::IoError("mkdir_p failed: \{e}")
+  }
+  fs.mkdir_p(join_path(git_dir, "refs/heads")) catch {
+    e => raise GitError::IoError("mkdir_p failed: \{e}")
+  }
+  fs.mkdir_p(join_path(git_dir, "refs/tags")) catch {
+    e => raise GitError::IoError("mkdir_p failed: \{e}")
+  }
 
   write_loose_objects(store, fs, git_dir)
   write_head_and_refs(fs, git_dir, refname, commit_id)
@@ -52,7 +62,9 @@ fn write_head_and_refs(
   write_text(fs, head_path, "ref: \{refname}\n")
   let ref_path = join_path(git_dir, refname)
   let dir = parent_dir(ref_path)
-  fs.mkdir_p(dir) catch { e => raise GitError::IoError("mkdir_p failed: \{e}") }
+  fs.mkdir_p(dir) catch {
+    e => raise GitError::IoError("mkdir_p failed: \{e}")
+  }
   write_text(fs, ref_path, commit_id.to_hex() + "\n")
 }
 
@@ -83,13 +95,19 @@ fn write_config(
 }
 
 ///|
-fn write_packed_refs(fs : &@fs.FileSystem, git_dir : String) -> Unit raise GitError {
+fn write_packed_refs(
+  fs : &@fs.FileSystem,
+  git_dir : String,
+) -> Unit raise GitError {
   let path = join_path(git_dir, "packed-refs")
   write_text(fs, path, "# pack-refs with: peeled fully-peeled\n")
 }
 
 ///|
-fn write_alternates(fs : &@fs.FileSystem, git_dir : String) -> Unit raise GitError {
+fn write_alternates(
+  fs : &@fs.FileSystem,
+  git_dir : String,
+) -> Unit raise GitError {
   let path = join_path(git_dir, "objects/info/alternates")
   write_text(fs, path, "")
 }
@@ -111,13 +129,15 @@ fn write_loose_objects(
       git_dir,
       "objects/" + String::unsafe_substring(hex, start=0, end=2),
     )
-    fs.mkdir_p(dir) catch { e => raise GitError::IoError("mkdir_p failed: \{e}") }
+    fs.mkdir_p(dir) catch {
+      e => raise GitError::IoError("mkdir_p failed: \{e}")
+    }
     let file = join_path(
       git_dir,
       "objects/" +
-        String::unsafe_substring(hex, start=0, end=2) +
-        "/" +
-        String::unsafe_substring(hex, start=2, end=hex.length()),
+      String::unsafe_substring(hex, start=0, end=2) +
+      "/" +
+      String::unsafe_substring(hex, start=2, end=hex.length()),
     )
     fs.write_file(file, compressed) catch {
       e => raise GitError::IoError("write_file failed: \{e}")
@@ -137,7 +157,10 @@ fn write_index_v2(
 
   let out : Array[Byte] = []
   // Header: "DIRC" + version(2) + count
-  out.push(b'D'); out.push(b'I'); out.push(b'R'); out.push(b'C')
+  out.push(b'D')
+  out.push(b'I')
+  out.push(b'R')
+  out.push(b'C')
   push_u32_be(out, 2)
   push_u32_be(out, entries.length())
 
@@ -159,24 +182,32 @@ fn write_index_v2(
     for b in e.id.bytes {
       out.push(b)
     }
-    let name_len = if e.path.length() < 0x0fff { e.path.length() } else { 0x0fff }
+    let name_len = if e.path.length() < 0x0fff {
+      e.path.length()
+    } else {
+      0x0fff
+    }
     push_u16_be(out, name_len)
     for c in e.path {
       out.push(c.to_int().to_byte())
     }
     out.push(b'\x00')
     // pad to 8-byte alignment
-    while (out.length() % 8) != 0 {
+    while out.length() % 8 != 0 {
       out.push(b'\x00')
     }
   }
 
-  let content = Bytes::from_array(FixedArray::makei(out.length(), fn(i) { out[i] }))
+  let content = Bytes::from_array(
+    FixedArray::makei(out.length(), fn(i) { out[i] }),
+  )
   let checksum = sha1(content)
   for b in checksum.bytes {
     out.push(b)
   }
-  let index_bytes = Bytes::from_array(FixedArray::makei(out.length(), fn(i) { out[i] }))
+  let index_bytes = Bytes::from_array(
+    FixedArray::makei(out.length(), fn(i) { out[i] }),
+  )
   let index_path = join_path(git_dir, "index")
   fs.write_file(index_path, index_bytes) catch {
     e => raise GitError::IoError("write_file failed: \{e}")
@@ -227,8 +258,11 @@ fn collect_tree_entries(
       }
       let entries = parse_tree(obj.data)
       for entry in entries {
-        let path =
-          if prefix.length() == 0 { entry.name } else { prefix + "/" + entry.name }
+        let path = if prefix.length() == 0 {
+          entry.name
+        } else {
+          prefix + "/" + entry.name
+        }
         if is_tree_mode(entry.mode) {
           collect_tree_entries(store, entry.id, path, out)
         } else {
@@ -276,7 +310,11 @@ fn push_u16_be(out : Array[Byte], v : Int) -> Unit {
 }
 
 ///|
-fn write_text(fs : &@fs.FileSystem, path : String, content : String) -> Unit raise GitError {
+fn write_text(
+  fs : &@fs.FileSystem,
+  path : String,
+  content : String,
+) -> Unit raise GitError {
   fs.write_string(path, content) catch {
     e => raise GitError::IoError("write_string failed: \{e}")
   }

@@ -36,7 +36,11 @@ fn HuffmanTree::insert(
     let next = if bit == 0 { self.left[node] } else { self.right[node] }
     let child = if next == -1 {
       let idx = self.add_node()
-      if bit == 0 { self.left[node] = idx } else { self.right[node] = idx }
+      if bit == 0 {
+        self.left[node] = idx
+      } else {
+        self.right[node] = idx
+      }
       idx
     } else {
       next
@@ -50,7 +54,10 @@ fn HuffmanTree::insert(
 }
 
 ///|
-fn HuffmanTree::decode(self : HuffmanTree, reader : BitReader) -> Int raise ZlibError {
+fn HuffmanTree::decode(
+  self : HuffmanTree,
+  reader : BitReader,
+) -> Int raise ZlibError {
   let mut node = 0
   while true {
     let bit = reader.read_bits(1)
@@ -76,7 +83,10 @@ fn reverse_bits(code : Int, len : Int) -> Int {
 }
 
 ///|
-fn build_huffman_tree(lengths : Array[Int], max_bits : Int) -> HuffmanTree raise ZlibError {
+fn build_huffman_tree(
+  lengths : Array[Int],
+  max_bits : Int,
+) -> HuffmanTree raise ZlibError {
   let bl_count : FixedArray[Int] = FixedArray::make(max_bits + 1, 0)
   for len in lengths {
     if len > 0 {

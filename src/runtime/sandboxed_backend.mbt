@@ -215,7 +215,11 @@ pub impl ProcessManager for SandboxedBackend with read_stderr_bytes(self, pid) {
 }
 
 ///|
-pub impl ProcessManager for SandboxedBackend with write_stdin_bytes(self, pid, data) {
+pub impl ProcessManager for SandboxedBackend with write_stdin_bytes(
+  self,
+  pid,
+  data,
+) {
   self.inner.write_stdin_bytes(pid, data)
 }
 

@@ -30,7 +30,6 @@ test "bench: Fs read file" (b : @bench.T) {
   fs.write_string("/test.txt", "hello world")
   let result = b.bench(fn() {
     let _ = fs.read_string("/test.txt") catch { _ => "" }
-
   })
   b.keep(result)
 }
@@ -52,10 +51,7 @@ test "bench: Fs mkdir" (b : @bench.T) {
 test "bench: Fs exists check" (b : @bench.T) {
   let fs = Fs::new()
   fs.write_string("/test.txt", "hello")
-  let result = b.bench(fn() {
-    let _ = fs.exists("/test.txt")
-
-  })
+  let result = b.bench(fn() { let _ = fs.exists("/test.txt") })
   b.keep(result)
 }
 
@@ -68,7 +64,6 @@ test "bench: Fs path resolution" (b : @bench.T) {
   fs.write_string("/a/b/c/file.txt", "data")
   let result = b.bench(fn() {
     let _ = fs.resolve_path("/a/b/../b/c/./file.txt") catch { _ => "" }
-
   })
   b.keep(result)
 }

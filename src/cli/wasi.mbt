@@ -6,7 +6,7 @@ fn wasi_fd_write(
   fd : Int,
   iovs_ptr : Int,
   iovs_len : Int,
-  nwritten_ptr : Int
+  nwritten_ptr : Int,
 ) -> Int = "wasi_snapshot_preview1" "fd_write"
 
 ///|
@@ -15,10 +15,11 @@ fn wasi_fd_read(
   fd : Int,
   iovs_ptr : Int,
   iovs_len : Int,
-  nread_ptr : Int
+  nread_ptr : Int,
 ) -> Int = "wasi_snapshot_preview1" "fd_read"
 
 // Memory helpers
+
 ///|
 extern "wasm" fn wasm_memory_ptr(arr : FixedArray[Byte]) -> Int =
   #|(func (param i32) (result i32) local.get 0 i32.const 8 i32.add)
@@ -32,7 +33,11 @@ extern "wasm" fn wasm_i32_load(ptr : Int) -> Int =
   #|(func (param i32) (result i32) local.get 0 i32.load)
 
 // Standard file descriptors
+
+///|
 let stdin_fd : Int = 0
+
+///|
 let stdout_fd : Int = 1
 
 ///|

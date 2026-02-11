@@ -1,4 +1,5 @@
 // Simple sync test first
+
 ///|
 test "byte stream: sync write then read" {
   let (reader, writer) = @async.new_byte_stream()
@@ -71,10 +72,7 @@ test "byte stream: poll without blocking" {
     assert_true(reader.poll() is None)
 
     // Write data
-    let _ = @coroutine.spawn(async fn() {
-      let _ = writer.write(b"data")
-
-    })
+    let _ = @coroutine.spawn(async fn() { let _ = writer.write(b"data") })
 
     // Need to yield to let writer run
     @coroutine.pause()

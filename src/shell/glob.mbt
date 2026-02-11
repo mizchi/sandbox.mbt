@@ -18,7 +18,7 @@ pub fn glob_match(pattern : String, text : String) -> Bool {
 pub fn expand_glob(
   pattern : String,
   fs : &@fs.FileSystem,
-  cwd : String
+  cwd : String,
 ) -> Array[String] {
   // If no glob chars, return as-is
   if not(@minimatch.has_glob_chars(pattern)) {
@@ -29,9 +29,7 @@ pub fn expand_glob(
   let (dir, file_pattern) = split_glob_path(pattern, cwd)
 
   // Get files in directory
-  let entries = try {
-    fs.readdir(dir)
-  } catch {
+  let entries = fs.readdir(dir) catch {
     _ => return [pattern] // Directory doesn't exist, return pattern as-is
   }
 
@@ -100,8 +98,10 @@ fn split_glob_path(pattern : String, cwd : String) -> (String, String) {
     // Make absolute if relative
     let abs_dir = if dir.has_prefix("/") {
       dir
+    } else if cwd == "/" {
+      "/" + dir
     } else {
-      if cwd == "/" { "/" + dir } else { cwd + "/" + dir }
+      cwd + "/" + dir
     }
     (abs_dir, file)
   }
@@ -122,7 +122,7 @@ fn glob_substr(s : String, start : Int, end : Int) -> String {
 pub fn expand_globs(
   patterns : Array[String],
   fs : &@fs.FileSystem,
-  cwd : String
+  cwd : String,
 ) -> Array[String] {
   let result : Array[String] = []
   for pattern in patterns {

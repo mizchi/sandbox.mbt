@@ -1,0 +1,21 @@
+import {
+  "mizchi/sandbox/fs",
+  "mizchi/sandbox/zlib",
+  "moonbitlang/core/encoding/utf8",
+  "moonbitlang/async/http",
+}
+
+import {
+  "mizchi/sandbox/fs",
+} for "test"
+
+warnings = "-29"
+
+options(
+  targets: {
+    "integration_test.mbt": [ "native" ],
+    "remote.mbt": [ "native" ],
+    "remote_test.mbt": [ "native" ],
+    "upload_pack_http.mbt": [ "native" ],
+  },
+)

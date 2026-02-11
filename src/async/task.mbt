@@ -120,7 +120,6 @@ pub fn Task::spawn_thread(f : async () -> Unit) -> @coroutine.Coroutine {
 /// Spawn an async task (convenience wrapper)
 pub fn spawn(f : async () -> Unit) -> Unit {
   let _ = @coroutine.spawn(f)
-
 }
 
 ///|

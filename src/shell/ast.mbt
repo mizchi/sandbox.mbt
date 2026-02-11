@@ -5,15 +5,15 @@
 pub(all) enum Word {
   Literal(String)
   Variable(String)
-  ExitCode               // $?
-  ArgN(Int)              // $0, $1, ...
-  ArgAll                 // $@ (all positional params as separate words)
-  ArgAllString           // $* (all positional params as single string)
-  ArgCount               // $#
-  LastPid                // $!
-  ShellPid               // $$
-  Quoted(Array[Word])    // For double quoted strings with embedded variables
-  CommandSub(String)     // $(cmd) or `cmd`
+  ExitCode // $?
+  ArgN(Int) // $0, $1, ...
+  ArgAll // $@ (all positional params as separate words)
+  ArgAllString // $* (all positional params as single string)
+  ArgCount // $#
+  LastPid // $!
+  ShellPid // $$
+  Quoted(Array[Word]) // For double quoted strings with embedded variables
+  CommandSub(String) // $(cmd) or `cmd`
 }
 
 ///|
@@ -64,12 +64,12 @@ pub impl Eq for Word with equal(self, other) {
 ///|
 /// Redirect kind
 pub(all) enum RedirectKind {
-  Out       // >
-  Append    // >>
-  In        // <
-  OutDup    // >&  (duplicate output fd)
-  InDup     // <&  (duplicate input fd)
-  HereDoc   // <<  (here document)
+  Out // >
+  Append // >>
+  In // <
+  OutDup // >&  (duplicate output fd)
+  InDup // <&  (duplicate input fd)
+  HereDoc // <<  (here document)
   HereDocStrip // <<- (here document with tab stripping)
 }
 
@@ -103,7 +103,7 @@ pub impl Eq for RedirectKind with equal(self, other) {
 ///|
 /// Redirect specification
 pub struct Redirect {
-  fd : Int              // 1=stdout, 2=stderr
+  fd : Int // 1=stdout, 2=stderr
   kind : RedirectKind
   target : Word
 }
@@ -143,11 +143,11 @@ pub(all) enum Ast {
   Pipeline(Array[Ast])
 
   // Logical operators
-  AndList(Ast, Ast)       // cmd1 && cmd2
-  OrList(Ast, Ast)        // cmd1 || cmd2
+  AndList(Ast, Ast) // cmd1 && cmd2
+  OrList(Ast, Ast) // cmd1 || cmd2
 
   // Sequential execution
-  Sequence(Ast, Ast)      // cmd1 ; cmd2
+  Sequence(Ast, Ast) // cmd1 ; cmd2
 
   // If statement: cond, then_body, elif_list, else_body
   IfStmt(Ast, Ast, Array[(Ast, Ast)], Ast?)
@@ -226,15 +226,15 @@ pub impl Show for Ast with output(self, logger) {
     }
     IfStmt(_, _, _, _) => logger.write_string("IfStmt(...)")
     ForLoop(varname, _, _) => logger.write_string("ForLoop(\{varname}, ...)")
-    WhileLoop(_, _, is_until) => {
+    WhileLoop(_, _, is_until) =>
       if is_until {
         logger.write_string("UntilLoop(...)")
       } else {
         logger.write_string("WhileLoop(...)")
       }
-    }
     CaseStmt(_, _) => logger.write_string("CaseStmt(...)")
-    Assignment(name, value) => logger.write_string("Assignment(\{name}=\{value})")
+    Assignment(name, value) =>
+      logger.write_string("Assignment(\{name}=\{value})")
     Subshell(body) => {
       logger.write_string("Subshell(")
       body.output(logger)

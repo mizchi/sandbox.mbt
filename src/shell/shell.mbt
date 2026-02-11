@@ -188,7 +188,9 @@ fn ls_path(
       }
     }
   } else {
-    stderr.write_string("ls: cannot access '" + path + "': No such file or directory\n")
+    stderr.write_string(
+      "ls: cannot access '" + path + "': No such file or directory\n",
+    )
     1
   }
 }

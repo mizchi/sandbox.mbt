@@ -26,7 +26,7 @@ pub fn OverlayFs::new(base : &FileSystem) -> OverlayFs {
 /// Create with custom overlay options
 pub fn OverlayFs::new_with_overlay(
   base : &FileSystem,
-  overlay : Fs
+  overlay : Fs,
 ) -> OverlayFs {
   { base, overlay, whiteouts: {} }
 }
@@ -341,9 +341,7 @@ fn ensure_parent_dirs(fs : OverlayFs, path : String) -> Unit {
   for i = 0; i < parts.length() - 1; i = i + 1 {
     current = current + "/" + parts[i]
     if not(fs.overlay.exists(current)) {
-      try {
-        fs.overlay.mkdir(current)
-      } catch {
+      fs.overlay.mkdir(current) catch {
         _ => () // Directory might already exist
       }
     }

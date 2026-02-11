@@ -1,49 +1,29 @@
 ///| Deflate decompression for zlib streams
 
-///| Length base values for symbols 257..285
+///|
+/// Length base values for symbols 257..285
 let length_base : FixedArray[Int] = [
-  3, 4, 5, 6, 7, 8, 9, 10,
-  11, 13, 15, 17,
-  19, 23, 27, 31,
-  35, 43, 51, 59,
-  67, 83, 99, 115,
-  131, 163, 195, 227,
-  258,
+  3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 15, 17, 19, 23, 27, 31, 35, 43, 51, 59, 67, 83,
+  99, 115, 131, 163, 195, 227, 258,
 ]
 
 ///|
 let length_extra : FixedArray[Int] = [
-  0, 0, 0, 0, 0, 0, 0, 0,
-  1, 1, 1, 1,
-  2, 2, 2, 2,
-  3, 3, 3, 3,
-  4, 4, 4, 4,
-  5, 5, 5, 5,
-  0,
+  0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5,
+  5, 0,
 ]
 
-///| Distance base values for symbols 0..29
+///|
+/// Distance base values for symbols 0..29
 let dist_base : FixedArray[Int] = [
-  1, 2, 3, 4,
-  5, 7, 9, 13,
-  17, 25, 33, 49,
-  65, 97, 129, 193,
-  257, 385, 513, 769,
-  1025, 1537, 2049, 3073,
-  4097, 6145, 8193, 12289,
-  16385, 24577,
+  1, 2, 3, 4, 5, 7, 9, 13, 17, 25, 33, 49, 65, 97, 129, 193, 257, 385, 513, 769,
+  1025, 1537, 2049, 3073, 4097, 6145, 8193, 12289, 16385, 24577,
 ]
 
 ///|
 let dist_extra : FixedArray[Int] = [
-  0, 0, 0, 0,
-  1, 1, 2, 2,
-  3, 3, 4, 4,
-  5, 5, 6, 6,
-  7, 7, 8, 8,
-  9, 9, 10, 10,
-  11, 11, 12, 12,
-  13, 13,
+  0, 0, 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11,
+  12, 12, 13, 13,
 ]
 
 ///|
@@ -52,7 +32,10 @@ fn bytes_from_array(arr : Array[Byte]) -> Bytes {
 }
 
 ///|
-fn inflate_deflate_stream(data : Bytes, start : Int) -> (Bytes, Int) raise ZlibError {
+fn inflate_deflate_stream(
+  data : Bytes,
+  start : Int,
+) -> (Bytes, Int) raise ZlibError {
   let reader = BitReader::new(data, start)
   let output : Array[Byte] = []
   inflate_blocks(reader, output)
@@ -61,7 +44,10 @@ fn inflate_deflate_stream(data : Bytes, start : Int) -> (Bytes, Int) raise ZlibE
 }
 
 ///|
-fn inflate_blocks(reader : BitReader, output : Array[Byte]) -> Unit raise ZlibError {
+fn inflate_blocks(
+  reader : BitReader,
+  output : Array[Byte],
+) -> Unit raise ZlibError {
   let mut is_final = false
   while not(is_final) {
     let bfinal = reader.read_bits(1)
@@ -84,7 +70,10 @@ fn inflate_blocks(reader : BitReader, output : Array[Byte]) -> Unit raise ZlibEr
 }
 
 ///|
-fn inflate_stored_block(reader : BitReader, output : Array[Byte]) -> Unit raise ZlibError {
+fn inflate_stored_block(
+  reader : BitReader,
+  output : Array[Byte],
+) -> Unit raise ZlibError {
   reader.align_byte()
   let len = reader.read_byte_aligned() | (reader.read_byte_aligned() << 8)
   let nlen = reader.read_byte_aligned() | (reader.read_byte_aligned() << 8)
@@ -169,7 +158,9 @@ fn build_fixed_trees() -> (HuffmanTree, HuffmanTree) raise ZlibError {
 }
 
 ///|
-fn build_dynamic_trees(reader : BitReader) -> (HuffmanTree, HuffmanTree) raise ZlibError {
+fn build_dynamic_trees(
+  reader : BitReader,
+) -> (HuffmanTree, HuffmanTree) raise ZlibError {
   let hlit = reader.read_bits(5) + 257
   let hdist = reader.read_bits(5) + 1
   let hclen = reader.read_bits(4) + 4

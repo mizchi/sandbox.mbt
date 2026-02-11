@@ -4,39 +4,39 @@
 /// Token types for shell parsing
 pub(all) enum Token {
   // Basic tokens
-  Word(String)              // Command, argument (unquoted)
-  SingleQuotedWord(String)  // 'literal' - no expansion
-  DoubleQuotedWord(String)  // "string" - variable expansion, no glob
+  Word(String) // Command, argument (unquoted)
+  SingleQuotedWord(String) // 'literal' - no expansion
+  DoubleQuotedWord(String) // "string" - variable expansion, no glob
   Assignment(String, String) // VAR=value
 
   // Variables
-  Variable(String)          // $VAR, ${VAR}
-  ExitCode                  // $?
-  ArgN(Int)                 // $0, $1...
-  ArgAll                    // $@
-  ArgAllString              // $*
-  ArgCount                  // $#
-  LastPid                   // $!
-  ShellPid                  // $$
-  CommandSub(String)        // $(cmd) or `cmd`
+  Variable(String) // $VAR, ${VAR}
+  ExitCode // $?
+  ArgN(Int) // $0, $1...
+  ArgAll // $@
+  ArgAllString // $*
+  ArgCount // $#
+  LastPid // $!
+  ShellPid // $$
+  CommandSub(String) // $(cmd) or `cmd`
 
   // Operators
-  Pipe                      // |
-  And                       // &&
-  Or                        // ||
-  Semi                      // ;
-  Amp                       // & (background)
+  Pipe // |
+  And // &&
+  Or // ||
+  Semi // ;
+  Amp // & (background)
 
   // Redirects
-  RedirectOut               // >
-  RedirectAppend            // >>
-  RedirectIn                // <
-  RedirectErr               // 2>
-  RedirectOutAnd            // >&
-  RedirectInAnd             // <&
-  HereDoc(String, String)   // <<DELIM content (delimiter, content)
+  RedirectOut // >
+  RedirectAppend // >>
+  RedirectIn // <
+  RedirectErr // 2>
+  RedirectOutAnd // >&
+  RedirectInAnd // <&
+  HereDoc(String, String) // <<DELIM content (delimiter, content)
   HereDocStrip(String, String) // <<-DELIM content (strip leading tabs)
-  IoNumber(Int)             // fd number before redirect (e.g., 2 in 2>&1)
+  IoNumber(Int) // fd number before redirect (e.g., 2 in 2>&1)
 
   // Control keywords
   If
@@ -54,13 +54,13 @@ pub(all) enum Token {
   Esac
 
   // Brackets
-  LeftBracket               // [
-  RightBracket              // ]
-  LeftParen                 // (
-  RightParen                // )
-  LeftBrace                 // {
-  RightBrace                // }
-  DoubleSemi                // ;;
+  LeftBracket // [
+  RightBracket // ]
+  LeftParen // (
+  RightParen // )
+  LeftBrace // {
+  RightBrace // }
+  DoubleSemi // ;;
 
   // Special
   Newline
@@ -226,7 +226,9 @@ fn Lexer::advance(self : Lexer) -> Char? {
 fn Lexer::skip_whitespace(self : Lexer) -> Unit {
   while true {
     match self.peek() {
-      Some(' ') | Some('\t') => { let _ = self.advance() }
+      Some(' ') | Some('\t') => {
+        let _ = self.advance()
+      }
       _ => break
     }
   }
@@ -235,7 +237,21 @@ fn Lexer::skip_whitespace(self : Lexer) -> Unit {
 ///|
 fn Lexer::is_word_char(c : Char) -> Bool {
   match c {
-    'a'..='z' | 'A'..='Z' | '0'..='9' | '_' | '-' | '.' | '/' | ':' | '~' | '*' | '?' | '@' | '+' | '%' | '=' => true
+    'a'..='z'
+    | 'A'..='Z'
+    | '0'..='9'
+    | '_'
+    | '-'
+    | '.'
+    | '/'
+    | ':'
+    | '~'
+    | '*'
+    | '?'
+    | '@'
+    | '+'
+    | '%'
+    | '=' => true
     _ => false
   }
 }
@@ -253,14 +269,13 @@ fn Lexer::read_word(self : Lexer) -> String {
   let buf = StringBuilder::new()
   while true {
     match self.peek() {
-      Some(c) => {
+      Some(c) =>
         if Lexer::is_word_char(c) {
           buf.write_char(c)
           let _ = self.advance()
         } else {
           break
         }
-      }
       None => break
     }
   }
@@ -290,13 +305,12 @@ fn Lexer::read_double_quoted(self : Lexer) -> String {
   while true {
     match self.advance() {
       Some('"') => break
-      Some('\\') => {
+      Some('\\') =>
         // Handle escape sequences
         match self.advance() {
           Some(c) => buf.write_char(c)
           None => ()
         }
-      }
       Some(c) => buf.write_char(c)
       None => break
     }
@@ -480,7 +494,7 @@ fn Lexer::read_heredoc_delimiter(self : Lexer) -> String {
         }
       }
     }
-    _ => {
+    _ =>
       // Unquoted delimiter - read word characters
       while true {
         match self.peek() {
@@ -491,14 +505,17 @@ fn Lexer::read_heredoc_delimiter(self : Lexer) -> String {
           _ => break
         }
       }
-    }
   }
   buf.to_string()
 }
 
 ///|
 /// Read here document content until delimiter
-fn Lexer::read_heredoc_content(self : Lexer, delim : String, strip_tabs : Bool) -> String {
+fn Lexer::read_heredoc_content(
+  self : Lexer,
+  delim : String,
+  strip_tabs : Bool,
+) -> String {
   let buf = StringBuilder::new()
   // Skip to next line
   while true {
@@ -507,7 +524,9 @@ fn Lexer::read_heredoc_content(self : Lexer, delim : String, strip_tabs : Bool) 
         let _ = self.advance()
         break
       }
-      Some(_) => { let _ = self.advance() }
+      Some(_) => {
+        let _ = self.advance()
+      }
       None => return buf.to_string()
     }
   }
@@ -550,10 +569,9 @@ fn Lexer::read_heredoc_content(self : Lexer, delim : String, strip_tabs : Bool) 
           let _ = self.advance()
           break
         }
-        _ => {
+        _ =>
           // Not a match, restore and continue
           self.pos = line_start
-        }
       }
     } else {
       // Not a match, restore position
@@ -632,7 +650,9 @@ pub fn Lexer::next_token(self : Lexer) -> Token {
       while true {
         match self.peek() {
           Some('\n') | None => break
-          _ => { let _ = self.advance() }
+          _ => {
+            let _ = self.advance()
+          }
         }
       }
       self.next_token()
@@ -738,8 +758,8 @@ pub fn Lexer::next_token(self : Lexer) -> Token {
       let next = self.peek_at(1)
       match next {
         Some('<') | Some('>') => {
-          let fd = (c.to_int() - '0'.to_int())
-          let _ = self.advance()  // consume digit
+          let fd = c.to_int() - '0'.to_int()
+          let _ = self.advance() // consume digit
           self.at_command_pos = false
           IoNumber(fd)
         }

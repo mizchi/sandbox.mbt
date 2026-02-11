@@ -21,10 +21,7 @@ pub fn create_object(
 
 ///|
 /// Hash object content (without compression)
-pub fn hash_object_content(
-  obj_type : ObjectType,
-  content : Bytes,
-) -> ObjectId {
+pub fn hash_object_content(obj_type : ObjectType, content : Bytes) -> ObjectId {
   let raw = format_object(obj_type, content)
   sha1(raw)
 }

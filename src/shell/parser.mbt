@@ -63,7 +63,9 @@ fn Parser::expect(self : Parser, expected : Token) -> Unit raise ParseError {
 fn Parser::skip_newlines(self : Parser) -> Unit {
   while true {
     match self.peek() {
-      Newline => { let _ = self.advance() }
+      Newline => {
+        let _ = self.advance()
+      }
       _ => break
     }
   }
@@ -72,8 +74,23 @@ fn Parser::skip_newlines(self : Parser) -> Unit {
 ///|
 fn Parser::is_command_end(self : Parser) -> Bool {
   match self.peek() {
-    EOF | Semi | Newline | And | Or | Pipe | Then | Do | Done | Fi | Else |
-    Elif | Esac | DoubleSemi | RightParen | RightBrace | Amp => true
+    EOF
+    | Semi
+    | Newline
+    | And
+    | Or
+    | Pipe
+    | Then
+    | Do
+    | Done
+    | Fi
+    | Else
+    | Elif
+    | Esac
+    | DoubleSemi
+    | RightParen
+    | RightBrace
+    | Amp => true
     _ => false
   }
 }
@@ -206,7 +223,9 @@ fn Parser::parse_brace_group(self : Parser) -> Ast raise ParseError {
   self.skip_newlines()
   // Brace group needs ; or newline before }
   match self.peek() {
-    Semi => { let _ = self.advance() }
+    Semi => {
+      let _ = self.advance()
+    }
     _ => ()
   }
   self.skip_newlines()
@@ -231,16 +250,15 @@ fn Parser::parse_simple_command(self : Parser) -> Ast raise ParseError {
 
   // Check for function definition: name() { ... }
   match self.peek() {
-    Word(name) => {
+    Word(name) =>
       if self.peek_at(1) == LeftParen && self.peek_at(2) == RightParen {
-        let _ = self.advance()  // consume name
-        let _ = self.advance()  // consume (
-        let _ = self.advance()  // consume )
+        let _ = self.advance() // consume name
+        let _ = self.advance() // consume (
+        let _ = self.advance() // consume )
         self.skip_newlines()
         let body = self.parse_command()
         return FuncDef(name, body)
       }
-    }
     _ => ()
   }
 
@@ -332,13 +350,17 @@ fn Parser::parse_simple_command(self : Parser) -> Ast raise ParseError {
       Token::HereDoc(delim, content) => {
         let _ = self.advance()
         // Here document: target is the content, stored in a Literal
-        redirects.push(Redirect::new(0, RedirectKind::HereDoc, Literal(content)))
+        redirects.push(
+          Redirect::new(0, RedirectKind::HereDoc, Literal(content)),
+        )
         // Note: delim is stored for reference but content is what matters
         let _ = delim
       }
       Token::HereDocStrip(delim, content) => {
         let _ = self.advance()
-        redirects.push(Redirect::new(0, RedirectKind::HereDocStrip, Literal(content)))
+        redirects.push(
+          Redirect::new(0, RedirectKind::HereDocStrip, Literal(content)),
+        )
         let _ = delim
       }
       _ => break
@@ -356,7 +378,7 @@ fn Parser::parse_simple_command(self : Parser) -> Ast raise ParseError {
 fn Parser::parse_redirect_with_fd(
   self : Parser,
   fd : Int,
-  redirects : Array[Redirect]
+  redirects : Array[Redirect],
 ) -> Unit raise ParseError {
   match self.peek() {
     RedirectOut => {
@@ -521,7 +543,9 @@ fn Parser::parse_for(self : Parser) -> Ast raise ParseError {
   }
   self.skip_newlines()
   match self.peek() {
-    Semi => { let _ = self.advance() }
+    Semi => {
+      let _ = self.advance()
+    }
     _ => ()
   }
   self.skip_newlines()
@@ -541,7 +565,9 @@ fn Parser::parse_while(self : Parser) -> Ast raise ParseError {
   let cond = self.parse_list()
   self.skip_newlines()
   match self.peek() {
-    Semi => { let _ = self.advance() }
+    Semi => {
+      let _ = self.advance()
+    }
     _ => ()
   }
   self.skip_newlines()
@@ -561,7 +587,9 @@ fn Parser::parse_until(self : Parser) -> Ast raise ParseError {
   let cond = self.parse_list()
   self.skip_newlines()
   match self.peek() {
-    Semi => { let _ = self.advance() }
+    Semi => {
+      let _ = self.advance()
+    }
     _ => ()
   }
   self.skip_newlines()
@@ -595,11 +623,7 @@ fn Parser::parse_case(self : Parser) -> Ast raise ParseError {
     self.skip_newlines()
 
     // Parse body
-    let body = if self.peek() == DoubleSemi {
-      Empty
-    } else {
-      self.parse_list()
-    }
+    let body = if self.peek() == DoubleSemi { Empty } else { self.parse_list() }
     if self.peek() == DoubleSemi {
       let _ = self.advance()
     }

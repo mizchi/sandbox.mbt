@@ -1,10 +1,6 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "mizchi/sandbox/fs"
 
-import {
-  "mizchi/git",
-}
-
 // Values
 
 // Errors
@@ -60,8 +56,6 @@ pub fn Fs::total_size(Self) -> Int
 pub fn Fs::truncate(Self, String, Int) -> Unit raise FsError
 pub fn Fs::write_file(Self, String, Bytes) -> Unit raise FsError
 pub fn Fs::write_string(Self, String, String) -> Unit raise FsError
-pub impl @git.FileSystem for Fs
-pub impl @git.RepoFileSystem for Fs
 pub impl FileSystem for Fs
 
 pub(all) enum FsEntry {
@@ -69,13 +63,6 @@ pub(all) enum FsEntry {
   Dir
   Symlink(String)
 }
-
-pub struct GitFsAdapter {
-  inner : &FileSystem
-}
-pub fn GitFsAdapter::new(&FileSystem) -> Self
-pub impl @git.FileSystem for GitFsAdapter
-pub impl @git.RepoFileSystem for GitFsAdapter
 
 pub struct HostFs {
   ops : HostFsOps

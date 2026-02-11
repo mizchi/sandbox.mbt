@@ -108,7 +108,9 @@ test "execute while loop" {
   let ctx = @posix.PosixContext::default()
   let exec = Executor::new(ctx)
   // Use counter variable - simple while test
-  let result = exec.exec_script("COUNT=0; while test $COUNT -lt 3; do echo $COUNT; COUNT=1; done")
+  let result = exec.exec_script(
+    "COUNT=0; while test $COUNT -lt 3; do echo $COUNT; COUNT=1; done",
+  )
   // This will loop once since COUNT becomes 1 after first iteration
   assert_true(result.stdout.contains("0"))
 }
@@ -117,7 +119,9 @@ test "execute while loop" {
 test "execute case statement" {
   let ctx = @posix.PosixContext::default()
   let exec = Executor::new(ctx)
-  let result = exec.exec_script("case foo in foo) echo match;; bar) echo no;; esac")
+  let result = exec.exec_script(
+    "case foo in foo) echo match;; bar) echo no;; esac",
+  )
   assert_eq(result.stdout, "match\n")
 }
 
@@ -200,11 +204,7 @@ test "redirect output to file" {
   let ctx = @posix.PosixContext::default()
   let exec = Executor::new(ctx)
   ignore(exec.exec_script("echo hello > /out.txt"))
-  let content = try {
-    ctx.get_fs().read_string("/out.txt")
-  } catch {
-    _ => ""
-  }
+  let content = ctx.get_fs().read_string("/out.txt") catch { _ => "" }
   assert_eq(content, "hello\n")
 }
 
@@ -233,7 +233,7 @@ test "command substitution pwd" {
   let exec = Executor::new(ctx)
   let result = exec.exec_script("echo $(pwd)")
   assert_eq(result.exit_code, 0)
-  assert_eq(result.stdout, "/\n")  // Default cwd is /
+  assert_eq(result.stdout, "/\n") // Default cwd is /
 }
 
 ///|

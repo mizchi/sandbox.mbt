@@ -18,7 +18,7 @@ pub struct S3Backend {
 }
 
 ///|
-pub fn S3Backend::new(bucket : String, prefix~ : String = "") -> S3Backend {
+pub fn S3Backend::new(bucket : String, prefix? : String = "") -> S3Backend {
   { bucket, prefix, inner: Fs::default() }
 }
 

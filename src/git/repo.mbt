@@ -168,8 +168,11 @@ fn walk_tree(
       }
       let entries = parse_tree(obj.data)
       for entry in entries {
-        let path =
-          if prefix.length() == 0 { entry.name } else { prefix + "/" + entry.name }
+        let path = if prefix.length() == 0 {
+          entry.name
+        } else {
+          prefix + "/" + entry.name
+        }
         if is_tree_mode(entry.mode) {
           walk_tree(store, entry.id, path, files)
         } else {
@@ -197,7 +200,11 @@ fn is_tree_mode(mode : String) -> Bool {
 ///|
 fn join_path(root : String, path : String) -> String {
   if root.length() == 0 || root == "/" {
-    if path.has_prefix("/") { path } else { "/" + path }
+    if path.has_prefix("/") {
+      path
+    } else {
+      "/" + path
+    }
   } else if root.has_suffix("/") {
     root + path
   } else {

@@ -1,6 +1,0 @@
-{
-  "import": [
-    "mizchi/sandbox/shell",
-    "mizchi/sandbox/posix"
-  ]
-}

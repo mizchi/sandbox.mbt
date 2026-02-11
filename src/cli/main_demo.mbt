@@ -36,14 +36,12 @@ fn main {
 
   // While loop (limited iterations)
   run_demo(
-    shell,
-    "COUNT=0; while test $COUNT -lt 3; do echo Count: $COUNT; COUNT=3; done",
+    shell, "COUNT=0; while test $COUNT -lt 3; do echo Count: $COUNT; COUNT=3; done",
   )
 
   // Case statement
   run_demo(
-    shell,
-    "case hello in hello) echo 'Matched hello';; *) echo 'No match';; esac",
+    shell, "case hello in hello) echo 'Matched hello';; *) echo 'No match';; esac",
   )
 
   // Test command
@@ -57,7 +55,9 @@ fn main {
   run_demo(shell, "ls /demo")
 
   // Complex example
-  run_demo(shell, "if test -d /demo; then echo 'Directory exists'; ls /demo; fi")
+  run_demo(
+    shell, "if test -d /demo; then echo 'Directory exists'; ls /demo; fi",
+  )
 
   println("")
   println("Demo complete!")
