@@ -68,10 +68,10 @@ fn ToolExecutor::execute_bash(self : ToolExecutor, args : String) -> ToolResult 
     Some(command) => {
       let result = self.shell.exec_line(command)
       let output = StringBuilder::new()
-      if not(result.stdout.is_empty()) {
+      if !(result.stdout.is_empty()) {
         output.write_string(result.stdout)
       }
-      if not(result.stderr.is_empty()) {
+      if !(result.stderr.is_empty()) {
         if output.to_string().length() > 0 {
           output.write_string("\n")
         }

@@ -119,7 +119,7 @@ pub impl FileSystem for HostFs with read_file(self, path) {
 
 ///|
 pub impl FileSystem for HostFs with write_file(self, path, content) {
-  if not((self.ops.write_file)(self.full_path(path), content)) {
+  if !((self.ops.write_file)(self.full_path(path), content)) {
     raise FsError::InvalidPath("Failed to write file: " + path)
   }
 }
@@ -134,14 +134,14 @@ pub impl FileSystem for HostFs with read_string(self, path) {
 
 ///|
 pub impl FileSystem for HostFs with write_string(self, path, content) {
-  if not((self.ops.write_string)(self.full_path(path), content)) {
+  if !((self.ops.write_string)(self.full_path(path), content)) {
     raise FsError::InvalidPath("Failed to write file: " + path)
   }
 }
 
 ///|
 pub impl FileSystem for HostFs with truncate(self, path, length) {
-  if not((self.ops.truncate)(self.full_path(path), length)) {
+  if !((self.ops.truncate)(self.full_path(path), length)) {
     raise FsError::InvalidPath("Failed to truncate file: " + path)
   }
 }
@@ -158,28 +158,28 @@ pub impl FileSystem for HostFs with size(self, path) {
 
 ///|
 pub impl FileSystem for HostFs with remove(self, path) {
-  if not((self.ops.remove)(self.full_path(path))) {
+  if !((self.ops.remove)(self.full_path(path))) {
     raise FsError::InvalidPath("Failed to remove file: " + path)
   }
 }
 
 ///|
 pub impl FileSystem for HostFs with mkdir(self, path) {
-  if not((self.ops.mkdir)(self.full_path(path))) {
+  if !((self.ops.mkdir)(self.full_path(path))) {
     raise FsError::InvalidPath("Failed to create directory: " + path)
   }
 }
 
 ///|
 pub impl FileSystem for HostFs with mkdir_p(self, path) {
-  if not((self.ops.mkdir_p)(self.full_path(path))) {
+  if !((self.ops.mkdir_p)(self.full_path(path))) {
     raise FsError::InvalidPath("Failed to create directory: " + path)
   }
 }
 
 ///|
 pub impl FileSystem for HostFs with rmdir(self, path) {
-  if not((self.ops.rmdir)(self.full_path(path))) {
+  if !((self.ops.rmdir)(self.full_path(path))) {
     raise FsError::InvalidPath("Failed to remove directory: " + path)
   }
 }
@@ -194,7 +194,7 @@ pub impl FileSystem for HostFs with readdir(self, path) {
 
 ///|
 pub impl FileSystem for HostFs with symlink(self, path, target) {
-  if not((self.ops.symlink)(self.full_path(path), target)) {
+  if !((self.ops.symlink)(self.full_path(path), target)) {
     raise FsError::InvalidPath("Failed to create symlink: " + path)
   }
 }
@@ -209,7 +209,7 @@ pub impl FileSystem for HostFs with read_link(self, path) {
 
 ///|
 pub impl FileSystem for HostFs with rename(self, old_path, new_path) {
-  if not((self.ops.rename)(self.full_path(old_path), self.full_path(new_path))) {
+  if !((self.ops.rename)(self.full_path(old_path), self.full_path(new_path))) {
     raise FsError::InvalidPath(
       "Failed to rename: " + old_path + " -> " + new_path,
     )
@@ -219,7 +219,7 @@ pub impl FileSystem for HostFs with rename(self, old_path, new_path) {
 ///|
 pub impl FileSystem for HostFs with stat(self, path) {
   let full = self.full_path(path)
-  if not((self.ops.exists)(full)) {
+  if !((self.ops.exists)(full)) {
     raise FsError::NotFound(path)
   }
   if (self.ops.is_symlink)(full) {

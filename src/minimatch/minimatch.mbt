@@ -120,7 +120,7 @@ fn match_char_class(pat : Array[Char], start : Int, c : Char) -> (Bool, Int) {
     i = i + 1
   }
 
-  let result = if negate { not(matched) } else { matched }
+  let result = if negate { !(matched) } else { matched }
   (result, i)
 }
 
@@ -151,7 +151,7 @@ pub fn match_any(patterns : Array[String], text : String) -> Bool {
 /// Check if all patterns match the text
 pub fn match_all(patterns : Array[String], text : String) -> Bool {
   for pattern in patterns {
-    if not(match_(pattern, text)) {
+    if !(match_(pattern, text)) {
       return false
     }
   }

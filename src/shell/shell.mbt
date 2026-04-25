@@ -295,7 +295,7 @@ fn cmd_touch(
   }
   for path in args {
     let abs_path = ctx.resolve_path(path)
-    if not(ctx.get_fs().exists(abs_path)) {
+    if !(ctx.get_fs().exists(abs_path)) {
       ctx.get_fs().write_string(abs_path, "") catch {
         _ => {
           stderr.write_string("touch: cannot touch '" + path + "'\n")
@@ -370,7 +370,7 @@ fn parse_int_simple(s : String) -> Int {
   let mut negative = false
   let mut started = false
   for c in s {
-    if c == '-' && not(started) {
+    if c == '-' && !(started) {
       negative = true
       started = true
     } else if c >= '0' && c <= '9' {

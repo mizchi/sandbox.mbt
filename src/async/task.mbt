@@ -189,7 +189,7 @@ pub fn Task::get_threads(self : Task) -> Array[@coroutine.Coroutine] {
 ///|
 /// Get pending subtasks
 pub fn Task::pending_subtasks(self : Task) -> Array[Subtask] {
-  self.subtasks.filter(fn(s) { not(s.completed) })
+  self.subtasks.filter(fn(s) { !(s.completed) })
 }
 
 ///|

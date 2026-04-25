@@ -21,7 +21,7 @@ pub fn expand_glob(
   cwd : String,
 ) -> Array[String] {
   // If no glob chars, return as-is
-  if not(@minimatch.has_glob_chars(pattern)) {
+  if !(@minimatch.has_glob_chars(pattern)) {
     return [pattern]
   }
 
@@ -37,7 +37,7 @@ pub fn expand_glob(
   let matches : Array[String] = []
   for entry in entries {
     // Skip hidden files unless pattern starts with .
-    if entry.has_prefix(".") && not(file_pattern.has_prefix(".")) {
+    if entry.has_prefix(".") && !(file_pattern.has_prefix(".")) {
       continue
     }
     if @minimatch.match_(file_pattern, entry) {

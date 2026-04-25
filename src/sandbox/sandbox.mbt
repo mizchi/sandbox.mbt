@@ -392,7 +392,7 @@ fn Sandbox::check_path(
           break
         }
       }
-      if not(is_allowed) {
+      if !(is_allowed) {
         raise PathDenied("Path not in allowed list: " + abs_path)
       }
     }
@@ -419,12 +419,12 @@ fn Sandbox::check_command(
   self : Sandbox,
   cmd : String,
 ) -> Unit raise SandboxError {
-  if not(self.caps.can_exec) {
+  if !(self.caps.can_exec) {
     raise PermissionDenied("Execution not allowed")
   }
   match self.caps.allowed_commands {
     Some(allowed) =>
-      if not(allowed.contains(cmd)) {
+      if !(allowed.contains(cmd)) {
         raise CommandDenied("Command not allowed: " + cmd)
       }
     None => () // All commands allowed
@@ -469,13 +469,13 @@ pub fn Sandbox::open(
   mode : @posix.FileMode,
 ) -> @posix.Fd raise SandboxError {
   // Check permissions
-  if flags.is_readable() && not(self.caps.can_read) {
+  if flags.is_readable() && !(self.caps.can_read) {
     raise PermissionDenied("Read not allowed")
   }
-  if flags.is_writable() && not(self.caps.can_write) {
+  if flags.is_writable() && !(self.caps.can_write) {
     raise PermissionDenied("Write not allowed")
   }
-  if flags.has(@posix.O_CREAT) && not(self.caps.can_create) {
+  if flags.has(@posix.O_CREAT) && !(self.caps.can_create) {
     raise PermissionDenied("Create not allowed")
   }
   self.check_path(path)
@@ -510,7 +510,7 @@ pub fn Sandbox::read(
   fd : @posix.Fd,
   count : Int,
 ) -> Bytes raise SandboxError {
-  if not(self.caps.can_read) {
+  if !(self.caps.can_read) {
     raise PermissionDenied("Read not allowed")
   }
   self.ctx.read(fd, count) catch {
@@ -524,7 +524,7 @@ pub fn Sandbox::write(
   fd : @posix.Fd,
   data : Bytes,
 ) -> Int raise SandboxError {
-  if not(self.caps.can_write) {
+  if !(self.caps.can_write) {
     raise PermissionDenied("Write not allowed")
   }
   self.check_file_size(data.length())
@@ -535,7 +535,7 @@ pub fn Sandbox::write(
 
 ///|
 pub fn Sandbox::mkdir(self : Sandbox, path : String) -> Unit raise SandboxError {
-  if not(self.caps.can_mkdir) {
+  if !(self.caps.can_mkdir) {
     raise PermissionDenied("mkdir not allowed")
   }
   self.check_path(path)
@@ -549,7 +549,7 @@ pub fn Sandbox::remove(
   self : Sandbox,
   path : String,
 ) -> Unit raise SandboxError {
-  if not(self.caps.can_delete) {
+  if !(self.caps.can_delete) {
     raise PermissionDenied("Delete not allowed")
   }
   self.check_path(path)

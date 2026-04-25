@@ -166,18 +166,18 @@ pub impl Filesystem for MemfsBackend with open(self, path, flags) {
   let abs_path = self.resolve_path(path)
   let exists = self.fs.exists(abs_path)
   if flags.create {
-    if not(exists) {
+    if !(exists) {
       self.fs.write_string(abs_path, "") catch {
         e => raise convert_memfs_error(e)
       }
     }
-  } else if not(exists) {
+  } else if !(exists) {
     raise IOError::NotFound(abs_path)
   }
   if self.fs.is_dir(abs_path) && flags.is_writable() {
     raise IOError::IsDirectory(abs_path)
   }
-  if flags.truncate && flags.is_writable() && not(self.fs.is_dir(abs_path)) {
+  if flags.truncate && flags.is_writable() && !(self.fs.is_dir(abs_path)) {
     self.fs.write_string(abs_path, "") catch {
       e => raise convert_memfs_error(e)
     }
@@ -202,7 +202,7 @@ pub impl Filesystem for MemfsBackend with open(self, path, flags) {
 ///|
 pub impl Filesystem for MemfsBackend with read(self, fd, len) {
   let file = self.get_file(fd)
-  if not(file.flags.is_readable()) {
+  if !(file.flags.is_readable()) {
     raise IOError::PermissionDenied("File not opened for reading")
   }
   let data = self.fs.read_file(file.path) catch {
@@ -221,7 +221,7 @@ pub impl Filesystem for MemfsBackend with read(self, fd, len) {
 ///|
 pub impl Filesystem for MemfsBackend with write(self, fd, data) {
   let file = self.get_file(fd)
-  if not(file.flags.is_writable()) {
+  if !(file.flags.is_writable()) {
     raise IOError::PermissionDenied("File not opened for writing")
   }
   let existing : Bytes = self.fs.read_file(file.path) catch {
@@ -262,7 +262,7 @@ pub impl Filesystem for MemfsBackend with close(self, fd) {
 ///|
 pub impl Filesystem for MemfsBackend with stat(self, path) {
   let abs_path = self.resolve_path(path)
-  if not(self.fs.exists(abs_path)) {
+  if !(self.fs.exists(abs_path)) {
     raise IOError::NotFound(abs_path)
   }
   let file_type = if self.fs.is_dir(abs_path) {
@@ -294,7 +294,7 @@ pub impl Filesystem for MemfsBackend with mkdir(self, path) {
 ///|
 pub impl Filesystem for MemfsBackend with readdir(self, path) {
   let abs_path = self.resolve_path(path)
-  if not(self.fs.is_dir(abs_path)) {
+  if !(self.fs.is_dir(abs_path)) {
     raise IOError::NotDirectory(abs_path)
   }
   let names = self.fs.readdir(abs_path) catch {
@@ -320,7 +320,7 @@ pub impl Filesystem for MemfsBackend with readdir(self, path) {
 ///|
 pub impl Filesystem for MemfsBackend with unlink(self, path) {
   let abs_path = self.resolve_path(path)
-  if not(self.fs.exists(abs_path)) {
+  if !(self.fs.exists(abs_path)) {
     raise IOError::NotFound(abs_path)
   }
   self.fs.remove(abs_path) catch {
@@ -332,7 +332,7 @@ pub impl Filesystem for MemfsBackend with unlink(self, path) {
 pub impl Filesystem for MemfsBackend with rename(self, from, to) {
   let abs_from = self.resolve_path(from)
   let abs_to = self.resolve_path(to)
-  if not(self.fs.exists(abs_from)) {
+  if !(self.fs.exists(abs_from)) {
     raise IOError::NotFound(abs_from)
   }
 
@@ -580,7 +580,7 @@ pub impl Environment for MemfsBackend with cwd(self) {
 ///|
 pub impl Environment for MemfsBackend with chdir(self, path) {
   let abs_path = self.resolve_path(path)
-  if not(self.fs.is_dir(abs_path)) {
+  if !(self.fs.is_dir(abs_path)) {
     raise IOError::NotDirectory(abs_path)
   }
   self.cwd = abs_path

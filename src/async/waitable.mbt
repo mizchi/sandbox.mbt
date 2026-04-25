@@ -63,7 +63,7 @@ pub impl Waitable for WaitableRead with set_waiter(self, coro) {
 
 ///|
 pub impl[T] Waitable for WaitableFuture[T] with is_ready(self) {
-  not(self.future.inner.state is Pending)
+  !(self.future.inner.state is Pending)
 }
 
 ///|
@@ -79,7 +79,7 @@ pub impl[T] Waitable for WaitableFuture[T] with get_waiter(self) {
 pub impl[T] Waitable for WaitableFuture[T] with set_waiter(self, coro) {
   match coro {
     Some(c) =>
-      if not(self.future.inner.waiters.contains(c)) {
+      if !(self.future.inner.waiters.contains(c)) {
         self.future.inner.waiters.push(c)
       }
     None => self.future.inner.waiters.clear()

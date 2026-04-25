@@ -215,7 +215,7 @@ pub fn expand_words_with_glob(
     let expanded = expand_word(w, env, ctx)
     // Apply glob expansion if the word contains glob characters
     // and is not quoted (Literal words can contain glob chars)
-    if has_glob_chars(expanded) && not(is_quoted_word(w)) {
+    if has_glob_chars(expanded) && !(is_quoted_word(w)) {
       let glob_results = expand_glob(expanded, ctx.get_fs(), cwd)
       for path in glob_results {
         result.push(path)

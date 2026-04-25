@@ -157,7 +157,7 @@ pub impl FileSystem for OverlayFs with truncate(self, path, length) {
     raise FsError::NotFound(path)
   }
   // If file is in base but not overlay, copy to overlay first
-  if not(self.in_overlay(path)) && self.base.exists(path) {
+  if !(self.in_overlay(path)) && self.base.exists(path) {
     let content = self.base.read_file(path)
     ensure_parent_dirs(self, path)
     self.overlay.write_file(path, content)
@@ -212,7 +212,7 @@ pub impl FileSystem for OverlayFs with mkdir_p(self, path) {
   for part in parts {
     current = current + "/" + part.to_string()
     self.remove_whiteout(current)
-    if not(self.exists(current)) {
+    if !(self.exists(current)) {
       self.overlay.mkdir(current)
     }
   }
@@ -223,7 +223,7 @@ pub impl FileSystem for OverlayFs with rmdir(self, path) {
   if self.is_whiteout(path) {
     raise FsError::NotFound(path)
   }
-  if not(self.is_dir(path)) {
+  if !(self.is_dir(path)) {
     raise FsError::NotADirectory(path)
   }
   // Remove from overlay if present
@@ -247,7 +247,7 @@ pub impl FileSystem for OverlayFs with readdir(self, path) {
   if self.overlay.is_dir(path) {
     for entry in self.overlay.readdir(path) {
       let full_path = if path == "/" { "/" + entry } else { path + "/" + entry }
-      if not(self.is_whiteout(full_path)) {
+      if !(self.is_whiteout(full_path)) {
         entries[entry] = true
       }
     }
@@ -256,7 +256,7 @@ pub impl FileSystem for OverlayFs with readdir(self, path) {
   if self.base.is_dir(path) {
     for entry in self.base.readdir(path) {
       let full_path = if path == "/" { "/" + entry } else { path + "/" + entry }
-      if not(self.is_whiteout(full_path)) && not(entries.contains(entry)) {
+      if !(self.is_whiteout(full_path)) && !(entries.contains(entry)) {
         entries[entry] = true
       }
     }
@@ -340,7 +340,7 @@ fn ensure_parent_dirs(fs : OverlayFs, path : String) -> Unit {
   let mut current = ""
   for i = 0; i < parts.length() - 1; i = i + 1 {
     current = current + "/" + parts[i]
-    if not(fs.overlay.exists(current)) {
+    if !(fs.overlay.exists(current)) {
       fs.overlay.mkdir(current) catch {
         _ => () // Directory might already exist
       }

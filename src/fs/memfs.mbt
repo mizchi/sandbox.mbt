@@ -206,7 +206,7 @@ pub fn Fs::mkdir(self : Fs, path : String) -> Unit raise FsError {
   }
   // Check parent exists
   let parent = parent_path(normalized)
-  if not(self.is_dir(parent)) {
+  if !(self.is_dir(parent)) {
     raise NotADirectory(parent)
   }
   // Check path doesn't exist
@@ -227,9 +227,9 @@ pub fn Fs::mkdir_p(self : Fs, path : String) -> Unit raise FsError {
   let mut current = ""
   for part in parts {
     current = current + "/" + part
-    if not(self.exists(current)) {
+    if !(self.exists(current)) {
       self.entries.set(current, Dir)
-    } else if not(self.is_dir(current)) {
+    } else if !(self.is_dir(current)) {
       raise NotADirectory(current)
     }
   }
@@ -257,7 +257,7 @@ pub fn Fs::write_file(
   let normalized = normalize_path(path)
   // Check parent exists
   let parent = parent_path(normalized)
-  if not(self.is_dir(parent)) {
+  if !(self.is_dir(parent)) {
     raise NotADirectory(parent)
   }
   // Get old size for quota tracking
@@ -303,7 +303,7 @@ pub fn Fs::symlink(
 ) -> Unit raise FsError {
   let normalized = normalize_path(path)
   let parent = parent_path(normalized)
-  if not(self.is_dir(parent)) {
+  if !(self.is_dir(parent)) {
     raise NotADirectory(parent)
   }
   if self.exists(normalized) {
@@ -345,7 +345,7 @@ pub fn Fs::rmdir(self : Fs, path : String) -> Unit raise FsError {
   if normalized == "/" {
     raise InvalidPath("/")
   }
-  if not(self.is_dir(normalized)) {
+  if !(self.is_dir(normalized)) {
     raise NotADirectory(normalized)
   }
   // Check if empty
@@ -361,7 +361,7 @@ pub fn Fs::rmdir(self : Fs, path : String) -> Unit raise FsError {
 /// List directory contents
 pub fn Fs::readdir(self : Fs, path : String) -> Array[String] raise FsError {
   let resolved = self.resolve_path(path)
-  if not(self.is_dir(resolved)) {
+  if !(self.is_dir(resolved)) {
     raise NotADirectory(path)
   }
   let prefix = if resolved == "/" { "/" } else { resolved + "/" }
@@ -369,7 +369,7 @@ pub fn Fs::readdir(self : Fs, path : String) -> Array[String] raise FsError {
   for entry_path, _ in self.entries {
     if entry_path.has_prefix(prefix) {
       let rest = substring_from(entry_path, prefix.length())
-      if rest.length() > 0 && not(string_contains(rest, "/")) {
+      if rest.length() > 0 && !(string_contains(rest, "/")) {
         result.push(rest)
       }
     }
@@ -401,22 +401,22 @@ pub fn Fs::rename(
   }
 
   // Check source exists
-  if not(self.exists(old_normalized)) {
+  if !(self.exists(old_normalized)) {
     raise NotFound(old_path)
   }
 
   // Check new parent exists and is a directory
   let new_parent = parent_path(new_normalized)
-  if not(self.exists(new_parent)) {
+  if !(self.exists(new_parent)) {
     raise NotFound(new_parent)
   }
-  if not(self.is_dir(new_parent)) {
+  if !(self.is_dir(new_parent)) {
     raise NotADirectory(new_parent)
   }
 
   // If destination exists, remove it first (for files)
   if self.exists(new_normalized) {
-    if self.is_dir(new_normalized) && not(self.is_dir(old_normalized)) {
+    if self.is_dir(new_normalized) && !(self.is_dir(old_normalized)) {
       raise NotAFile(new_normalized)
     }
     if self.is_file(new_normalized) || self.is_symlink(new_normalized) {

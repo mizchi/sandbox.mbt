@@ -81,7 +81,7 @@ pub fn RuntimeShell::execute_script(
 ) -> Array[ExecResult] {
   let results : Array[ExecResult] = []
   for line in script.split("\n") {
-    if not(self.running) {
+    if !(self.running) {
       break
     }
     results.push(self.execute(line.to_string()))

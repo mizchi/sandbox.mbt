@@ -77,7 +77,7 @@ fn git_hash_object(
       write_object = true
     } else if arg == "--stdin" {
       use_stdin = true
-    } else if not(arg.has_prefix("-")) {
+    } else if !(arg.has_prefix("-")) {
       file_path = arg
     }
   }
@@ -109,7 +109,7 @@ fn git_hash_object(
   // Write object if -w
   if write_object {
     let git_dir = ctx.resolve_path(".git")
-    if not(ctx.get_fs().exists(git_dir)) {
+    if !(ctx.get_fs().exists(git_dir)) {
       stderr.write_string("fatal: not a git repository\n")
       return 128
     }
@@ -237,7 +237,7 @@ fn git_add(
   }
 
   let git_dir = ctx.resolve_path(".git")
-  if not(ctx.get_fs().exists(git_dir)) {
+  if !(ctx.get_fs().exists(git_dir)) {
     stderr.write_string("fatal: not a git repository\n")
     return 128
   }
@@ -291,7 +291,7 @@ fn git_commit(
   exec : Executor,
 ) -> Int {
   let git_dir = ctx.resolve_path(".git")
-  if not(ctx.get_fs().exists(git_dir)) {
+  if !(ctx.get_fs().exists(git_dir)) {
     stderr.write_string("fatal: not a git repository\n")
     return 128
   }
@@ -451,7 +451,7 @@ fn git_write_tree(
   exec : Executor,
 ) -> Int {
   let git_dir = ctx.resolve_path(".git")
-  if not(ctx.get_fs().exists(git_dir)) {
+  if !(ctx.get_fs().exists(git_dir)) {
     stderr.write_string("fatal: not a git repository\n")
     return 128
   }
@@ -501,7 +501,7 @@ fn git_commit_tree(
   exec : Executor,
 ) -> Int {
   let git_dir = ctx.resolve_path(".git")
-  if not(ctx.get_fs().exists(git_dir)) {
+  if !(ctx.get_fs().exists(git_dir)) {
     stderr.write_string("fatal: not a git repository\n")
     return 128
   }
@@ -613,7 +613,7 @@ fn git_log(
   exec : Executor,
 ) -> Int {
   let git_dir = ctx.resolve_path(".git")
-  if not(ctx.get_fs().exists(git_dir)) {
+  if !(ctx.get_fs().exists(git_dir)) {
     stderr.write_string("fatal: not a git repository\n")
     return 128
   }

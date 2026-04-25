@@ -260,7 +260,7 @@ pub async fn push(remote : Remote, req : PushRequest) -> String raise GitError {
 
   // Check for required capabilities
   let has_report_status = caps.contains("report-status")
-  if not(has_report_status) {
+  if !(has_report_status) {
     raise GitError::ProtocolError("Server does not support report-status")
   }
 

@@ -43,7 +43,7 @@ pub fn parse_remote(remote : String) -> RemoteSpec {
   }
   // scp-style: [user@]host:path
   let colon = remote.find(":")
-  if colon is Some(idx) && not(remote.has_prefix("/")) {
+  if colon is Some(idx) && !(remote.has_prefix("/")) {
     let host = String::unsafe_substring(remote, start=0, end=idx)
     let path = String::unsafe_substring(
       remote,

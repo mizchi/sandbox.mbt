@@ -100,7 +100,7 @@ pub fn[C : LLMClient] Agent::run(
   self.add_user_message(user_input)
   for turns = 0; turns < self.config.max_turns; turns = turns + 1 {
     let (content, has_tool_calls) = self.run_turn(client)
-    if not(has_tool_calls) {
+    if !(has_tool_calls) {
       return content
     }
   }

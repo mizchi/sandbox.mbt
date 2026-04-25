@@ -98,10 +98,10 @@ fn main {
           running = false
         } else if trimmed.length() > 0 {
           let result = shell.exec_line(trimmed)
-          if not(result.stdout.is_empty()) {
+          if !(result.stdout.is_empty()) {
             write_string(result.stdout)
           }
-          if not(result.stderr.is_empty()) {
+          if !(result.stderr.is_empty()) {
             write_string(result.stderr)
           }
         }

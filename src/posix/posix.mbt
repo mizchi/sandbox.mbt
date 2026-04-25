@@ -202,12 +202,12 @@ pub fn PosixContext::open(
     if exists && flags.has(O_EXCL) {
       raise PosixErrno(EEXIST, "File exists")
     }
-    if not(exists) {
+    if !(exists) {
       self.fs.write_string(abs_path, "") catch {
         e => raise PosixErrno(EIO, e.to_string())
       }
     }
-  } else if not(exists) {
+  } else if !(exists) {
     raise PosixErrno(ENOENT, "No such file or directory")
   }
 
@@ -216,13 +216,13 @@ pub fn PosixContext::open(
     if flags.is_writable() {
       raise PosixErrno(EISDIR, "Is a directory")
     }
-    if not(flags.has(O_DIRECTORY)) && flags.is_readable() {
+    if !(flags.has(O_DIRECTORY)) && flags.is_readable() {
       raise PosixErrno(EISDIR, "Is a directory")
     }
   }
 
   // Handle O_TRUNC
-  if flags.has(O_TRUNC) && flags.is_writable() && not(self.fs.is_dir(abs_path)) {
+  if flags.has(O_TRUNC) && flags.is_writable() && !(self.fs.is_dir(abs_path)) {
     self.fs.write_string(abs_path, "") catch {
       e => raise PosixErrno(EIO, e.to_string())
     }
@@ -260,7 +260,7 @@ pub fn PosixContext::read(
   count : Int,
 ) -> Bytes raise PosixError {
   let file = self.get_file(fd)
-  if not(file.flags.is_readable()) {
+  if !(file.flags.is_readable()) {
     raise PosixErrno(EBADF, "File not open for reading")
   }
 
@@ -319,7 +319,7 @@ pub fn PosixContext::write(
   data : Bytes,
 ) -> Int raise PosixError {
   let file = self.get_file(fd)
-  if not(file.flags.is_writable()) {
+  if !(file.flags.is_writable()) {
     raise PosixErrno(EBADF, "File not open for writing")
   }
 
@@ -469,13 +469,13 @@ pub fn PosixContext::stat(
   path : String,
 ) -> Stat raise PosixError {
   let abs_path = self.resolve_path(path)
-  if not(self.fs.exists(abs_path)) {
+  if !(self.fs.exists(abs_path)) {
     raise PosixErrno(ENOENT, "No such file or directory")
   }
 
   // Follow symlinks for stat()
   let resolved = self.fs.resolve_path(abs_path) catch { _ => abs_path }
-  if not(self.fs.exists(resolved)) {
+  if !(self.fs.exists(resolved)) {
     raise PosixErrno(ENOENT, "No such file or directory")
   }
   let now = self.get_time()
@@ -546,7 +546,7 @@ pub fn PosixContext::lstat(
   path : String,
 ) -> Stat raise PosixError {
   let abs_path = self.resolve_path(path)
-  if not(self.fs.exists(abs_path)) {
+  if !(self.fs.exists(abs_path)) {
     raise PosixErrno(ENOENT, "No such file or directory")
   }
   let now = self.get_time()
@@ -667,10 +667,10 @@ pub fn PosixContext::chdir(
   path : String,
 ) -> Unit raise PosixError {
   let abs_path = self.resolve_path(path)
-  if not(self.fs.exists(abs_path)) {
+  if !(self.fs.exists(abs_path)) {
     raise PosixErrno(ENOENT, "No such file or directory")
   }
-  if not(self.fs.is_dir(abs_path)) {
+  if !(self.fs.is_dir(abs_path)) {
     raise PosixErrno(ENOTDIR, "Not a directory")
   }
   self.cwd = abs_path
@@ -904,7 +904,7 @@ fn PosixContext::is_readable(
   _fd : Fd,
   file : OpenFile,
 ) -> Bool {
-  if not(file.flags.is_readable()) {
+  if !(file.flags.is_readable()) {
     return false
   }
 
@@ -931,7 +931,7 @@ fn PosixContext::is_writable(
   _fd : Fd,
   file : OpenFile,
 ) -> Bool {
-  if not(file.flags.is_writable()) {
+  if !(file.flags.is_writable()) {
     return false
   }
 
@@ -956,7 +956,7 @@ pub fn PosixContext::access(
   let abs_path = self.resolve_path(path)
 
   // Check existence first
-  if not(self.fs.exists(abs_path)) {
+  if !(self.fs.exists(abs_path)) {
     raise PosixErrno(ENOENT, "No such file or directory")
   }
 
@@ -1023,7 +1023,7 @@ pub fn PosixContext::ftruncate(
   length : Int64,
 ) -> Unit raise PosixError {
   let file = self.get_file(fd)
-  if not(file.flags.is_writable()) {
+  if !(file.flags.is_writable()) {
     raise PosixErrno(EBADF, "File not open for writing")
   }
   if file.is_pipe {
@@ -1064,10 +1064,10 @@ pub fn PosixContext::rmdir(
   path : String,
 ) -> Unit raise PosixError {
   let abs_path = self.resolve_path(path)
-  if not(self.fs.exists(abs_path)) {
+  if !(self.fs.exists(abs_path)) {
     raise PosixErrno(ENOENT, "No such file or directory")
   }
-  if not(self.fs.is_dir(abs_path)) {
+  if !(self.fs.is_dir(abs_path)) {
     raise PosixErrno(ENOTDIR, "Not a directory")
   }
   self.fs.rmdir(abs_path) catch {
@@ -1089,7 +1089,7 @@ pub fn PosixContext::unlink(
   path : String,
 ) -> Unit raise PosixError {
   let abs_path = self.resolve_path(path)
-  if not(self.fs.exists(abs_path)) {
+  if !(self.fs.exists(abs_path)) {
     raise PosixErrno(ENOENT, "No such file or directory")
   }
   if self.fs.is_dir(abs_path) {
@@ -1125,10 +1125,10 @@ pub fn PosixContext::readlink(
   path : String,
 ) -> String raise PosixError {
   let abs_path = self.resolve_path(path)
-  if not(self.fs.exists(abs_path)) {
+  if !(self.fs.exists(abs_path)) {
     raise PosixErrno(ENOENT, "No such file or directory")
   }
-  if not(self.fs.is_symlink(abs_path)) {
+  if !(self.fs.is_symlink(abs_path)) {
     raise PosixErrno(EINVAL, "Invalid argument")
   }
   self.fs.read_link(abs_path) catch {

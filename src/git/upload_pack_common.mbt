@@ -237,7 +237,7 @@ pub fn extract_pack_from_v2_response(data : Bytes) -> Bytes raise GitError {
     if line_bytes.length() == 0 {
       continue
     }
-    if not(in_pack) {
+    if !(in_pack) {
       let line = trim_newline(bytes_to_string(line_bytes))
       if line == "packfile" {
         in_pack = true

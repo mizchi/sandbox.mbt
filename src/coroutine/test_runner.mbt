@@ -5,7 +5,7 @@
 pub fn run_async_test(f : async () -> Unit) -> Unit raise {
   let coro = spawn(f)
   // Run the scheduler until the coroutine completes
-  while not(no_more_work()) {
+  while !(no_more_work()) {
     reschedule()
   }
   // Check if the coroutine failed

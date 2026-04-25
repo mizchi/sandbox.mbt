@@ -166,7 +166,7 @@ pub fn OpenFlags::has(self : OpenFlags, flag : OpenFlag) -> Bool {
 
 ///|
 pub fn OpenFlags::add(self : OpenFlags, flag : OpenFlag) -> OpenFlags {
-  if not(self.has(flag)) {
+  if !(self.has(flag)) {
     self.flags.push(flag)
   }
   self

@@ -291,7 +291,7 @@ fn builtin_wc(ctx : ProcessContext) -> Int {
   let backend = ctx.backend
   fn count_stats(content : String) -> (Int, Int, Int) {
     let lines = content.split("\n").count()
-    let words = content.split(" ").filter(fn(s) { not(s.is_empty()) }).count()
+    let words = content.split(" ").filter(fn(s) { !(s.is_empty()) }).count()
     let bytes = @utf8.encode(content[:]).length()
     (lines, words, bytes)
   }

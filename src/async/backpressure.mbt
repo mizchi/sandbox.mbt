@@ -89,7 +89,7 @@ pub fn BackpressureController::release(self : BackpressureController) -> Unit {
   if self.current_count > 0 {
     self.current_count -= 1
   }
-  if not(self.is_active()) {
+  if !(self.is_active()) {
     self.wake_one()
   }
 }
@@ -114,7 +114,7 @@ pub fn BackpressureController::set_max(
 ) -> Unit {
   self.max_concurrent = max
   // Wake waiters if we now have capacity
-  while not(self.is_active()) && self.waiters.length() > 0 {
+  while !(self.is_active()) && self.waiters.length() > 0 {
     self.wake_one()
   }
 }

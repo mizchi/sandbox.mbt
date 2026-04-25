@@ -67,10 +67,10 @@ fn main {
 fn run_demo(shell : @shell.Shell, cmd : String) -> Unit {
   println("$ " + cmd)
   let result = shell.exec_line(cmd)
-  if not(result.stdout.is_empty()) {
+  if !(result.stdout.is_empty()) {
     print_output(result.stdout)
   }
-  if not(result.stderr.is_empty()) {
+  if !(result.stderr.is_empty()) {
     print_output("[stderr] " + result.stderr)
   }
   println("")

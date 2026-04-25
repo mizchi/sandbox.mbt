@@ -84,7 +84,7 @@ pub fn[T] FutureRead::is_pending(self : FutureRead[T]) -> Bool {
 ///|
 /// Check if future is resolved (success or failure)
 pub fn[T] FutureRead::is_done(self : FutureRead[T]) -> Bool {
-  not(self.inner.state is Pending)
+  !(self.inner.state is Pending)
 }
 
 ///|

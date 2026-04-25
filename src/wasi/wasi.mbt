@@ -213,7 +213,7 @@ fn wasi_substring_from(s : String, start : Int) -> String {
 ///|
 /// Check if host is allowed for network access
 pub fn WasiSandbox::check_host(self : WasiSandbox, host : String) -> Bool {
-  if not(self.config.allow_network) {
+  if !(self.config.allow_network) {
     return false
   }
   match self.config.allowed_hosts {
@@ -225,7 +225,7 @@ pub fn WasiSandbox::check_host(self : WasiSandbox, host : String) -> Bool {
 ///|
 /// Check if port is allowed for network access
 pub fn WasiSandbox::check_port(self : WasiSandbox, port : Int) -> Bool {
-  if not(self.config.allow_network) {
+  if !(self.config.allow_network) {
     return false
   }
   match self.config.allowed_ports {

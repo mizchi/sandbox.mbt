@@ -418,7 +418,7 @@ fn Executor::exec_while(
       cond_result.exit_code == 0
     }
 
-    if not(should_continue) {
+    if !(should_continue) {
       break
     }
 

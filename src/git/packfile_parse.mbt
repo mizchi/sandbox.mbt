@@ -45,9 +45,7 @@ fn parse_packfile_internal(
   }
 
   // Magic: "PACK"
-  if not(
-      data[0] == b'P' && data[1] == b'A' && data[2] == b'C' && data[3] == b'K',
-    ) {
+  if !(data[0] == b'P' && data[1] == b'A' && data[2] == b'C' && data[3] == b'K') {
     raise GitError::PackfileError("Invalid packfile magic")
   }
 
