@@ -16,7 +16,7 @@ pub(all) enum WasiSandboxMode {
   HostEnforced
   /// Hybrid mode (guest pre-check + host enforcement)
   Hybrid
-} derive(Show, Eq)
+} derive(Show, Debug, Eq)
 
 ///|
 /// WASI Sandbox configuration
@@ -168,7 +168,7 @@ pub struct WasiSandbox {
 
 ///|
 pub fn WasiSandbox::new(config : WasiSandboxConfig) -> WasiSandbox {
-  { config, sandbox: @sandbox.Sandbox::new(config.caps) }
+  { config, sandbox: @sandbox.Sandbox::new(config.caps), }
 }
 
 ///|
@@ -176,7 +176,7 @@ pub fn WasiSandbox::with_fs(
   fs : @fs.Fs,
   config : WasiSandboxConfig,
 ) -> WasiSandbox {
-  { config, sandbox: @sandbox.Sandbox::with_fs(fs, config.caps) }
+  { config, sandbox: @sandbox.Sandbox::with_fs(fs, config.caps), }
 }
 
 ///|
@@ -213,7 +213,7 @@ fn wasi_substring_from(s : String, start : Int) -> String {
 ///|
 /// Check if host is allowed for network access
 pub fn WasiSandbox::check_host(self : WasiSandbox, host : String) -> Bool {
-  if !(self.config.allow_network) {
+  if !self.config.allow_network {
     return false
   }
   match self.config.allowed_hosts {
@@ -225,7 +225,7 @@ pub fn WasiSandbox::check_host(self : WasiSandbox, host : String) -> Bool {
 ///|
 /// Check if port is allowed for network access
 pub fn WasiSandbox::check_port(self : WasiSandbox, port : Int) -> Bool {
-  if !(self.config.allow_network) {
+  if !self.config.allow_network {
     return false
   }
   match self.config.allowed_ports {

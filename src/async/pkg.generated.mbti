@@ -203,12 +203,7 @@ pub struct Subtask {
 }
 pub fn Subtask::complete(Self) -> Unit
 
-pub(all) struct SubtaskId(Int)
-#deprecated
-pub fn SubtaskId::inner(Self) -> Int
-pub impl Eq for SubtaskId
-pub impl Hash for SubtaskId
-pub impl Show for SubtaskId
+pub(all) struct SubtaskId(Int) derive(Eq, Hash, Show)
 
 pub struct Task {
   id : TaskId
@@ -234,12 +229,7 @@ pub fn Task::release_backpressure(Self) -> Unit
 pub async fn[T] Task::run(async () -> T, parent? : Self) -> T
 pub fn Task::spawn_thread(async () -> Unit) -> @coroutine.Coroutine
 
-pub(all) struct TaskId(Int)
-#deprecated
-pub fn TaskId::inner(Self) -> Int
-pub impl Eq for TaskId
-pub impl Hash for TaskId
-pub impl Show for TaskId
+pub(all) struct TaskId(Int) derive(Eq, Hash, Show)
 
 pub(all) enum TaskState {
   Running
@@ -285,8 +275,7 @@ pub async fn WriteEnd::write_string(Self, String) -> Bool
 
 // Traits
 pub(open) trait Waitable {
-  is_ready(Self) -> Bool
-  get_waiter(Self) -> @coroutine.Coroutine?
-  set_waiter(Self, @coroutine.Coroutine?) -> Unit
+  fn is_ready(Self) -> Bool
+  fn get_waiter(Self) -> @coroutine.Coroutine?
+  fn set_waiter(Self, @coroutine.Coroutine?) -> Unit
 }
-

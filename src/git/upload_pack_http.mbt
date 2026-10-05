@@ -1,4 +1,4 @@
-///| Upload-pack over HTTP (smart HTTP, wasm targets)
+///| Upload-pack over HTTP (smart HTTP, native target)
 
 ///|
 pub async fn upload_pack_info_refs_http(
@@ -11,7 +11,7 @@ pub async fn upload_pack_info_refs_http(
   }
   let base = spec.base_url.unwrap_or(remote)
   let url = "\{base}/info/refs?service=git-upload-pack"
-  let headers : Map[String, String] = {
+  let headers : Map[@http.CaseInsensitiveString, String] = {
     "User-Agent": "git/moonbit",
     "Accept": "application/x-git-upload-pack-advertisement",
   }
@@ -26,7 +26,7 @@ pub async fn upload_pack_info_refs_http(
       "Failed to fetch info/refs: HTTP \{response.code}",
     )
   }
-  data
+  data.binary()
 }
 
 ///|
@@ -41,7 +41,7 @@ pub async fn upload_pack_request_http(
   }
   let base = spec.base_url.unwrap_or(remote)
   let url = "\{base}/git-upload-pack"
-  let headers : Map[String, String] = {
+  let headers : Map[@http.CaseInsensitiveString, String] = {
     "User-Agent": "git/moonbit",
     "Content-Type": "application/x-git-upload-pack-request",
     "Accept": "application/x-git-upload-pack-result",
@@ -57,7 +57,7 @@ pub async fn upload_pack_request_http(
       "Failed to upload-pack: HTTP \{response.code}",
     )
   }
-  data
+  data.binary()
 }
 
 ///|

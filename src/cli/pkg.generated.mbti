@@ -2,6 +2,9 @@
 package "mizchi/sandbox/cli"
 
 // Values
+pub fn read_line() -> String?
+
+pub fn write_stdout(String) -> Unit
 
 // Errors
 
@@ -10,4 +13,3 @@ package "mizchi/sandbox/cli"
 // Type aliases
 
 // Traits
-

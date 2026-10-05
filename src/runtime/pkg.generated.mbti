@@ -3,6 +3,7 @@ package "mizchi/sandbox/runtime"
 
 import {
   "mizchi/sandbox/fs",
+  "moonbitlang/core/debug",
 }
 
 // Values
@@ -27,9 +28,7 @@ pub(all) suberror IOError {
   BrokenPipe
   Closed
   Other(String)
-}
-pub impl Eq for IOError
-pub impl Show for IOError
+} derive(Eq, Show)
 
 pub(all) suberror NetworkError {
   ConnectionRefused(String)
@@ -41,9 +40,7 @@ pub(all) suberror NetworkError {
   Timeout
   HostNotFound(String)
   Other(String)
-}
-pub impl Eq for NetworkError
-pub impl Show for NetworkError
+} derive(Eq, Show)
 
 pub(all) suberror PermissionDenied {
   Read(String)
@@ -51,9 +48,7 @@ pub(all) suberror PermissionDenied {
   Net(String)
   Env(String)
   Run(String)
-}
-pub impl Eq for PermissionDenied
-pub impl Show for PermissionDenied
+} derive(Eq, Show)
 
 pub(all) suberror ProcessError {
   NotFound(String)
@@ -62,9 +57,7 @@ pub(all) suberror ProcessError {
   AlreadyExited(Pid)
   SpawnFailed(String)
   Other(String)
-}
-pub impl Eq for ProcessError
-pub impl Show for ProcessError
+} derive(Eq, Show)
 
 // Types and methods
 pub(all) struct Command {
@@ -96,19 +89,10 @@ pub(all) struct ExitStatus {
 pub fn ExitStatus::is_success(Self) -> Bool
 pub fn ExitStatus::success() -> Self
 
-pub(all) struct Fd(Int)
-#deprecated
-pub fn Fd::inner(Self) -> Int
-pub impl Eq for Fd
-pub impl Hash for Fd
-pub impl Show for Fd
+pub(all) struct Fd(Int) derive(Eq, Hash, Show)
 
-pub(all) struct FileMode(Int)
+pub(all) struct FileMode(Int) derive(Eq, Show)
 pub fn FileMode::default() -> Self
-#deprecated
-pub fn FileMode::inner(Self) -> Int
-pub impl Eq for FileMode
-pub impl Show for FileMode
 
 pub(all) struct FileStat {
   file_type : FileType
@@ -173,17 +157,13 @@ pub(all) enum PermissionDescriptor {
   Net(host~ : String?)
   Env(variable~ : String?)
   Run(command~ : String?)
-}
-pub impl Eq for PermissionDescriptor
-pub impl Show for PermissionDescriptor
+} derive(Eq, Show)
 
 pub(all) enum PermissionState {
   Granted
   Prompt
   Denied
-}
-pub impl Eq for PermissionState
-pub impl Show for PermissionState
+} derive(Eq, Show, @debug.Debug)
 
 pub(all) struct PermissionStatus {
   state : PermissionState
@@ -205,12 +185,7 @@ pub fn Permissions::deny(Self, PermissionDescriptor) -> Unit
 pub fn Permissions::new() -> Self
 pub fn Permissions::query(Self, PermissionDescriptor) -> PermissionStatus
 
-pub(all) struct Pid(Int)
-#deprecated
-pub fn Pid::inner(Self) -> Int
-pub impl Eq for Pid
-pub impl Hash for Pid
-pub impl Show for Pid
+pub(all) struct Pid(Int) derive(Eq, Hash, Show)
 
 pub struct Pipe {
   buffer : Array[Byte]
@@ -266,11 +241,7 @@ pub impl Filesystem for SandboxedBackend
 pub impl Network for SandboxedBackend
 pub impl ProcessManager for SandboxedBackend
 
-pub(all) struct Signal(Int)
-#deprecated
-pub fn Signal::inner(Self) -> Int
-pub impl Eq for Signal
-pub impl Show for Signal
+pub(all) struct Signal(Int) derive(Eq, Show)
 
 pub(all) struct SocketAddr {
   host : String
@@ -297,51 +268,50 @@ pub(all) struct TcpListenerHandle {
 
 // Traits
 pub(open) trait Environment {
-  get_env(Self, String) -> String?
-  set_env(Self, String, String) -> Unit
-  env_vars(Self) -> Map[String, String]
-  args(Self) -> Array[String]
-  cwd(Self) -> String
-  chdir(Self, String) -> Unit raise IOError
+  fn get_env(Self, String) -> String?
+  fn set_env(Self, String, String) -> Unit
+  fn env_vars(Self) -> Map[String, String]
+  fn args(Self) -> Array[String]
+  fn cwd(Self) -> String
+  fn chdir(Self, String) -> Unit raise IOError
 }
 
 pub(open) trait Filesystem {
-  open(Self, String, OpenFlags) -> Fd raise IOError
-  read(Self, Fd, Int) -> Bytes raise IOError
-  write(Self, Fd, Bytes) -> Int raise IOError
-  close(Self, Fd) -> Unit raise IOError
-  stat(Self, String) -> FileStat raise IOError
-  exists(Self, String) -> Bool
-  mkdir(Self, String) -> Unit raise IOError
-  readdir(Self, String) -> Array[DirEntry] raise IOError
-  unlink(Self, String) -> Unit raise IOError
-  rename(Self, String, String) -> Unit raise IOError
-  realpath(Self, String) -> String raise IOError
+  fn open(Self, String, OpenFlags) -> Fd raise IOError
+  fn read(Self, Fd, Int) -> Bytes raise IOError
+  fn write(Self, Fd, Bytes) -> Int raise IOError
+  fn close(Self, Fd) -> Unit raise IOError
+  fn stat(Self, String) -> FileStat raise IOError
+  fn exists(Self, String) -> Bool
+  fn mkdir(Self, String) -> Unit raise IOError
+  fn readdir(Self, String) -> Array[DirEntry] raise IOError
+  fn unlink(Self, String) -> Unit raise IOError
+  fn rename(Self, String, String) -> Unit raise IOError
+  fn realpath(Self, String) -> String raise IOError
 }
 
 pub(open) trait Network {
-  tcp_connect(Self, SocketAddr) -> TcpConn raise NetworkError
-  tcp_read(Self, TcpConn, Int) -> Bytes raise NetworkError
-  tcp_write(Self, TcpConn, Bytes) -> Int raise NetworkError
-  tcp_close(Self, TcpConn) -> Unit
-  tcp_listen(Self, SocketAddr) -> TcpListenerHandle raise NetworkError
-  tcp_accept(Self, TcpListenerHandle) -> TcpConn raise NetworkError
-  tcp_listener_close(Self, TcpListenerHandle) -> Unit
-  resolve(Self, String) -> Array[String] raise NetworkError
+  fn tcp_connect(Self, SocketAddr) -> TcpConn raise NetworkError
+  fn tcp_read(Self, TcpConn, Int) -> Bytes raise NetworkError
+  fn tcp_write(Self, TcpConn, Bytes) -> Int raise NetworkError
+  fn tcp_close(Self, TcpConn) -> Unit
+  fn tcp_listen(Self, SocketAddr) -> TcpListenerHandle raise NetworkError
+  fn tcp_accept(Self, TcpListenerHandle) -> TcpConn raise NetworkError
+  fn tcp_listener_close(Self, TcpListenerHandle) -> Unit
+  fn resolve(Self, String) -> Array[String] raise NetworkError
 }
 
 pub(open) trait ProcessManager {
-  spawn(Self, Command) -> Process raise ProcessError
-  wait(Self, Pid) -> ExitStatus raise ProcessError
-  try_wait(Self, Pid) -> ExitStatus? raise ProcessError
-  kill(Self, Pid, Signal) -> Unit raise ProcessError
-  current_pid(Self) -> Pid
-  read_stdout_bytes(Self, Pid) -> Bytes raise ProcessError
-  read_stderr_bytes(Self, Pid) -> Bytes raise ProcessError
-  write_stdin_bytes(Self, Pid, Bytes) -> Unit raise ProcessError
-  close_stdin(Self, Pid) -> Unit raise ProcessError
-  read_stdout(Self, Pid) -> String raise ProcessError
-  read_stderr(Self, Pid) -> String raise ProcessError
-  write_stdin(Self, Pid, String) -> Unit raise ProcessError
+  fn spawn(Self, Command) -> Process raise ProcessError
+  fn wait(Self, Pid) -> ExitStatus raise ProcessError
+  fn try_wait(Self, Pid) -> ExitStatus? raise ProcessError
+  fn kill(Self, Pid, Signal) -> Unit raise ProcessError
+  fn current_pid(Self) -> Pid
+  fn read_stdout_bytes(Self, Pid) -> Bytes raise ProcessError
+  fn read_stderr_bytes(Self, Pid) -> Bytes raise ProcessError
+  fn write_stdin_bytes(Self, Pid, Bytes) -> Unit raise ProcessError
+  fn close_stdin(Self, Pid) -> Unit raise ProcessError
+  fn read_stdout(Self, Pid) -> String raise ProcessError
+  fn read_stderr(Self, Pid) -> String raise ProcessError
+  fn write_stdin(Self, Pid, String) -> Unit raise ProcessError
 }
-

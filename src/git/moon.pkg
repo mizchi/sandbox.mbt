@@ -7,12 +7,16 @@ import {
 
 import {
   "mizchi/sandbox/fs",
+  "moonbitlang/async",
+  "moonbitlang/async/socket",
+  "moonbitlang/async/io",
 } for "test"
 
 warnings = "-29"
 
 options(
   targets: {
+    "http_native_test.mbt": [ "native" ],
     "integration_test.mbt": [ "native" ],
     "remote.mbt": [ "native" ],
     "remote_test.mbt": [ "native" ],

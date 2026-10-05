@@ -5,6 +5,7 @@ import {
   "mizchi/sandbox/fs",
   "mizchi/sandbox/posix",
   "mizchi/sandbox/runtime",
+  "moonbitlang/core/debug",
 }
 
 // Values
@@ -125,7 +126,7 @@ pub(all) enum RedirectKind {
   InDup
   HereDoc
   HereDocStrip
-}
+} derive(@debug.Debug)
 pub impl Eq for RedirectKind
 pub impl Show for RedirectKind
 
@@ -203,7 +204,7 @@ pub(all) enum Token {
   DoubleSemi
   Newline
   EOF
-}
+} derive(@debug.Debug)
 pub impl Eq for Token
 pub impl Show for Token
 
@@ -240,11 +241,10 @@ pub(all) enum Word {
   ShellPid
   Quoted(Array[Word])
   CommandSub(String)
-}
+} derive(@debug.Debug)
 pub impl Eq for Word
 pub impl Show for Word
 
 // Type aliases
 
 // Traits
-

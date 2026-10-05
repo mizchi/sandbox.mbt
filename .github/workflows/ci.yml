@@ -1,0 +1,62 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [native, wasm-gc, wasm]
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install latest stable MoonBit
+        run: |
+          curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash
+          echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
+      - name: Resolve dependencies
+        run: |
+          moon version --all
+          moon update
+          moon tree
+      - name: Check
+        run: moon check --target ${{ matrix.target }}
+      - name: Build
+        run: moon build --target ${{ matrix.target }}
+      - name: Test
+        run: moon test --target ${{ matrix.target }}
+      - name: Validate package metadata
+        if: matrix.target == 'native'
+        run: |
+          moon package
+          python3 - <<'PYTHON'
+          from pathlib import Path
+          import json
+          import subprocess
+          import tempfile
+          import zipfile
+          archives = list(Path("_build/publish").glob("*.zip"))
+          assert len(archives) == 1, archives
+          with zipfile.ZipFile(archives[0]) as archive:
+              names = archive.namelist()
+              assert not any(name.startswith("deps/") for name in names), names
+              manifest = archive.read("moon.mod").decode()
+              assert '"moonbitlang/async@0.22.4"' in manifest, manifest
+              assert "path:" not in manifest, manifest
+              with tempfile.TemporaryDirectory() as directory:
+                  archive.extractall(directory)
+                  tree = json.loads(subprocess.check_output([
+                      "moon", "-C", directory, "tree", "--json",
+                  ]))
+                  assert tree["status"] == "success", tree
+                  resolved = {module["name"]: module["version"] for module in tree["modules"]}
+                  assert resolved["moonbitlang/async"] == "0.22.4", resolved
+                  assert len(resolved) == 2, resolved
+          PYTHON

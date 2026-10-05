@@ -1,0 +1,12 @@
+.DS_Store
+_build/
+target/
+target
+.mooncakes/
+.moonagent/
+.wrangler/
+experiments/
+node_modules/
+
+# Keep the experimental WASI fork out of published archives.
+/deps/
