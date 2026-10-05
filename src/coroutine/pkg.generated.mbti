@@ -33,8 +33,7 @@ pub fn spawn(async () -> Unit) -> Coroutine
 pub async fn suspend() -> Unit
 
 // Errors
-pub(all) suberror Cancelled
-pub impl Show for Cancelled
+pub(all) suberror Cancelled derive(Show)
 
 // Types and methods
 type Coroutine
@@ -49,4 +48,3 @@ pub impl Hash for Coroutine
 // Type aliases
 
 // Traits
-

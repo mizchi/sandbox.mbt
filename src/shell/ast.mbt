@@ -14,10 +14,10 @@ pub(all) enum Word {
   ShellPid // $$
   Quoted(Array[Word]) // For double quoted strings with embedded variables
   CommandSub(String) // $(cmd) or `cmd`
-}
+} derive(Debug)
 
 ///|
-pub impl Show for Word with output(self, logger) {
+pub impl Show for Word with fn output(self, logger) {
   match self {
     Literal(s) => logger.write_string("Literal(\{s})")
     Variable(s) => logger.write_string("Variable($\{s})")
@@ -34,7 +34,7 @@ pub impl Show for Word with output(self, logger) {
 }
 
 ///|
-pub impl Eq for Word with equal(self, other) {
+pub impl Eq for Word with fn equal(self, other) {
   match (self, other) {
     (Literal(a), Literal(b)) => a == b
     (Variable(a), Variable(b)) => a == b
@@ -71,10 +71,10 @@ pub(all) enum RedirectKind {
   InDup // <&  (duplicate input fd)
   HereDoc // <<  (here document)
   HereDocStrip // <<- (here document with tab stripping)
-}
+} derive(Debug)
 
 ///|
-pub impl Show for RedirectKind with output(self, logger) {
+pub impl Show for RedirectKind with fn output(self, logger) {
   match self {
     Out => logger.write_string(">")
     Append => logger.write_string(">>")
@@ -87,7 +87,7 @@ pub impl Show for RedirectKind with output(self, logger) {
 }
 
 ///|
-pub impl Eq for RedirectKind with equal(self, other) {
+pub impl Eq for RedirectKind with fn equal(self, other) {
   match (self, other) {
     (Out, Out) => true
     (Append, Append) => true
@@ -110,11 +110,11 @@ pub struct Redirect {
 
 ///|
 pub fn Redirect::new(fd : Int, kind : RedirectKind, target : Word) -> Redirect {
-  { fd, kind, target }
+  { fd, kind, target, }
 }
 
 ///|
-pub impl Show for Redirect with output(self, logger) {
+pub impl Show for Redirect with fn output(self, logger) {
   if self.fd != 1 {
     logger.write_string("\{self.fd}")
   }
@@ -130,7 +130,7 @@ pub struct CaseItem {
 
 ///|
 pub fn CaseItem::new(patterns : Array[Word], body : Ast) -> CaseItem {
-  { patterns, body }
+  { patterns, body, }
 }
 
 ///|
@@ -181,7 +181,7 @@ pub(all) enum Ast {
 }
 
 ///|
-pub impl Show for Ast with output(self, logger) {
+pub impl Show for Ast with fn output(self, logger) {
   match self {
     SimpleCommand(words, _) => {
       logger.write_string("SimpleCommand(")

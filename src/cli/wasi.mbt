@@ -21,6 +21,8 @@ fn wasi_fd_read(
 // Memory helpers
 
 ///|
+// Preserve the existing owned FFI convention while the raw pointer is in use.
+#owned(arr)
 extern "wasm" fn wasm_memory_ptr(arr : FixedArray[Byte]) -> Int =
   #|(func (param i32) (result i32) local.get 0 i32.const 8 i32.add)
 

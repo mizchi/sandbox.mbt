@@ -32,10 +32,7 @@ test "WasiSandboxConfig builder methods" {
   assert_eq(config.mode, @wasi.Hybrid)
   assert_eq(config.allow_network, true)
   assert_eq(config.path_mappings.length(), 1)
-  inspect(
-    config.allowed_hosts,
-    content="Some([\"localhost\", \"example.com\"])",
-  )
+  assert_eq(config.allowed_hosts, Some(["localhost", "example.com"]))
 }
 
 ///|

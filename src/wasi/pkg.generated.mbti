@@ -5,6 +5,7 @@ import {
   "mizchi/sandbox/fs",
   "mizchi/sandbox/posix",
   "mizchi/sandbox/sandbox",
+  "moonbitlang/core/debug",
 }
 
 // Values
@@ -17,9 +18,7 @@ pub(all) enum BackendMode {
   Sandbox
   Native
   WasiNative
-}
-pub impl Eq for BackendMode
-pub impl Show for BackendMode
+} derive(Eq, Show)
 
 pub struct RuntimeConfig {
   mode : BackendMode
@@ -80,11 +79,8 @@ pub(all) enum WasiSandboxMode {
   GuestOnly
   HostEnforced
   Hybrid
-}
-pub impl Eq for WasiSandboxMode
-pub impl Show for WasiSandboxMode
+} derive(Eq, Show, @debug.Debug)
 
 // Type aliases
 
 // Traits
-

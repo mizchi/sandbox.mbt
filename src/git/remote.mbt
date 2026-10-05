@@ -1,9 +1,6 @@
-///| Git HTTP push protocol implementation (WASM target only)
+///| Git HTTP push protocol implementation (native target only)
 
-///| This file is only compiled for wasm-gc and wasm targets
-
-// Note: This module requires the x-async HTTP client
-// Import will be added when moon.pkg.json is updated for wasm targets
+// Uses the published moonbitlang/async HTTP client.
 
 ///|
 /// Helper to convert Array[Byte] to Bytes
@@ -67,7 +64,7 @@ pub fn PushRequest::new(
   refname : String,
   packfile : Bytes,
 ) -> PushRequest {
-  { old_id, new_id, refname, packfile }
+  { old_id, new_id, refname, packfile, }
 }
 
 ///|
@@ -232,7 +229,7 @@ pub async fn discover_refs(
   remote : Remote,
 ) -> (Array[(ObjectId, String)], Array[String]) raise GitError {
   let url = remote.info_refs_url()
-  let headers : Map[String, String] = {
+  let headers : Map[@http.CaseInsensitiveString, String] = {
     "User-Agent": "git/moonbit",
     "Accept": "application/x-git-receive-pack-advertisement",
   }
@@ -247,6 +244,7 @@ pub async fn discover_refs(
 
   // Skip service announcement line if present
   // Format: "# service=git-receive-pack\n" followed by flush
+  let data = data.binary()
   let refs = parse_refs(data)
   let caps = extract_capabilities(data)
   (refs, caps)
@@ -260,14 +258,14 @@ pub async fn push(remote : Remote, req : PushRequest) -> String raise GitError {
 
   // Check for required capabilities
   let has_report_status = caps.contains("report-status")
-  if !(has_report_status) {
+  if !has_report_status {
     raise GitError::ProtocolError("Server does not support report-status")
   }
 
   // Step 2: Send receive-pack request
   let url = remote.receive_pack_url()
   let body = build_receive_pack_body(req)
-  let headers : Map[String, String] = {
+  let headers : Map[@http.CaseInsensitiveString, String] = {
     "User-Agent": "git/moonbit",
     "Content-Type": "application/x-git-receive-pack-request",
     "Accept": "application/x-git-receive-pack-result",
@@ -280,7 +278,7 @@ pub async fn push(remote : Remote, req : PushRequest) -> String raise GitError {
   }
 
   // Step 3: Parse response
-  match parse_receive_pack_response(response_data) {
+  match parse_receive_pack_response(response_data.binary()) {
     Ok(msg) => msg
     Err(e) => raise e
   }

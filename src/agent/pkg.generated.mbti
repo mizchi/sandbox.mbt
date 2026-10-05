@@ -102,6 +102,5 @@ pub fn ToolResult::ok(String) -> Self
 
 // Traits
 pub(open) trait LLMClient {
-  chat(Self, Array[Message], Array[ToolDef]) -> Message raise
+  fn chat(Self, Array[Message], Array[ToolDef]) -> Message raise
 }
-

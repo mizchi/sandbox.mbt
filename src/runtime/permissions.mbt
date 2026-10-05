@@ -6,7 +6,7 @@ pub(all) enum PermissionState {
   Granted
   Prompt
   Denied
-} derive(Show, Eq)
+} derive(Show, Debug, Eq)
 
 ///|
 /// Permission descriptor
@@ -34,7 +34,7 @@ pub struct Permissions {
 
 ///|
 pub fn Permissions::new() -> Permissions {
-  { allowed: [], denied: [] }
+  { allowed: [], denied: [], }
 }
 
 ///|
@@ -74,16 +74,16 @@ pub fn Permissions::query(
 ) -> PermissionStatus {
   // Check denied first
   if self.is_denied(desc) {
-    return { state: PermissionState::Denied, descriptor: desc }
+    return { state: PermissionState::Denied, descriptor: desc, }
   }
 
   // Check allowed
   if self.is_allowed(desc) {
-    return { state: PermissionState::Granted, descriptor: desc }
+    return { state: PermissionState::Granted, descriptor: desc, }
   }
 
   // Default to prompt (but in WASM, this means denied)
-  { state: PermissionState::Prompt, descriptor: desc }
+  { state: PermissionState::Prompt, descriptor: desc, }
 }
 
 ///|

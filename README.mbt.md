@@ -21,6 +21,16 @@ In-memory sandbox primitives for MoonBit - virtual filesystem, POSIX emulation, 
 moon add mizchi/sandbox
 ```
 
+## Dependencies and targets
+
+The published module requires `moonbitlang/async >= 0.22.4`. Only the native
+Git HTTP transport uses that dependency; the in-memory filesystem, sandbox
+permissions, and coroutine runtime remain implemented in this repository.
+The experimental `deps/x-async` submodule is not needed for builds or tests
+and is excluded from the published package.
+
+Checks, builds, and tests run on `native`, `wasm-gc`, and `wasm`.
+
 ## Usage
 
 ### Shell

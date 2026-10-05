@@ -15,9 +15,7 @@ pub(all) suberror SandboxError {
   CommandDenied(String)
   ResourceLimitExceeded(String)
   IOError(String)
-}
-pub impl Eq for SandboxError
-pub impl Show for SandboxError
+} derive(Eq, Show)
 
 // Types and methods
 pub struct Capabilities {
@@ -72,4 +70,3 @@ pub fn Sandbox::write(Self, @posix.Fd, Bytes) -> Int raise SandboxError
 // Type aliases
 
 // Traits
-

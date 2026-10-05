@@ -65,10 +65,10 @@ pub(all) enum Token {
   // Special
   Newline
   EOF
-}
+} derive(Debug)
 
 ///|
-pub impl Show for Token with output(self, logger) {
+pub impl Show for Token with fn output(self, logger) {
   match self {
     Word(s) => logger.write_string("Word(\{s})")
     SingleQuotedWord(s) => logger.write_string("SingleQuotedWord('\{s}')")
@@ -123,7 +123,7 @@ pub impl Show for Token with output(self, logger) {
 }
 
 ///|
-pub impl Eq for Token with equal(self, other) {
+pub impl Eq for Token with fn equal(self, other) {
   match (self, other) {
     (Word(a), Word(b)) => a == b
     (SingleQuotedWord(a), SingleQuotedWord(b)) => a == b
@@ -189,7 +189,7 @@ pub struct Lexer {
 
 ///|
 pub fn Lexer::new(input : String) -> Lexer {
-  { input: input.to_array(), pos: 0, at_command_pos: true }
+  { input: input.to_array(), pos: 0, at_command_pos: true, }
 }
 
 ///|

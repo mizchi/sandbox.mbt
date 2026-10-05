@@ -103,9 +103,7 @@ pub(all) suberror GitError {
   PackfileError(String)
   ProtocolError(String)
   IoError(String)
-}
-pub impl Eq for GitError
-pub impl Show for GitError
+} derive(Eq, Show)
 
 // Types and methods
 pub struct Commit {
@@ -155,10 +153,9 @@ pub(all) enum ObjectType {
   Tree
   Commit
   Tag
-}
+} derive(Eq)
 pub fn ObjectType::to_packfile_type(Self) -> Int
 pub fn ObjectType::to_string(Self) -> String
-pub impl Eq for ObjectType
 pub impl Show for ObjectType
 
 pub struct PackObject {
@@ -170,15 +167,13 @@ pub fn PackObject::new(ObjectType, Bytes) -> Self
 pub(all) enum ProtocolVersion {
   V0
   V2
-}
-pub impl Eq for ProtocolVersion
+} derive(Eq)
 
 pub(all) enum RemoteKind {
   Http
   Ssh
   File
-}
-pub impl Eq for RemoteKind
+} derive(Eq)
 
 pub struct RemoteSpec {
   kind : RemoteKind
@@ -198,4 +193,3 @@ pub fn TreeEntry::new(String, String, ObjectId) -> Self
 // Type aliases
 
 // Traits
-
